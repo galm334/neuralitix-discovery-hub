@@ -25,7 +25,7 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarContent>
-        <SidebarGroup className="mt-14 md:mt-8">
+        <SidebarGroup className="mt-[60px] md:mt-8">
           <SidebarGroupContent>
             <SidebarMenu className="space-y-2">
               {navigationItems.map((item) => (
@@ -33,7 +33,11 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild>
                     <a 
                       href={item.url} 
-                      className={`flex items-center gap-3 ${location.pathname === item.url ? 'text-primary' : ''}`}
+                      className={`flex items-center gap-3 ${
+                        location.pathname === item.url 
+                          ? 'bg-primary/10 text-foreground' 
+                          : 'hover:bg-primary/5'
+                      } rounded-md px-3 py-2`}
                     >
                       <item.icon className="h-5 w-5" />
                       <span>{item.title}</span>
