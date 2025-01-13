@@ -11,6 +11,7 @@ import Index from "./pages/Index";
 import Popular from "./pages/Popular";
 import Trending from "./pages/Trending";
 import JustAdded from "./pages/JustAdded";
+import ToolPage from "./pages/ToolPage";
 
 const queryClient = new QueryClient();
 
@@ -59,6 +60,7 @@ const App = () => (
                   <Route path="/popular" element={<Popular />} />
                   <Route path="/trending" element={<Trending />} />
                   <Route path="/just-added" element={<JustAdded />} />
+                  <Route path="/tool/:id" element={<ToolPage />} />
                 </Routes>
               </main>
             </div>
