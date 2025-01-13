@@ -1,4 +1,3 @@
-import { useLocation } from "react-router-dom";
 import { Home, Star, TrendingUp, Plus, Send, MessageSquare, LogIn } from "lucide-react";
 import {
   Sidebar,
@@ -6,9 +5,8 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { SidebarMenuItem } from "./SidebarMenuItem";
 
 const navigationItems = [
   { title: "Home", url: "/", icon: Home },
@@ -20,30 +18,19 @@ const navigationItems = [
 ];
 
 export function AppSidebar() {
-  const location = useLocation();
-
   return (
     <Sidebar>
       <SidebarContent>
-        <SidebarGroup className="mt-[60px] md:mt-8">
+        <SidebarGroup className="mt-20 md:mt-8">
           <SidebarGroupContent>
             <SidebarMenu className="space-y-2">
               {navigationItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <a 
-                      href={item.url} 
-                      className={`flex items-center gap-3 ${
-                        location.pathname === item.url 
-                          ? 'bg-primary/10 text-foreground' 
-                          : 'hover:bg-primary/5'
-                      } rounded-md px-3 py-2`}
-                    >
-                      <item.icon className="h-5 w-5" />
-                      <span>{item.title}</span>
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                <SidebarMenuItem
+                  key={item.title}
+                  title={item.title}
+                  url={item.url}
+                  icon={item.icon}
+                />
               ))}
             </SidebarMenu>
           </SidebarGroupContent>
