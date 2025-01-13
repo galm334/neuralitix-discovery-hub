@@ -23,7 +23,7 @@ export function AIToolCard({
   isVerified = false,
 }: AIToolCardProps) {
   return (
-    <Card className="overflow-hidden bg-card hover:shadow-lg transition-shadow">
+    <Card className="overflow-hidden bg-card hover:shadow-lg transition-shadow border border-[#9b87f5]/20">
       <div className="relative h-48">
         <img
           src={image}
@@ -49,11 +49,11 @@ export function AIToolCard({
         <p className="text-sm text-muted-foreground line-clamp-2">{description}</p>
       </CardContent>
       <CardFooter className="p-4 pt-0 flex flex-col gap-4">
-        <Button className="w-full" variant="default">
+        <Button className="w-full bg-[#6366F1] hover:bg-[#6366F1]/90" variant="default">
           Try now
           <ExternalLink className="w-4 h-4 ml-2" />
         </Button>
-        <div className="flex justify-between items-center text-sm text-muted-foreground border-t pt-4">
+        <div className="flex justify-between items-center text-sm text-muted-foreground border-t border-[#9b87f5]/20 pt-4">
           <span className="font-medium">{rating}/10</span>
           <span>{saves.toLocaleString()} saves</span>
         </div>
