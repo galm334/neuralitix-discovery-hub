@@ -15,13 +15,13 @@ const Index = () => {
           </p>
           
           <div className="relative max-w-2xl mx-auto">
-            <div className="flex gap-2">
+            <div className="flex gap-2 bg-muted/50 backdrop-blur-sm rounded-lg p-2">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
                 <Input 
                   type="text"
                   placeholder="Find me an agent that..."
-                  className="w-full pl-10 h-12 text-lg bg-background/50 backdrop-blur-sm"
+                  className="w-full pl-10 h-12 text-lg bg-transparent border-0 focus-visible:ring-0"
                 />
               </div>
               <Button className="h-12 px-6 text-lg">

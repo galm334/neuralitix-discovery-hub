@@ -25,14 +25,14 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarContent>
-        <SidebarGroup>
+        <SidebarGroup className="mt-8">
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="space-y-4">
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <a href={item.url} className="flex items-center gap-2">
-                      <item.icon className="h-4 w-4" />
+                    <a href={item.url} className="flex items-center gap-3">
+                      <item.icon className="h-5 w-5" />
                       <span>{item.title}</span>
                     </a>
                   </SidebarMenuButton>
@@ -42,14 +42,14 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup>
+        <SidebarGroup className="mt-8">
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="space-y-4">
               {actionItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <a href={item.url} className="flex items-center gap-2">
-                      <item.icon className="h-4 w-4" />
+                    <a href={item.url} className="flex items-center gap-3">
+                      <item.icon className="h-5 w-5" />
                       <span>{item.title}</span>
                     </a>
                   </SidebarMenuButton>
