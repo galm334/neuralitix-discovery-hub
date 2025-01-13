@@ -17,8 +17,8 @@ export function SidebarMenuItem({ icon: Icon, title, url }: SidebarMenuItemProps
         href={url} 
         className={`flex items-center gap-3 rounded-md px-3 py-2 mt-4 text-sm ${
           isActive 
-            ? 'bg-[#3B82F6] text-white' 
-            : 'text-gray-300 hover:bg-gray-800'
+            ? 'bg-primary text-primary-foreground' 
+            : 'text-foreground/70 hover:bg-accent/50 hover:text-foreground'
         }`}
       >
         <Icon className="h-5 w-5" />

@@ -9,9 +9,9 @@ export function Sidebar({ children }: { children: React.ReactNode }) {
       <Sheet open={openMobile} onOpenChange={setOpenMobile}>
         <SheetContent 
           side="left" 
-          className="w-[280px] p-0 border-r-0 bg-background"
+          className="w-[280px] p-0 bg-background border-r border-border"
         >
-          <nav className="h-full flex flex-col">
+          <nav className="h-full flex flex-col bg-background">
             {children}
           </nav>
         </SheetContent>
