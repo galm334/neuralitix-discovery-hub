@@ -80,7 +80,7 @@ export function ToolHeader({
           <span className="text-2xl font-semibold">{rating}</span>
           <div className="flex items-center gap-2 text-muted-foreground">
             <Bookmark className="h-4 w-4" />
-            <span className="hidden md:inline">{saves.toLocaleString()}</span>
+            <span>{saves.toLocaleString()}</span>
           </div>
         </div>
 

@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ExternalLink, Plus } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Update {
   title: string;
@@ -12,14 +13,18 @@ interface ToolUpdatesProps {
 }
 
 export function ToolUpdates({ updates }: ToolUpdatesProps) {
+  const isMobile = useIsMobile();
+  
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-semibold">Updates</h2>
-        <Button variant="outline">
-          Add Update
-          <Plus className="ml-2 h-4 w-4" />
-        </Button>
+        {!isMobile && (
+          <Button variant="outline">
+            Add Update
+            <Plus className="ml-2 h-4 w-4" />
+          </Button>
+        )}
       </div>
       {updates.map((update) => (
         <div key={update.title} className="border border-border rounded-lg p-4">
