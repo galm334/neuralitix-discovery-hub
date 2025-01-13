@@ -23,7 +23,7 @@ export function AIToolCard({
   isVerified = false,
 }: AIToolCardProps) {
   return (
-    <Card className="overflow-hidden bg-card hover:shadow-lg transition-shadow border border-[#9b87f5]/20">
+    <Card className="overflow-hidden border-2 border-[#9b87f5]/20 hover:shadow-lg transition-shadow">
       <div className="relative h-48">
         <img
           src={image}
@@ -54,8 +54,12 @@ export function AIToolCard({
           <ExternalLink className="w-4 h-4 ml-2" />
         </Button>
         <div className="flex justify-between items-center text-sm text-muted-foreground border-t border-[#9b87f5]/20 pt-4">
-          <span className="font-medium">{rating}/10</span>
-          <span>{saves.toLocaleString()} saves</span>
+          <div className="flex items-center">
+            <span className="font-medium">{rating}/10</span>
+          </div>
+          <div className="flex items-center">
+            <span>{saves.toLocaleString()} saves</span>
+          </div>
         </div>
       </CardFooter>
     </Card>
