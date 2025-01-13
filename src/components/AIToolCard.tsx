@@ -55,10 +55,10 @@ export function AIToolCard({
         </Button>
         <div className="flex justify-between items-center text-sm text-muted-foreground border-t border-[#9b87f5]/20 pt-4">
           <div className="flex items-center">
-            <span className="font-medium">{rating}/10</span>
+            <span className="font-medium">{rating}</span>
           </div>
           <div className="flex items-center">
-            <span>{saves.toLocaleString()} saves</span>
+            <span>{saves.toLocaleString()}</span>
           </div>
         </div>
       </CardFooter>
