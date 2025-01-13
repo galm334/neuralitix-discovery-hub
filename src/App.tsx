@@ -3,28 +3,29 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { SidebarProvider, SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/contexts/SidebarContext";
 import { AppSidebar } from "@/components/AppSidebar";
-import { Sparkles, LogIn, X } from "lucide-react";
+import { Sparkles, Menu, X } from "lucide-react";
+import { useSidebar } from "@/contexts/SidebarContext";
 import Index from "./pages/Index";
 
 const queryClient = new QueryClient();
 
 function Header() {
-  const { openMobile, setOpenMobile } = useSidebar();
+  const { openMobile, setOpenMobile, toggleSidebar } = useSidebar();
   
   return (
     <header className="fixed top-0 left-0 right-0 h-14 bg-background border-b border-border z-50 flex items-center px-4">
-      {openMobile ? (
-        <button 
-          onClick={() => setOpenMobile(false)}
-          className="md:hidden text-primary hover:text-primary/80"
-        >
+      <button 
+        onClick={toggleSidebar}
+        className="md:hidden text-foreground"
+      >
+        {openMobile ? (
           <X className="h-6 w-6" />
-        </button>
-      ) : (
-        <SidebarTrigger className="md:hidden text-primary hover:text-primary/80" />
-      )}
+        ) : (
+          <Menu className="h-6 w-6" />
+        )}
+      </button>
       <div className="flex items-center gap-2 md:flex-none flex-1 justify-center md:justify-start">
         <Sparkles className="h-6 w-6 text-primary" />
         <span className="text-xl font-bold text-primary">Neuralitix</span>
