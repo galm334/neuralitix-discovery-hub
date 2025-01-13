@@ -53,7 +53,7 @@ export function AIToolCard({
           Try now
           <ExternalLink className="w-4 h-4 ml-2" />
         </Button>
-        <div className="w-full flex justify-end items-center text-sm text-muted-foreground border-t border-[#9b87f5]/20 pt-4">
+        <div className="w-full flex justify-end items-center text-sm text-muted-foreground border-t border-[#9b87f5]/20 pt-2">
           <div className="flex items-center gap-1">
             <Bookmark className="w-4 h-4" />
             <span>{saves.toLocaleString()}</span>
