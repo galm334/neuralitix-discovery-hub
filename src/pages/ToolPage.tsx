@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Bookmark, CheckCircle2, ExternalLink, Share2, Send } from "lucide-react";
+import { Bookmark, CheckCircle2, ExternalLink, Share2, Send, Plus, X } from "lucide-react";
 
 interface Review {
   source: string;
@@ -245,7 +245,7 @@ const ToolPage = () => {
                       "Some features require Pro plan"
                     ].map((con) => (
                       <li key={con} className="flex items-start gap-2">
-                        <XCircle className="h-5 w-5 text-red-500 mt-0.5" />
+                        <X className="h-5 w-5 text-red-500 mt-0.5" />
                         <span>{con}</span>
                       </li>
                     ))}
