@@ -24,13 +24,13 @@ const Index = () => {
                   className="w-full pl-10 h-12 text-lg bg-transparent border-0 focus-visible:ring-0"
                 />
               </div>
-              <Button className="h-12 px-6 text-lg">
+              <Button className="h-12 px-6 text-lg hidden md:inline-flex">
                 Search
               </Button>
             </div>
           </div>
 
-          <div className="mt-20 grid grid-cols-4 gap-8 text-center">
+          <div className="mt-20 hidden md:grid grid-cols-4 gap-8 text-center">
             <div>
               <h3 className="text-4xl font-bold text-primary mb-2">1,000+</h3>
               <p className="text-muted-foreground">AI Agents</p>
