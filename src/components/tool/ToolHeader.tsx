@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Share2, Bookmark, Send } from "lucide-react";
+import { ExternalLink, Share2, Bookmark, Link2 } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ToolHeaderProps {
   title: string;
@@ -27,35 +28,28 @@ export function ToolHeader({
   rating,
   saves
 }: ToolHeaderProps) {
+  const isMobile = useIsMobile();
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(window.location.href);
+  };
+
   return (
     <div className="flex flex-col space-y-6">
-      {/* Share button */}
-      <div className="absolute right-4 top-4 md:right-6 md:top-6">
-        <Button variant="outline" size="icon">
-          <Share2 className="h-4 w-4" />
-        </Button>
-      </div>
-
       {/* Category and Date */}
       <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
         <Badge variant="secondary">{category}</Badge>
         <span>Added {dateAdded}</span>
       </div>
 
-      {/* Title Row with Logo and CTA */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-4">
-          <img 
-            src={logoUrl}
-            alt={`${title} Logo`}
-            className="w-8 h-8 rounded-lg object-cover"
-          />
-          <h1 className="text-3xl font-bold">{title}</h1>
-        </div>
-        <Button size="lg" className="shrink-0">
-          Visit Agent
-          <ExternalLink className="ml-2 h-4 w-4" />
-        </Button>
+      {/* Title Row with Logo */}
+      <div className="flex items-center gap-4 mb-4">
+        <img 
+          src={logoUrl}
+          alt={`${title} Logo`}
+          className="w-8 h-8 rounded-lg object-cover"
+        />
+        <h1 className="text-3xl font-bold">{title}</h1>
       </div>
 
       {/* Author and Description */}
@@ -72,27 +66,42 @@ export function ToolHeader({
         <p className="text-muted-foreground">{description}</p>
       </div>
 
+      {/* CTA Button (Mobile) */}
+      {isMobile && (
+        <Button size="lg" className="w-full">
+          Visit Agent
+          <ExternalLink className="ml-2 h-4 w-4" />
+        </Button>
+      )}
+
       {/* Stats and Actions */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl font-semibold">{rating}</span>
-            <span className="text-sm text-muted-foreground">/10</span>
-          </div>
+          <span className="text-2xl font-semibold">{rating}</span>
           <div className="flex items-center gap-2 text-muted-foreground">
             <Bookmark className="h-4 w-4" />
-            <span>{saves.toLocaleString()} saves</span>
+            <span className="hidden md:inline">{saves.toLocaleString()}</span>
           </div>
         </div>
 
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm">
-            <Bookmark className="h-4 w-4 mr-2" />
-            Save
+        <div className="flex gap-2 items-center">
+          {!isMobile && (
+            <Button size="lg">
+              Visit Agent
+              <ExternalLink className="ml-2 h-4 w-4" />
+            </Button>
+          )}
+          <Button variant="outline" size="sm" onClick={handleCopyLink}>
+            <Link2 className="h-4 w-4" />
+            {!isMobile && <span className="ml-2">Copy link</span>}
           </Button>
           <Button variant="outline" size="sm">
-            <Send className="h-4 w-4 mr-2" />
-            Share
+            <Bookmark className="h-4 w-4" />
+            {!isMobile && <span className="ml-2">Save</span>}
+          </Button>
+          <Button variant="outline" size="sm">
+            <Share2 className="h-4 w-4" />
+            {!isMobile && <span className="ml-2">Share</span>}
           </Button>
         </div>
       </div>
