@@ -8,6 +8,9 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { Sparkles, Menu, X } from "lucide-react";
 import { useSidebar } from "@/contexts/SidebarContext";
 import Index from "./pages/Index";
+import Popular from "./pages/Popular";
+import Trending from "./pages/Trending";
+import JustAdded from "./pages/JustAdded";
 
 const queryClient = new QueryClient();
 
@@ -53,6 +56,9 @@ const App = () => (
               <main className="flex-1">
                 <Routes>
                   <Route path="/" element={<Index />} />
+                  <Route path="/popular" element={<Popular />} />
+                  <Route path="/trending" element={<Trending />} />
+                  <Route path="/just-added" element={<JustAdded />} />
                 </Routes>
               </main>
             </div>
