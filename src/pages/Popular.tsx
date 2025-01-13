@@ -19,7 +19,6 @@ const popularTools = [
     saves: 567,
     isVerified: true,
   },
-  // ... Add more tools as needed
 ];
 
 export default function Popular() {

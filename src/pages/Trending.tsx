@@ -13,7 +13,6 @@ const trendingTools = [
     saves: 1234,
     isVerified: true,
   },
-  // ... Add more tools as needed
 ];
 
 export default function Trending() {

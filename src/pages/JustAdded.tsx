@@ -19,7 +19,6 @@ const newTools = [
     saves: 789,
     isVerified: true,
   },
-  // ... Add more tools as needed
 ];
 
 export default function JustAdded() {
