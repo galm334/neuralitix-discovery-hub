@@ -185,7 +185,6 @@ const ToolPage = () => {
               </div>
 
               <div id="updates">
-                <h2 className="text-2xl font-semibold mb-6">Updates</h2>
                 <ToolUpdates updates={updates} />
               </div>
 
