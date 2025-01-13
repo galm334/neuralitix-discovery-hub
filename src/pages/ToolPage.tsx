@@ -1,22 +1,14 @@
 import { useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Bookmark, CheckCircle2, ExternalLink, Share2, Send, Plus, X } from "lucide-react";
+import { ToolHeader } from "@/components/tool/ToolHeader";
+import { ToolUpdates } from "@/components/tool/ToolUpdates";
+import { ToolReviews } from "@/components/tool/ToolReviews";
+import { ToolProsAndCons } from "@/components/tool/ToolProsAndCons";
+import { ToolFAQ } from "@/components/tool/ToolFAQ";
+import { ToolPricing } from "@/components/tool/ToolPricing";
 
-interface Review {
-  source: string;
-  rating: number;
-  comment: string;
-}
-
-interface Update {
-  title: string;
-  date: string;
-  description: string;
-}
-
-const reviews: Review[] = [
+const reviews = [
   {
     source: "TechCrunch",
     rating: 9.0,
@@ -34,7 +26,7 @@ const reviews: Review[] = [
   },
 ];
 
-const updates: Update[] = [
+const updates = [
   {
     title: "Major Performance Improvements",
     date: "27/02/2024",
@@ -52,89 +44,104 @@ const updates: Update[] = [
   },
 ];
 
-const ToolPage = () => {
-  const [activeTab, setActiveTab] = useState("overview");
+const pros = [
+  "Advanced AI models for better results",
+  "Intuitive user interface",
+  "Real-time processing",
+  "Extensive customization options",
+  "Regular updates and improvements"
+];
 
+const cons = [
+  "Learning curve for advanced features",
+  "Requires stable internet connection",
+  "Limited offline capabilities",
+  "Some features require Pro plan"
+];
+
+const faqs = [
+  {
+    question: "What is WriterGPT Pro?",
+    answer: "WriterGPT Pro is an advanced AI writing assistant powered by GPT-4, designed to help with content creation, editing, and style enhancement."
+  },
+  {
+    question: "How does the pricing work?",
+    answer: "We offer flexible pricing plans including a free tier for basic usage, a Pro plan for advanced features, and Enterprise plans for custom solutions."
+  },
+  {
+    question: "Can I use it offline?",
+    answer: "While some basic features work offline, most features require an internet connection to access our AI models and cloud services."
+  },
+  {
+    question: "Do you offer refunds?",
+    answer: "Yes, we offer a 30-day money-back guarantee if you're not satisfied with our service."
+  },
+  {
+    question: "What about data privacy?",
+    answer: "We take data privacy seriously. All data is encrypted and we never share your information with third parties."
+  }
+];
+
+const pricingTiers = [
+  {
+    name: "Free",
+    price: "$0",
+    features: [
+      "Basic AI capabilities",
+      "Standard response time",
+      "Community support",
+      "Basic analytics",
+      "100 requests per day"
+    ]
+  },
+  {
+    name: "Pro",
+    price: "$29",
+    isPopular: true,
+    features: [
+      "Advanced AI models",
+      "Priority response time",
+      "Email support",
+      "Advanced analytics",
+      "Unlimited requests",
+      "API access",
+      "Custom integrations"
+    ]
+  },
+  {
+    name: "Enterprise",
+    price: "Custom",
+    features: [
+      "Custom AI models",
+      "Dedicated support",
+      "SLA guarantee",
+      "Advanced security",
+      "Custom features",
+      "Training sessions",
+      "Dedicated account manager"
+    ]
+  }
+];
+
+const ToolPage = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="relative px-4 py-8 md:px-6 lg:px-8">
-        {/* Share button in top-right corner */}
-        <div className="absolute right-4 top-4 md:right-6 md:top-6">
-          <Button variant="outline" size="icon">
-            <Share2 className="h-4 w-4" />
-          </Button>
-        </div>
-
         <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col space-y-6">
-            {/* Header Row */}
-            <div>
-              {/* Category and Date */}
-              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-                <Badge variant="secondary">Research</Badge>
-                <span>Added 11th of June, 2024</span>
-              </div>
+          <ToolHeader
+            title="CodeReviewer AI"
+            logoUrl="/placeholder.svg"
+            category="Research"
+            dateAdded="11th of June, 2024"
+            authorName="Din Watts"
+            authorAgentsCount={1234}
+            authorImageUrl="https://ui.shadcn.com/avatars/01.png"
+            description="Accelerate your research with AI-powered literature review and analysis."
+            rating={9.5}
+            saves={892}
+          />
 
-              {/* Title Row with Logo and CTA */}
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-4">
-                  <img 
-                    src="/placeholder.svg"
-                    alt="Tool Logo"
-                    className="w-8 h-8 rounded-lg object-cover"
-                  />
-                  <h1 className="text-3xl font-bold">CodeReviewer AI</h1>
-                </div>
-                <Button size="lg" className="shrink-0">
-                  Visit Agent
-                  <ExternalLink className="ml-2 h-4 w-4" />
-                </Button>
-              </div>
-
-              {/* Author and Description */}
-              <div className="mb-6">
-                <div className="flex items-center gap-3 mb-2">
-                  <img 
-                    src="https://ui.shadcn.com/avatars/01.png" 
-                    alt="Din Watts"
-                    className="w-6 h-6 rounded-full"
-                  />
-                  <span className="text-sm">Din Watts</span>
-                  <span className="text-sm text-muted-foreground">• 1,234 agents</span>
-                </div>
-                <p className="text-muted-foreground">
-                  Accelerate your research with AI-powered literature review and analysis.
-                </p>
-              </div>
-
-              {/* Stats and Actions */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl font-semibold">9.5</span>
-                    <span className="text-sm text-muted-foreground">/10</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Bookmark className="h-4 w-4" />
-                    <span>892 saves</span>
-                  </div>
-                </div>
-
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm">
-                    <Bookmark className="h-4 w-4 mr-2" />
-                    Save
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <Send className="h-4 w-4 mr-2" />
-                    Share
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            {/* Tabs Section */}
-            <Tabs defaultValue="overview" className="mt-8">
+          <Tabs defaultValue="overview" className="mt-8">
             <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent">
               {["Overview", "Updates", "Reviews", "Pros & Cons", "FAQ", "Pricing"].map((tab) => (
                 <TabsTrigger
@@ -147,15 +154,14 @@ const ToolPage = () => {
               ))}
             </TabsList>
 
-              <TabsContent value="overview" className="mt-6">
-                {/* Featured Image */}
-                <div className="w-full aspect-[21/9] mb-8 rounded-lg overflow-hidden">
-                  <img 
-                    src="/placeholder.svg"
-                    alt="CodeReviewer AI Featured"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
+            <TabsContent value="overview" className="mt-6">
+              <div className="w-full aspect-[21/9] mb-8 rounded-lg overflow-hidden">
+                <img 
+                  src="/placeholder.svg"
+                  alt="CodeReviewer AI Featured"
+                  className="w-full h-full object-cover"
+                />
+              </div>
 
               <div className="prose prose-invert max-w-none">
                 <h2>What sets CodeReviewer AI apart</h2>
@@ -180,252 +186,28 @@ const ToolPage = () => {
                   </div>
                 </div>
               </div>
-              </TabsContent>
+            </TabsContent>
 
             <TabsContent value="updates" className="mt-6">
-              <div className="space-y-6">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-2xl font-semibold">Updates</h2>
-                  <Button variant="outline">
-                    Add Update
-                    <Plus className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
-                {updates.map((update) => (
-                  <div key={update.title} className="border border-border rounded-lg p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-semibold">{update.title}</h3>
-                      <span className="text-sm text-muted-foreground">{update.date}</span>
-                    </div>
-                    <p className="text-muted-foreground">{update.description}</p>
-                  </div>
-                ))}
-                <Button variant="outline" className="w-full">
-                  Read more updates
-                  <ExternalLink className="ml-2 h-4 w-4" />
-                </Button>
-              </div>
+              <ToolUpdates updates={updates} />
             </TabsContent>
 
             <TabsContent value="reviews" className="mt-6">
-              <div className="space-y-6">
-                {reviews.map((review) => (
-                  <div key={review.source} className="border border-border rounded-lg p-4">
-                    <div className="flex justify-between items-center mb-2">
-                      <h3 className="font-semibold">{review.source}</h3>
-                      <Badge variant="secondary" className="bg-accent/50">
-                        {review.rating}/10
-                      </Badge>
-                    </div>
-                    <p className="text-muted-foreground">{review.comment}</p>
-                  </div>
-                ))}
-                <Button variant="outline" className="w-full">
-                  Read more reviews
-                  <ExternalLink className="ml-2 h-4 w-4" />
-                </Button>
-              </div>
+              <ToolReviews reviews={reviews} />
             </TabsContent>
 
             <TabsContent value="pros-cons" className="mt-6">
-              <div className="grid md:grid-cols-2 gap-8">
-                <div>
-                  <h2 className="text-2xl font-semibold mb-4 text-green-500">Pros</h2>
-                  <ul className="space-y-3">
-                    {[
-                      "Advanced AI models for better results",
-                      "Intuitive user interface",
-                      "Real-time processing",
-                      "Extensive customization options",
-                      "Regular updates and improvements"
-                    ].map((pro) => (
-                      <li key={pro} className="flex items-start gap-2">
-                        <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5" />
-                        <span>{pro}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div>
-                  <h2 className="text-2xl font-semibold mb-4 text-red-500">Cons</h2>
-                  <ul className="space-y-3">
-                    {[
-                      "Learning curve for advanced features",
-                      "Requires stable internet connection",
-                      "Limited offline capabilities",
-                      "Some features require Pro plan"
-                    ].map((con) => (
-                      <li key={con} className="flex items-start gap-2">
-                        <X className="h-5 w-5 text-red-500 mt-0.5" />
-                        <span>{con}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
+              <ToolProsAndCons pros={pros} cons={cons} />
             </TabsContent>
 
             <TabsContent value="faq" className="mt-6">
-              <div className="space-y-6">
-                <div className="border border-border rounded-lg p-4">
-                  <h3 className="font-semibold mb-2">What is WriterGPT Pro?</h3>
-                  <p className="text-muted-foreground">
-                    WriterGPT Pro is an advanced AI writing assistant powered by GPT-4, designed to help with content creation, editing, and style enhancement.
-                  </p>
-                </div>
-                <div className="border border-border rounded-lg p-4">
-                  <h3 className="font-semibold mb-2">How does the pricing work?</h3>
-                  <p className="text-muted-foreground">
-                    We offer flexible pricing plans including a free tier for basic usage, a Pro plan for advanced features, and Enterprise plans for custom solutions.
-                  </p>
-                </div>
-                <div className="border border-border rounded-lg p-4">
-                  <h3 className="font-semibold mb-2">Can I use it offline?</h3>
-                  <p className="text-muted-foreground">
-                    While some basic features work offline, most features require an internet connection to access our AI models and cloud services.
-                  </p>
-                </div>
-                <div className="border border-border rounded-lg p-4">
-                  <h3 className="font-semibold mb-2">Do you offer refunds?</h3>
-                  <p className="text-muted-foreground">
-                    Yes, we offer a 30-day money-back guarantee if you're not satisfied with our service.
-                  </p>
-                </div>
-                <div className="border border-border rounded-lg p-4">
-                  <h3 className="font-semibold mb-2">What about data privacy?</h3>
-                  <p className="text-muted-foreground">
-                    We take data privacy seriously. All data is encrypted and we never share your information with third parties.
-                  </p>
-                </div>
-              </div>
+              <ToolFAQ faqs={faqs} />
             </TabsContent>
 
             <TabsContent value="pricing" className="mt-6">
-              <div className="grid md:grid-cols-3 gap-8">
-                {/* Free Plan */}
-                <div className="border border-border rounded-lg p-6">
-                  <h3 className="text-xl font-semibold mb-2">Free</h3>
-                  <div className="mb-4">
-                    <span className="text-3xl font-bold">$0</span>
-                    <span className="text-muted-foreground">/per month</span>
-                  </div>
-                  <ul className="space-y-3 mb-6">
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-green-500" />
-                      <span>Basic AI capabilities</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-green-500" />
-                      <span>Standard response time</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-green-500" />
-                      <span>Community support</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-green-500" />
-                      <span>Basic analytics</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-green-500" />
-                      <span>100 requests per day</span>
-                    </li>
-                  </ul>
-                  <Button className="w-full" variant="outline">
-                    Get Started
-                  </Button>
-                </div>
-
-                {/* Pro Plan */}
-                <div className="border-2 border-primary rounded-lg p-6 relative">
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <Badge className="bg-primary text-primary-foreground">Most Popular</Badge>
-                  </div>
-                  <h3 className="text-xl font-semibold mb-2">Pro</h3>
-                  <div className="mb-4">
-                    <span className="text-3xl font-bold">$29</span>
-                    <span className="text-muted-foreground">/per month</span>
-                  </div>
-                  <ul className="space-y-3 mb-6">
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-green-500" />
-                      <span>Advanced AI models</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-green-500" />
-                      <span>Priority response time</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-green-500" />
-                      <span>Email support</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-green-500" />
-                      <span>Advanced analytics</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-green-500" />
-                      <span>Unlimited requests</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-green-500" />
-                      <span>API access</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-green-500" />
-                      <span>Custom integrations</span>
-                    </li>
-                  </ul>
-                  <Button className="w-full">
-                    Get Started
-                  </Button>
-                </div>
-
-                {/* Enterprise Plan */}
-                <div className="border border-border rounded-lg p-6">
-                  <h3 className="text-xl font-semibold mb-2">Enterprise</h3>
-                  <div className="mb-4">
-                    <span className="text-3xl font-bold">Custom</span>
-                    <span className="text-muted-foreground">/per month</span>
-                  </div>
-                  <ul className="space-y-3 mb-6">
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-green-500" />
-                      <span>Custom AI models</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-green-500" />
-                      <span>Dedicated support</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-green-500" />
-                      <span>SLA guarantee</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-green-500" />
-                      <span>Advanced security</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-green-500" />
-                      <span>Custom features</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-green-500" />
-                      <span>Training sessions</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-green-500" />
-                      <span>Dedicated account manager</span>
-                    </li>
-                  </ul>
-                  <Button className="w-full" variant="outline">
-                    Contact Sales
-                  </Button>
-                </div>
-              </div>
+              <ToolPricing pricingTiers={pricingTiers} />
             </TabsContent>
-            </Tabs>
-          </div>
+          </Tabs>
         </div>
       </div>
     </div>
