@@ -21,7 +21,7 @@ function Header() {
     <header className="fixed top-0 left-0 right-0 h-14 bg-background border-b border-border z-50 flex items-center px-4">
       <button 
         onClick={toggleSidebar}
-        className="md:hidden text-foreground hover:text-primary transition-colors"
+        className="md:hidden text-foreground hover:text-primary transition-colors bg-background"
       >
         {openMobile ? (
           <X className="h-6 w-6" />
