@@ -48,12 +48,12 @@ export function AIToolCard({
         <h3 className="text-xl font-semibold mb-2">{title}</h3>
         <p className="text-sm text-muted-foreground line-clamp-2">{description}</p>
       </CardContent>
-      <CardFooter className="p-4 pt-0 flex flex-col gap-4">
+      <CardFooter className="p-4 pt-0 flex flex-col gap-2">
         <Button className="w-full bg-[#6366F1] hover:bg-[#6366F1]/90" variant="default">
           Try now
           <ExternalLink className="w-4 h-4 ml-2" />
         </Button>
-        <div className="w-full flex justify-end items-center text-sm text-muted-foreground border-t border-[#9b87f5]/20 pt-2">
+        <div className="w-full flex justify-end items-center text-sm text-muted-foreground border-t border-[#9b87f5]/20 pt-1">
           <div className="flex items-center gap-1">
             <Bookmark className="w-4 h-4" />
             <span>{saves.toLocaleString()}</span>
