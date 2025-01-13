@@ -4,24 +4,24 @@ import { Button } from "@/components/ui/button";
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-white">
+    <div className="min-h-[calc(100vh-3.5rem)] bg-background">
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-3xl mx-auto text-center">
-          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
-            Discover the Best AI Tools
+          <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-primary via-secondary to-accent">
+            Compare and Find the Best GenAI Tools for You
           </h1>
-          <p className="text-xl text-gray-600 mb-8">
-            Explore and compare top-rated AI tools across different categories
+          <p className="text-xl text-muted-foreground mb-8">
+            #1 AI agent aggregator. Updated daily. Used by 1M+ humans
           </p>
           
           <div className="relative max-w-2xl mx-auto">
             <div className="flex gap-2">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
                 <Input 
                   type="text"
-                  placeholder="Search AI tools..."
-                  className="w-full pl-10 h-12 text-lg"
+                  placeholder="Find me an agent that..."
+                  className="w-full pl-10 h-12 text-lg bg-background/50 backdrop-blur-sm"
                 />
               </div>
               <Button className="h-12 px-6 text-lg">
@@ -30,19 +30,23 @@ const Index = () => {
             </div>
           </div>
 
-          <div className="mt-12 grid grid-cols-2 md:grid-cols-3 gap-4">
-            {["No-Code", "Text-to-Image", "Writing"].map((category) => (
-              <a
-                key={category}
-                href={`/category/${category.toLowerCase()}`}
-                className="p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200"
-              >
-                <h3 className="font-medium text-gray-900">{category}</h3>
-                <p className="text-sm text-gray-500 mt-1">
-                  Top 50 {category} Tools
-                </p>
-              </a>
-            ))}
+          <div className="mt-20 grid grid-cols-4 gap-8 text-center">
+            <div>
+              <h3 className="text-4xl font-bold text-primary mb-2">1,000+</h3>
+              <p className="text-muted-foreground">AI Agents</p>
+            </div>
+            <div>
+              <h3 className="text-4xl font-bold text-primary mb-2">50K+</h3>
+              <p className="text-muted-foreground">Daily Users</p>
+            </div>
+            <div>
+              <h3 className="text-4xl font-bold text-primary mb-2">24/7</h3>
+              <p className="text-muted-foreground">Updates</p>
+            </div>
+            <div>
+              <h3 className="text-4xl font-bold text-primary mb-2">100%</h3>
+              <p className="text-muted-foreground">Free</p>
+            </div>
           </div>
         </div>
       </div>
