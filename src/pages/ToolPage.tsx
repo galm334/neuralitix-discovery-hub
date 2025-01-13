@@ -57,34 +57,43 @@ const ToolPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero Section */}
       <div className="relative px-4 py-8 md:px-6 lg:px-8">
-        <Button 
-          variant="outline" 
-          size="icon"
-          className="absolute left-4 top-4 md:left-6 md:top-6"
-        >
-          <Share2 className="h-4 w-4" />
-        </Button>
+        {/* Share button in top-right corner */}
+        <div className="absolute right-4 top-4 md:right-6 md:top-6">
+          <Button variant="outline" size="icon">
+            <Share2 className="h-4 w-4" />
+          </Button>
+        </div>
 
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col space-y-6">
             {/* Header Row */}
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-4 mb-2">
+            <div>
+              {/* Category and Date */}
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+                <Badge variant="secondary">Research</Badge>
+                <span>Added 11th of June, 2024</span>
+              </div>
+
+              {/* Title Row with Logo and CTA */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-4">
                   <img 
                     src="/placeholder.svg"
                     alt="Tool Logo"
-                    className="w-12 h-12 rounded-lg object-cover"
+                    className="w-8 h-8 rounded-lg object-cover"
                   />
-                  <div>
-                    <Badge className="mb-2 bg-blue-500/10 text-blue-500">Development</Badge>
-                    <h1 className="text-3xl font-bold">CodeReviewer AI</h1>
-                  </div>
+                  <h1 className="text-3xl font-bold">CodeReviewer AI</h1>
                 </div>
-                
-                <div className="flex items-center gap-3 mb-4">
+                <Button size="lg" className="shrink-0">
+                  Visit Agent
+                  <ExternalLink className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Author and Description */}
+              <div className="mb-6">
+                <div className="flex items-center gap-3 mb-2">
                   <img 
                     src="https://ui.shadcn.com/avatars/01.png" 
                     alt="Din Watts"
@@ -93,41 +102,39 @@ const ToolPage = () => {
                   <span className="text-sm">Din Watts</span>
                   <span className="text-sm text-muted-foreground">• 1,234 agents</span>
                 </div>
+                <p className="text-muted-foreground">
+                  Accelerate your research with AI-powered literature review and analysis.
+                </p>
               </div>
 
-              <Button size="lg" className="shrink-0">
-                Visit Agent
-                <ExternalLink className="ml-2 h-4 w-4" />
-              </Button>
+              {/* Stats and Actions */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl font-semibold">9.5</span>
+                    <span className="text-sm text-muted-foreground">/10</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Bookmark className="h-4 w-4" />
+                    <span>892 saves</span>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm">
+                    <Bookmark className="h-4 w-4 mr-2" />
+                    Save
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    <Send className="h-4 w-4 mr-2" />
+                    Share
+                  </Button>
+                </div>
+              </div>
             </div>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl font-semibold">9.5</span>
-                  <span className="text-sm text-muted-foreground">/10</span>
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Bookmark className="h-4 w-4" />
-                  <span>892 saves</span>
-                </div>
-              </div>
-
-              <div className="flex gap-4">
-                <Button variant="outline">
-                  Save
-                  <Bookmark className="ml-2 h-4 w-4" />
-                </Button>
-                <Button variant="outline">
-                  Share
-                  <Send className="ml-2 h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* Tabs Section */}
-          <Tabs defaultValue="overview" className="mt-8">
+            {/* Tabs Section */}
+            <Tabs defaultValue="overview" className="mt-8">
             <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent">
               {["Overview", "Updates", "Reviews", "Pros & Cons", "FAQ", "Pricing"].map((tab) => (
                 <TabsTrigger
@@ -140,15 +147,15 @@ const ToolPage = () => {
               ))}
             </TabsList>
 
-            <TabsContent value="overview" className="mt-6">
-              {/* Featured Image */}
-              <div className="w-full aspect-[21/9] mb-8 rounded-lg overflow-hidden">
-                <img 
-                  src="/placeholder.svg"
-                  alt="CodeReviewer AI Featured"
-                  className="w-full h-full object-cover"
-                />
-              </div>
+              <TabsContent value="overview" className="mt-6">
+                {/* Featured Image */}
+                <div className="w-full aspect-[21/9] mb-8 rounded-lg overflow-hidden">
+                  <img 
+                    src="/placeholder.svg"
+                    alt="CodeReviewer AI Featured"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
 
               <div className="prose prose-invert max-w-none">
                 <h2>What sets CodeReviewer AI apart</h2>
@@ -173,7 +180,7 @@ const ToolPage = () => {
                   </div>
                 </div>
               </div>
-            </TabsContent>
+              </TabsContent>
 
             <TabsContent value="updates" className="mt-6">
               <div className="space-y-6">
@@ -417,7 +424,8 @@ const ToolPage = () => {
                 </div>
               </div>
             </TabsContent>
-          </Tabs>
+            </Tabs>
+          </div>
         </div>
       </div>
     </div>
