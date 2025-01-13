@@ -30,13 +30,15 @@ export function AIToolCard({
           alt={title}
           className="w-full h-full object-cover"
         />
-        <div className="absolute top-2 right-2 flex gap-2">
+        <div className="absolute top-2 left-2">
           {isVerified && (
             <Badge variant="secondary" className="bg-blue-500/10 text-blue-500">
               <CheckCircle2 className="w-3 h-3 mr-1" />
               Verified
             </Badge>
           )}
+        </div>
+        <div className="absolute top-2 right-2">
           <Badge variant="secondary" className="bg-slate-950 text-white">
             {price}
           </Badge>
@@ -51,8 +53,8 @@ export function AIToolCard({
           Try now
           <ExternalLink className="w-4 h-4 ml-2" />
         </Button>
-        <div className="flex justify-between items-center text-sm text-muted-foreground">
-          <span>{rating}/10</span>
+        <div className="flex justify-between items-center text-sm text-muted-foreground border-t pt-4">
+          <span className="font-medium">{rating}/10</span>
           <span>{saves.toLocaleString()} saves</span>
         </div>
       </CardFooter>
