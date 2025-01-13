@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Bookmark, CheckCircle2, ExternalLink } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface AIToolCardProps {
   title: string;
@@ -22,6 +23,9 @@ export function AIToolCard({
   saves,
   isVerified = false,
 }: AIToolCardProps) {
+  // Convert title to URL-friendly slug
+  const slug = title.toLowerCase().replace(/\s+/g, '-');
+  
   return (
     <Card className="overflow-hidden border-2 border-[#9b87f5]/20 hover:shadow-lg transition-shadow">
       <div className="relative h-48">
@@ -45,7 +49,9 @@ export function AIToolCard({
         </div>
       </div>
       <CardContent className="p-4">
-        <h3 className="text-xl font-semibold mb-2">{title}</h3>
+        <Link to={`/tool/${slug}`} className="hover:text-primary transition-colors">
+          <h3 className="text-xl font-semibold mb-2">{title}</h3>
+        </Link>
         <p className="text-sm text-muted-foreground line-clamp-2">{description}</p>
       </CardContent>
       <CardFooter className="p-4 pt-0 flex flex-col gap-2">
