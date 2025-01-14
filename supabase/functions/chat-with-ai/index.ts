@@ -70,17 +70,17 @@ Current context: The user is looking for AI tools and has asked: "${query}"`;
       }),
     });
 
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('OpenAI API error:', errorData);
+      throw new Error(errorData.error?.message || 'Error from OpenAI API');
+    }
+
     const data = await response.json();
     console.log('OpenAI response:', data);
 
-    if (!response.ok) {
-      throw new Error(data.error?.message || 'Error from OpenAI API');
-    }
-
-    const aiResponse = data.choices[0].message.content;
-
     return new Response(JSON.stringify({ 
-      message: aiResponse,
+      message: data.choices[0].message.content,
       tools: tools || []
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

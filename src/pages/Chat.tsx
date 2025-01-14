@@ -3,10 +3,9 @@ import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Link } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 
 const Chat = () => {
   const [messages, setMessages] = useState<Array<{
@@ -165,7 +164,9 @@ const Chat = () => {
 
   const renderMessage = (message: any) => {
     return (
-      <div className="max-w-[80%] rounded-lg px-4 py-2 bg-muted">
+      <div className={`max-w-[80%] rounded-lg px-4 py-2 ${
+        message.role === "assistant" ? "bg-muted" : "bg-primary text-primary-foreground"
+      }`}>
         {message.content}
       </div>
     );
@@ -186,6 +187,11 @@ const Chat = () => {
                 {renderMessage(message)}
               </div>
             ))}
+            {isLoading && (
+              <div className="flex justify-center">
+                <Loader2 className="h-6 w-6 animate-spin" />
+              </div>
+            )}
             <div ref={scrollRef} />
           </div>
         </ScrollArea>
@@ -200,7 +206,7 @@ const Chat = () => {
           className="flex-1"
         />
         <Button type="submit" disabled={isLoading}>
-          Send
+          {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send"}
         </Button>
       </form>
     </div>
