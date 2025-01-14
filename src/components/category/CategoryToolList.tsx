@@ -1,4 +1,7 @@
 import { AIToolCard } from "@/components/AIToolCard";
+import { Button } from "@/components/ui/button";
+import { ExternalLink, Bookmark } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface CategoryToolListProps {
   category?: string;
@@ -14,7 +17,7 @@ interface CategoryToolListProps {
 const tools = [
   {
     title: "CodeReviewer AI",
-    description: "Advanced AI-powered code review tool that helps developers write better code faster. Features include real-time suggestions, security scanning, and performance optimization tips.",
+    description: "Advanced AI-powered code review tool that helps developers write better code faster. Features include real-time suggestions.",
     image: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b",
     price: "Free",
     rating: 9.8,
@@ -23,7 +26,7 @@ const tools = [
   },
   {
     title: "DataViz Assistant",
-    description: "Intelligent data visualization platform that automatically generates beautiful charts and insights. Supports multiple data sources and real-time collaboration.",
+    description: "Intelligent data visualization platform that automatically generates beautiful charts and insights. Supports multiple data.",
     image: "https://images.unsplash.com/photo-1531297484001-80022131f5a1",
     price: "$10/month",
     rating: 9.5,
@@ -51,20 +54,46 @@ export function CategoryToolList({ category, filters, sortBy = "rating" }: Categ
     <div className="space-y-8">
       <div className="space-y-6">
         {sortedTools.map((tool, index) => (
-          <div key={tool.title} className="relative flex items-start gap-4 p-4 rounded-lg border-2 border-[#9b87f5]/20 hover:shadow-lg transition-shadow">
-            <div className="text-2xl font-bold text-muted-foreground mt-4">
-              #{index + 1}
+          <div key={tool.title} className="relative flex flex-col p-4 rounded-lg border-2 border-[#9b87f5]/20 hover:shadow-lg transition-shadow">
+            <div className="flex items-start gap-4 mb-4">
+              <div className="text-2xl font-bold text-muted-foreground mt-1">
+                #{index + 1}
+              </div>
+              <div className="w-16 h-16 flex-shrink-0">
+                <img
+                  src={tool.image}
+                  alt={tool.title}
+                  className="w-full h-full object-cover rounded-lg"
+                />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-xl font-semibold">{tool.title}</h3>
+                  <div className="flex items-center gap-4">
+                    <Link 
+                      to={`/tool/${tool.title.toLowerCase().replace(/\s+/g, '-')}`} 
+                      className="text-primary hover:underline"
+                    >
+                      See more
+                    </Link>
+                    <Button className="bg-[#6366F1] hover:bg-[#6366F1]/90" size="sm">
+                      Try now
+                      <ExternalLink className="w-4 h-4 ml-2" />
+                    </Button>
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground line-clamp-2 max-w-[100ch]">
+                  {tool.description}
+                </p>
+              </div>
             </div>
-            <div className="w-24 h-24 flex-shrink-0">
-              <img
-                src={tool.image}
-                alt={tool.title}
-                className="w-full h-full object-cover rounded-lg"
-              />
-            </div>
-            <div className="flex-1">
-              <h3 className="text-xl font-semibold mb-2">{tool.title}</h3>
-              <p className="text-sm text-muted-foreground">{tool.description}</p>
+            <div className="flex items-center justify-between pt-4 border-t border-[#9b87f5]/20 text-sm text-muted-foreground">
+              <span>Rank #{index + 1}</span>
+              <span>{tool.price}</span>
+              <div className="flex items-center gap-1">
+                <Bookmark className="w-4 h-4" />
+                <span>{tool.saves.toLocaleString()}</span>
+              </div>
             </div>
           </div>
         ))}
