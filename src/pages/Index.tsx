@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { useDebounce } from "@/hooks/use-debounce";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Suggestion {
   text: string;
@@ -29,20 +30,20 @@ const Index = () => {
     const fetchSuggestions = async () => {
       if (debouncedQuery.length >= 3) {
         try {
-          const response = await fetch(
-            "https://tlrrdakthzeytwpfygjn.supabase.co/functions/v1/get-autocomplete",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ query: debouncedQuery }),
-            }
-          );
-          const data = await response.json();
-          setSuggestions(data.suggestions);
-          setTools(data.tools);
-          setShowSuggestions(true);
+          const { data, error } = await supabase.functions.invoke('get-autocomplete', {
+            body: { query: debouncedQuery }
+          });
+          
+          if (error) {
+            console.error("Error fetching suggestions:", error);
+            return;
+          }
+
+          if (data) {
+            setSuggestions(data.suggestions || []);
+            setTools(data.tools || []);
+            setShowSuggestions(true);
+          }
         } catch (error) {
           console.error("Error fetching suggestions:", error);
         }
