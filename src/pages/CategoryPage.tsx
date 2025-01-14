@@ -12,6 +12,7 @@ export default function CategoryPage() {
     platform: [],
     pricing: [],
   });
+  const [sortBy, setSortBy] = useState("rating");
 
   const categoryName = category?.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
   const currentYear = new Date().getFullYear() + 1;
@@ -39,17 +40,20 @@ export default function CategoryPage() {
       <div className="mt-8">
         <h1 className="text-4xl font-bold mb-4">Best {categoryName} Tools in {currentYear}</h1>
         <p className="text-muted-foreground mb-8">
-          Discover the top-rated {categoryName.toLowerCase()} tools that are revolutionizing the industry.
+          Discover the top-rated {categoryName?.toLowerCase()} tools that are revolutionizing the industry.
           Updated in real-time based on user feedback and performance metrics.
         </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <div className="lg:col-span-3">
-          <CategoryToolList category={category} filters={selectedFilters} />
+          <CategoryToolList category={category} filters={selectedFilters} sortBy={sortBy} />
         </div>
         <div className="lg:col-span-1">
-          <CategorySidebar onFilterChange={setSelectedFilters} />
+          <CategorySidebar 
+            onFilterChange={setSelectedFilters} 
+            onSortChange={setSortBy}
+          />
         </div>
       </div>
     </div>
