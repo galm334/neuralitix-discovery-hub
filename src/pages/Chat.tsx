@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Link } from "react-router-dom";
 
 const Chat = () => {
   const [messages, setMessages] = useState<Array<{
@@ -61,51 +62,20 @@ const Chat = () => {
     setIsLoading(true);
     
     try {
-      // Extract key terms from the query
-      const searchTerms = userQuery.toLowerCase()
-        .replace(/[^\w\s]/g, '')
-        .split(' ')
-        .filter(term => term.length > 3)
-        .join(' | ');
-
-      console.log('Searching with terms:', searchTerms);
-      
-      const { data: tools, error } = await supabase
-        .from('ai_tools')
-        .select('name, description, category')
-        .textSearch('search_vector', searchTerms, {
-          type: 'plain',
-          config: 'english'
-        })
-        .limit(3);
+      const { data, error } = await supabase.functions.invoke('chat-with-ai', {
+        body: { query: userQuery }
+      });
 
       if (error) throw error;
       
-      console.log('Found tools:', tools);
+      console.log('AI response:', data);
 
-      let responseContent = `Here are some AI tools that match your search for "${userQuery}":\n\n`;
-      
-      if (tools && tools.length > 0) {
-        tools.forEach((tool) => {
-          const toolSlug = tool.name.toLowerCase().replace(/\s+/g, '-');
-          responseContent += `<tool>
-name: ${tool.name}
-description: ${tool.description}
-category: ${tool.category}
-slug: ${toolSlug}
-</tool>\n`;
-        });
-      } else {
-        responseContent = "I couldn't find any exact matches for your search. Could you please try rephrasing your query or being more specific about what kind of AI tool you're looking for?";
-      }
-
-      console.log('Inserting assistant response:', responseContent);
       const { error: messageError } = await supabase
         .from("chat_messages")
         .insert([
           {
             conversation_id: conversationId,
-            content: responseContent,
+            content: data.message,
             role: "assistant",
           }
         ]);
@@ -114,7 +84,7 @@ slug: ${toolSlug}
       console.log('Assistant response inserted successfully');
     } catch (error) {
       console.error("Error sending initial response:", error);
-      toast.error("Error sending initial response");
+      toast.error("Error getting AI response");
     } finally {
       setIsLoading(false);
     }
@@ -145,19 +115,43 @@ slug: ${toolSlug}
 
     setIsLoading(true);
     try {
-      const { error } = await supabase.from("chat_messages").insert([
-        {
-          conversation_id: conversationId,
-          content: newMessage,
-          role: "user",
-        },
-      ]);
+      // First insert the user message
+      const { error: userMessageError } = await supabase
+        .from("chat_messages")
+        .insert([
+          {
+            conversation_id: conversationId,
+            content: newMessage,
+            role: "user",
+          }
+        ]);
 
-      if (error) throw error;
+      if (userMessageError) throw userMessageError;
+
+      // Then get AI response
+      const { data: aiResponse, error: aiError } = await supabase.functions.invoke('chat-with-ai', {
+        body: { query: newMessage }
+      });
+
+      if (aiError) throw aiError;
+
+      // Insert AI response
+      const { error: assistantMessageError } = await supabase
+        .from("chat_messages")
+        .insert([
+          {
+            conversation_id: conversationId,
+            content: aiResponse.message,
+            role: "assistant",
+          }
+        ]);
+
+      if (assistantMessageError) throw assistantMessageError;
+
       setNewMessage("");
     } catch (error) {
+      console.error("Error in chat interaction:", error);
       toast.error("Error sending message");
-      console.error("Error sending message:", error);
     } finally {
       setIsLoading(false);
     }
@@ -170,56 +164,6 @@ slug: ${toolSlug}
   };
 
   const renderMessage = (message: any) => {
-    if (message.role === "assistant" && message.content.includes("<tool>")) {
-      const introText = message.content.split("\n\n")[0];
-      const tools = message.content
-        .split("<tool>")
-        .slice(1)
-        .map((toolStr: string) => {
-          const lines = toolStr.split("\n").filter(Boolean);
-          const toolData: any = {};
-          lines.forEach((line: string) => {
-            if (line.includes(": ")) {
-              const [key, value] = line.split(": ");
-              toolData[key] = value;
-            }
-          });
-          return toolData;
-        });
-
-      return (
-        <div className="space-y-4 w-full max-w-3xl">
-          <p className="text-muted-foreground">{introText}</p>
-          {tools.length > 0 && (
-            <div className="space-y-4">
-              {tools.map((tool: any, index: number) => (
-                <Link 
-                  key={index}
-                  to={`/tool/${tool.slug}`}
-                  className="block p-4 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors"
-                >
-                  <div className="flex justify-between items-start gap-2 mb-2">
-                    <h3 className="text-lg font-semibold hover:text-primary transition-colors">
-                      {tool.name}
-                    </h3>
-                    <Badge variant="secondary" className="shrink-0">
-                      {tool.category}
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    {tool.description}
-                    <span className="ml-2 text-primary hover:underline">
-                      See more
-                    </span>
-                  </p>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
-      );
-    }
-
     return (
       <div className="max-w-[80%] rounded-lg px-4 py-2 bg-muted">
         {message.content}
