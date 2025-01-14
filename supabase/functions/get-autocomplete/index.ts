@@ -59,20 +59,22 @@ serve(async (req) => {
     const correctedQuery = correctedWords.join(' ');
     console.log('Corrected query:', correctedQuery);
 
-    // Format the query for text search
+    // Format the query for text search - properly escape and format terms
     const searchTerms = correctedQuery
       .split(' ')
       .filter(word => word.length > 2)
-      .join(' | '); // Changed from & to | for broader matches
+      .map(term => term.replace(/[^\w\s]/g, '')) // Remove special characters
+      .map(term => `${term}:*`) // Add prefix matching
+      .join(' & '); // Use AND operator between terms
 
-    console.log('Search terms:', searchTerms);
+    console.log('Formatted search terms:', searchTerms);
 
-    // Search for relevant tools with a more lenient search
+    // Search for relevant tools
     const { data: tools, error: toolsError } = await supabaseClient
       .from('ai_tools')
       .select('name, description, category')
-      .textSearch('search_vector', `${searchTerms}`, {
-        type: 'websearch',
+      .textSearch('search_vector', searchTerms, {
+        type: 'plain',
         config: 'english'
       })
       .limit(5);
