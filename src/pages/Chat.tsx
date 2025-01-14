@@ -51,15 +51,38 @@ const Chat = () => {
     setInitialResponseSent(true);
     setIsLoading(true);
     try {
-      const { error } = await supabase.from("chat_messages").insert([
+      // First, search for relevant tools
+      const { data: tools, error: searchError } = await supabase
+        .from('ai_tools')
+        .select('name, description, category')
+        .textSearch('search_vector', userQuery.split(' ').join(' & '))
+        .limit(3);
+
+      if (searchError) throw searchError;
+
+      // Format the tools into a response message
+      let responseContent = `Here are some AI tools that match your query: "${userQuery}"\n\n`;
+      
+      if (tools && tools.length > 0) {
+        tools.forEach((tool, index) => {
+          responseContent += `${index + 1}. ${tool.name} - ${tool.description} (Category: ${tool.category})\n`;
+        });
+      } else {
+        responseContent += "I couldn't find any exact matches, but I can help you explore similar tools. What specific features are you looking for?";
+      }
+
+      responseContent += "\nWould you like more specific information about any of these tools?";
+
+      // Insert the response message
+      const { error: messageError } = await supabase.from("chat_messages").insert([
         {
           conversation_id: conversationId,
-          content: `Here are some AI tools that match your query: "${userQuery}"\n\n1. WriterBot - An AI-powered writing assistant\n2. ContentGenius - Advanced content generation tool\n3. BlogMaster AI - Specialized in blog post creation\n\nWould you like more specific information about any of these tools?`,
+          content: responseContent,
           role: "assistant",
         },
       ]);
 
-      if (error) throw error;
+      if (messageError) throw messageError;
     } catch (error) {
       toast.error("Error sending initial response");
       console.error("Error sending initial response:", error);
