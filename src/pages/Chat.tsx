@@ -61,10 +61,19 @@ const Chat = () => {
     setIsLoading(true);
     
     try {
+      // Extract key terms from the query
+      const searchTerms = userQuery.toLowerCase()
+        .replace(/[^\w\s]/g, '')
+        .split(' ')
+        .filter(term => term.length > 3)
+        .join(' | ');
+
+      console.log('Searching with terms:', searchTerms);
+      
       const { data: tools, error } = await supabase
         .from('ai_tools')
         .select('name, description, category')
-        .textSearch('search_vector', `'${userQuery.toLowerCase()}'`, {
+        .textSearch('search_vector', searchTerms, {
           type: 'plain',
           config: 'english'
         })
