@@ -16,6 +16,16 @@ interface SearchResult {
   logo_url: string | null;
 }
 
+declare global {
+  interface Window {
+    ZapChat?: {
+      open: () => void;
+      close: () => void;
+      toggle: () => void;
+    };
+  }
+}
+
 const SearchResults = () => {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -23,67 +33,19 @@ const SearchResults = () => {
   const { conversationId } = useParams();
 
   const handleChatNow = () => {
-    const chatbotElement = document.querySelector('zapier-interfaces-chatbot-embed') as HTMLElement;
-    if (chatbotElement) {
-      try {
-        // Try to access shadow root if it exists
-        if (chatbotElement.shadowRoot) {
-          console.log("Shadow root found:", chatbotElement.shadowRoot);
-        }
-
-        // Set attributes and dispatch multiple events to ensure triggering
-        chatbotElement.setAttribute('is-popup', 'true');
-        chatbotElement.setAttribute('is-open', 'true');
-        chatbotElement.setAttribute('data-state', 'open');
-        
-        // Force styles with !important
-        const styles = {
-          display: 'block',
-          visibility: 'visible',
-          opacity: '1',
-          position: 'fixed',
-          bottom: '20px',
-          right: '20px',
-          zIndex: '9999',
-          pointerEvents: 'auto'
-        };
-
-        Object.entries(styles).forEach(([property, value]) => {
-          chatbotElement.style.setProperty(property, value, 'important');
-        });
-
-        // Dispatch multiple events
-        const events = ['click', 'focus', 'mouseenter', 'zapier-chat-open'];
-        events.forEach(eventType => {
-          chatbotElement.dispatchEvent(new CustomEvent(eventType, { bubbles: true }));
-        });
-
-        // Log detailed state for debugging
-        console.log('Chatbot element after modifications:', {
-          element: chatbotElement,
-          attributes: {
-            isPopup: chatbotElement.getAttribute('is-popup'),
-            isOpen: chatbotElement.getAttribute('is-open'),
-            dataState: chatbotElement.getAttribute('data-state')
-          },
-          styles: {
-            display: window.getComputedStyle(chatbotElement).display,
-            visibility: window.getComputedStyle(chatbotElement).visibility,
-            opacity: window.getComputedStyle(chatbotElement).opacity,
-            position: window.getComputedStyle(chatbotElement).position,
-            zIndex: window.getComputedStyle(chatbotElement).zIndex,
-          },
-          shadowRoot: chatbotElement.shadowRoot ? 'exists' : 'none',
-        });
-
-        toast.success("Opening chat window...");
-      } catch (error) {
-        console.error('Error while trying to open chat:', error);
-        toast.error("Failed to open chat. Please refresh and try again.");
-      }
+    // Try to use the Zapier Chat API if available
+    if (window.ZapChat && typeof window.ZapChat.open === 'function') {
+      window.ZapChat.open();
+      toast.success("Opening chat window...");
     } else {
-      console.error('Chatbot element not found');
-      toast.error("Chat widget not found. Please refresh the page.");
+      // Fallback: try to find and click the chat button
+      const chatButton = document.querySelector('[data-testid="chat-button"]') as HTMLElement;
+      if (chatButton) {
+        chatButton.click();
+        toast.success("Opening chat window...");
+      } else {
+        toast.error("Chat is not available at the moment. Please refresh the page.");
+      }
     }
   };
 
