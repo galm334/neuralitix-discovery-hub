@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ExternalLink, Share2, Bookmark, Link2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Link } from "react-router-dom";
 
 interface ToolHeaderProps {
   title: string;
@@ -34,11 +35,18 @@ export function ToolHeader({
     navigator.clipboard.writeText(window.location.href);
   };
 
+  // Convert category to URL-friendly slug
+  const categorySlug = category.toLowerCase().replace(/\s+/g, '-');
+
   return (
     <div className="flex flex-col space-y-6">
       {/* Category and Date */}
       <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-        <Badge variant="secondary">{category}</Badge>
+        <Link to={`/category/${categorySlug}`}>
+          <Badge variant="secondary" className="hover:bg-secondary/80 cursor-pointer transition-colors">
+            {category}
+          </Badge>
+        </Link>
         <span>Added {dateAdded}</span>
       </div>
 
