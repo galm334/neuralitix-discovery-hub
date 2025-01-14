@@ -22,7 +22,7 @@ export function MobileToolCard({ tool, index }: MobileToolCardProps) {
     <div className="relative flex flex-col p-4 bg-[#F1F0FB]/30 first:rounded-t-lg last:rounded-b-lg">
       <div className="flex items-start gap-4">
         <div className="flex items-center gap-4">
-          <span className="text-lg font-semibold text-muted-foreground">#{index + 1}</span>
+          <span className="text-lg font-semibold text-muted-foreground h-16 flex items-center">#{index + 1}</span>
           <div className="w-16 h-16 flex-shrink-0">
             <img
               src={tool.image}
@@ -32,7 +32,12 @@ export function MobileToolCard({ tool, index }: MobileToolCardProps) {
           </div>
         </div>
         <div className="flex-1">
-          <h3 className="text-xl font-semibold">{tool.title}</h3>
+          <Link 
+            to={`/tool/${tool.title.toLowerCase().replace(/\s+/g, '-')}`}
+            className="hover:text-primary transition-colors"
+          >
+            <h3 className="text-xl font-semibold">{tool.title}</h3>
+          </Link>
         </div>
       </div>
 

@@ -32,7 +32,26 @@ export function DesktopToolCard({ tool, index }: DesktopToolCardProps) {
           />
         </div>
         <div className="flex-1">
-          <h3 className="text-xl font-semibold">{tool.title}</h3>
+          <div className="flex items-center justify-between">
+            <Link 
+              to={`/tool/${tool.title.toLowerCase().replace(/\s+/g, '-')}`}
+              className="hover:text-primary transition-colors"
+            >
+              <h3 className="text-xl font-semibold">{tool.title}</h3>
+            </Link>
+            <div className="flex items-center gap-4">
+              <Link 
+                to={`/tool/${tool.title.toLowerCase().replace(/\s+/g, '-')}`} 
+                className="text-primary hover:underline"
+              >
+                See more
+              </Link>
+              <Button className="bg-[#6366F1] hover:bg-[#6366F1]/90" size="sm">
+                Try now
+                <ExternalLink className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -41,18 +60,6 @@ export function DesktopToolCard({ tool, index }: DesktopToolCardProps) {
           <p className="text-sm text-muted-foreground line-clamp-2 max-w-[100ch]">
             {tool.description}
           </p>
-        </div>
-        <div className="flex items-center gap-4 ml-4">
-          <Link 
-            to={`/tool/${tool.title.toLowerCase().replace(/\s+/g, '-')}`} 
-            className="text-primary hover:underline"
-          >
-            See more
-          </Link>
-          <Button className="bg-[#6366F1] hover:bg-[#6366F1]/90" size="sm">
-            Try now
-            <ExternalLink className="w-4 h-4 ml-2" />
-          </Button>
         </div>
       </div>
 
