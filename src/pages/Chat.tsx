@@ -25,41 +25,62 @@ const SearchResults = () => {
   const handleChatNow = () => {
     const chatbotElement = document.querySelector('zapier-interfaces-chatbot-embed') as HTMLElement;
     if (chatbotElement) {
-      // First, ensure any existing event listeners are removed
-      const clone = chatbotElement.cloneNode(true);
-      chatbotElement.parentNode?.replaceChild(clone, chatbotElement);
-      
-      // Get the fresh reference
-      const freshElement = document.querySelector('zapier-interfaces-chatbot-embed') as HTMLElement;
-      
-      // Set initial state
-      freshElement.setAttribute('is-popup', 'true');
-      freshElement.setAttribute('is-open', 'true');
-      
-      // Force layout recalculation
-      void freshElement.getBoundingClientRect();
-      
-      // Apply styles directly
-      freshElement.style.setProperty('display', 'block', 'important');
-      freshElement.style.setProperty('visibility', 'visible', 'important');
-      freshElement.style.setProperty('opacity', '1', 'important');
-      freshElement.style.setProperty('pointer-events', 'auto', 'important');
-      
-      // Create and dispatch a custom event
-      const openEvent = new CustomEvent('zapier-chat-open', { bubbles: true });
-      freshElement.dispatchEvent(openEvent);
+      try {
+        // Try to access shadow root if it exists
+        if (chatbotElement.shadowRoot) {
+          console.log("Shadow root found:", chatbotElement.shadowRoot);
+        }
 
-      console.log('Chatbot element state after modifications:', {
-        element: freshElement,
-        isPopup: freshElement.getAttribute('is-popup'),
-        isOpen: freshElement.getAttribute('is-open'),
-        display: window.getComputedStyle(freshElement).display,
-        visibility: window.getComputedStyle(freshElement).visibility,
-        opacity: window.getComputedStyle(freshElement).opacity,
-        pointerEvents: window.getComputedStyle(freshElement).pointerEvents,
-      });
+        // Set attributes and dispatch multiple events to ensure triggering
+        chatbotElement.setAttribute('is-popup', 'true');
+        chatbotElement.setAttribute('is-open', 'true');
+        chatbotElement.setAttribute('data-state', 'open');
+        
+        // Force styles with !important
+        const styles = {
+          display: 'block',
+          visibility: 'visible',
+          opacity: '1',
+          position: 'fixed',
+          bottom: '20px',
+          right: '20px',
+          zIndex: '9999',
+          pointerEvents: 'auto'
+        };
 
-      toast.success("Opening chat window...");
+        Object.entries(styles).forEach(([property, value]) => {
+          chatbotElement.style.setProperty(property, value, 'important');
+        });
+
+        // Dispatch multiple events
+        const events = ['click', 'focus', 'mouseenter', 'zapier-chat-open'];
+        events.forEach(eventType => {
+          chatbotElement.dispatchEvent(new CustomEvent(eventType, { bubbles: true }));
+        });
+
+        // Log detailed state for debugging
+        console.log('Chatbot element after modifications:', {
+          element: chatbotElement,
+          attributes: {
+            isPopup: chatbotElement.getAttribute('is-popup'),
+            isOpen: chatbotElement.getAttribute('is-open'),
+            dataState: chatbotElement.getAttribute('data-state')
+          },
+          styles: {
+            display: window.getComputedStyle(chatbotElement).display,
+            visibility: window.getComputedStyle(chatbotElement).visibility,
+            opacity: window.getComputedStyle(chatbotElement).opacity,
+            position: window.getComputedStyle(chatbotElement).position,
+            zIndex: window.getComputedStyle(chatbotElement).zIndex,
+          },
+          shadowRoot: chatbotElement.shadowRoot ? 'exists' : 'none',
+        });
+
+        toast.success("Opening chat window...");
+      } catch (error) {
+        console.error('Error while trying to open chat:', error);
+        toast.error("Failed to open chat. Please refresh and try again.");
+      }
     } else {
       console.error('Chatbot element not found');
       toast.error("Chat widget not found. Please refresh the page.");
