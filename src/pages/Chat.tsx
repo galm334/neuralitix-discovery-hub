@@ -61,17 +61,44 @@ const Chat = () => {
     setIsLoading(true);
     
     try {
+      // First, try to correct common partial words
+      const commonTerms: Record<string, string> = {
+        'writ': 'writing',
+        'blog': 'blogging',
+        'edit': 'editing',
+        'content': 'content creation',
+        'copy': 'copywriting',
+        'market': 'marketing',
+        'trans': 'translation',
+        'summar': 'summarization',
+        'proof': 'proofreading',
+      };
+
+      // Correct any partial words in the query
+      const words = userQuery.toLowerCase().split(' ');
+      const correctedWords = words.map(word => {
+        for (const [partial, full] of Object.entries(commonTerms)) {
+          if (word.startsWith(partial)) {
+            return full;
+          }
+        }
+        return word;
+      });
+
+      const correctedQuery = correctedWords.join(' ');
+      console.log('Corrected query:', correctedQuery);
+
       const { data: tools, error: searchError } = await supabase
         .from('ai_tools')
         .select('name, description, category')
-        .textSearch('search_vector', userQuery.split(' ').join(' & '))
+        .textSearch('search_vector', correctedQuery.split(' ').join(' & '))
         .limit(3);
 
       if (searchError) throw searchError;
       
       console.log('Found tools:', tools);
 
-      let responseContent = `Here are some AI tools that match your search:\n\n`;
+      let responseContent = `Here are some AI tools that match your search for "${correctedQuery}":\n\n`;
       
       if (tools && tools.length > 0) {
         tools.forEach((tool) => {
@@ -84,7 +111,7 @@ slug: ${toolSlug}
 </tool>\n`;
         });
       } else {
-        responseContent += "I couldn't find any exact matches, but I can help you explore similar tools. What specific features are you looking for?";
+        responseContent = "I couldn't find any exact matches for your search. Could you please try rephrasing your query or being more specific about what kind of AI tool you're looking for?";
       }
 
       console.log('Inserting assistant response');
@@ -178,30 +205,32 @@ slug: ${toolSlug}
       return (
         <div className="space-y-4 w-full max-w-3xl">
           <p className="text-muted-foreground">{introText}</p>
-          <div className="space-y-4">
-            {tools.map((tool: any, index: number) => (
-              <Link 
-                key={index}
-                to={`/tool/${tool.slug}`}
-                className="block p-4 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors"
-              >
-                <div className="flex justify-between items-start gap-2 mb-2">
-                  <h3 className="text-lg font-semibold hover:text-primary transition-colors">
-                    {tool.name}
-                  </h3>
-                  <Badge variant="secondary" className="shrink-0">
-                    {tool.category}
-                  </Badge>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  {tool.description}
-                  <span className="ml-2 text-primary hover:underline">
-                    See more
-                  </span>
-                </p>
-              </Link>
-            ))}
-          </div>
+          {tools.length > 0 && (
+            <div className="space-y-4">
+              {tools.map((tool: any, index: number) => (
+                <Link 
+                  key={index}
+                  to={`/tool/${tool.slug}`}
+                  className="block p-4 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors"
+                >
+                  <div className="flex justify-between items-start gap-2 mb-2">
+                    <h3 className="text-lg font-semibold hover:text-primary transition-colors">
+                      {tool.name}
+                    </h3>
+                    <Badge variant="secondary" className="shrink-0">
+                      {tool.category}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {tool.description}
+                    <span className="ml-2 text-primary hover:underline">
+                      See more
+                    </span>
+                  </p>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       );
     }

@@ -7,8 +7,26 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Common writing-related terms and their corrections
+const commonTerms = {
+  'writ': 'writing',
+  'blog': 'blogging',
+  'edit': 'editing',
+  'content': 'content creation',
+  'copy': 'copywriting',
+  'market': 'marketing',
+  'trans': 'translation',
+  'summar': 'summarization',
+  'proof': 'proofreading',
+  'ai': 'artificial intelligence',
+  'chat': 'chatbot',
+  'gen': 'generation',
+  'anal': 'analysis',
+  'vis': 'visualization',
+  'auto': 'automation',
+};
+
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -20,48 +38,40 @@ serve(async (req) => {
       throw new Error('Query parameter is required and must be a string');
     }
 
-    // Create Supabase client
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    console.log('Searching for query:', query);
+    console.log('Original query:', query);
 
-    // Common writing-related terms to complete partial words
-    const commonTerms = {
-      'writ': 'writing',
-      'blog': 'blogging',
-      'edit': 'editing',
-      'content': 'content',
-      'copy': 'copywriting',
-      'market': 'marketing',
-      'trans': 'translation',
-      'summar': 'summarization',
-      'proof': 'proofreading',
-    };
-
-    // Find the matching term for the partial word
-    let searchTerm = query.toLowerCase();
-    for (const [partial, full] of Object.entries(commonTerms)) {
-      if (query.toLowerCase().startsWith(partial)) {
-        searchTerm = full;
-        break;
+    // Correct any partial or misspelled words
+    const words = query.toLowerCase().split(' ');
+    const correctedWords = words.map(word => {
+      for (const [partial, full] of Object.entries(commonTerms)) {
+        if (word.startsWith(partial)) {
+          return full;
+        }
       }
-    }
+      return word;
+    });
+
+    const correctedQuery = correctedWords.join(' ');
+    console.log('Corrected query:', correctedQuery);
 
     // Format the query for text search
-    const formattedQuery = searchTerm
+    const searchTerms = correctedQuery
       .split(' ')
-      .filter(word => word.length > 0)
-      .map(word => word.replace(/[^a-zA-Z0-9]/g, ''))
+      .filter(word => word.length > 2)
       .join(' & ');
+
+    console.log('Search terms:', searchTerms);
 
     // Search for relevant tools
     const { data: tools, error: toolsError } = await supabaseClient
       .from('ai_tools')
       .select('name, description, category')
-      .textSearch('search_vector', formattedQuery)
+      .textSearch('search_vector', searchTerms)
       .limit(5);
 
     if (toolsError) {
@@ -71,14 +81,17 @@ serve(async (req) => {
 
     console.log('Found tools:', tools?.length ?? 0);
 
-    // Generate complete, natural suggestions based on the completed search term
+    // Generate suggestions based on the corrected query and found tools
     const suggestions = [
-      `Find AI tools for ${searchTerm}`,
-      `Search for AI ${searchTerm} assistants`,
-      `Discover AI tools for ${searchTerm}`,
-      `Compare AI ${searchTerm} tools`,
-      `Find best AI tools for ${searchTerm}`
-    ];
+      `Find AI tools for ${correctedQuery}`,
+      `Search for AI ${correctedQuery} assistants`,
+      `Discover AI tools for ${correctedQuery}`,
+      `Compare AI ${correctedQuery} tools`,
+      `Find best AI tools for ${correctedQuery}`
+    ].filter(suggestion => 
+      // Only include suggestions that use complete words
+      !suggestion.includes(query.toLowerCase())
+    );
 
     return new Response(
       JSON.stringify({ 
