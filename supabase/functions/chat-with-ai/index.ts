@@ -30,8 +30,10 @@ serve(async (req) => {
       throw new Error('No query provided');
     }
 
+    // Initialize Supabase client
     const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
 
+    // First generate embedding for the query
     console.log('Generating embedding for query...');
     const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
       method: 'POST',
@@ -52,9 +54,9 @@ serve(async (req) => {
     }
 
     const { data: embeddingData } = await embeddingResponse.json();
-    console.log('Embedding generated successfully');
     const embedding = embeddingData[0].embedding;
 
+    // Search for similar tools using the embedding
     console.log('Searching for similar tools...');
     const { data: tools, error: searchError } = await supabase.rpc('match_tools', {
       query_embedding: embedding,
@@ -69,20 +71,23 @@ serve(async (req) => {
 
     console.log('Found similar tools:', tools);
 
+    // Prepare system prompt with found tools
     const systemPrompt = `You are a helpful AI assistant that helps users find AI tools. You should always be friendly and conversational.
+    
+    Here are the relevant tools I found in our database:
+    ${JSON.stringify(tools, null, 2)}
+
     Format your response like this:
     1. Start with a brief greeting
-    2. If we found verified tools, list them under "## Verified Tools"
-    3. Then list web suggestions under "## Additional Suggestions"
+    2. If we found verified tools from our database, list them under "## Verified Tools"
+    3. Only if we didn't find relevant tools in our database, suggest alternatives under "## Additional Suggestions"
     4. For each tool:
        - Use "### [Tool Name]" as heading
        - Write a clear description paragraph
        - List key features with bullet points
-    5. End with a friendly closing note
-    
-    Here are the tools I found in our database:
-    ${JSON.stringify(tools, null, 2)}`;
+    5. End with a friendly closing note`;
 
+    // Generate AI response
     console.log('Generating AI response...');
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -113,6 +118,7 @@ serve(async (req) => {
       throw new Error('AI response is empty or malformed');
     }
 
+    // Return the message content directly
     return new Response(
       JSON.stringify({ 
         message: data.choices[0].message.content,
