@@ -29,21 +29,16 @@ serve(async (req) => {
 
     console.log('Original query:', query);
 
-    // Format search terms for tsquery to match partial words
-    const searchTerms = query
-      .toLowerCase()
-      .split(' ')
-      .filter(term => term.length >= 3)
-      .map(term => `${term}:*`) // Add prefix matching
-      .join(' & ');
+    // Format search terms for prefix matching
+    const searchTerm = `${query.toLowerCase()}:*`;
 
-    console.log('Formatted search terms:', searchTerms);
+    console.log('Formatted search term:', searchTerm);
 
-    // Search for relevant tools using plainto_tsquery for better partial matching
+    // Search for relevant tools using prefix matching
     const { data: tools, error: toolsError } = await supabaseClient
       .from('ai_tools')
       .select('name, description, category')
-      .textSearch('search_vector', searchTerms, {
+      .textSearch('search_vector', searchTerm, {
         type: 'plain',
         config: 'english'
       })
@@ -62,11 +57,11 @@ serve(async (req) => {
       // Get unique categories and create category-based suggestions
       const categories = [...new Set(tools.map(tool => tool.category))];
       
-      // Create suggestions based on the original query and found categories
+      // Create suggestions based on the found categories
       suggestions = [
-        `Find AI tools for writing`,
+        'Find AI tools for writing',
         ...categories.map(category => `Find ${category} AI tools`),
-        `Compare AI tools for writing`,
+        'Compare AI tools for writing',
       ];
     }
 
