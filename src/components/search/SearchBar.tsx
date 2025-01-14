@@ -18,7 +18,6 @@ export const SearchBar = () => {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [tools, setTools] = useState<Tool[]>([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
   const debouncedQuery = useDebounce(query, 300);
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -32,7 +31,8 @@ export const SearchBar = () => {
         inputRef.current &&
         !inputRef.current.contains(event.target as Node)
       ) {
-        setShowSuggestions(false);
+        setSuggestions([]);
+        setTools([]);
       }
     };
 
@@ -57,18 +57,16 @@ export const SearchBar = () => {
           }
 
           console.log('Received suggestions:', data);
-          if (data) {
-            setSuggestions(data.suggestions || []);
-            setTools(data.tools || []);
-            setShowSuggestions(true);
-          }
+          setSuggestions(data?.suggestions || []);
+          setTools(data?.tools || []);
         } catch (error) {
           console.error("Error fetching suggestions:", error);
+          setSuggestions([]);
+          setTools([]);
         }
       } else {
         setSuggestions([]);
         setTools([]);
-        setShowSuggestions(false);
       }
     };
 
@@ -140,7 +138,7 @@ export const SearchBar = () => {
         </Button>
       </div>
 
-      {debouncedQuery.length >= 3 && (
+      {debouncedQuery.length >= 3 && (suggestions.length > 0 || tools.length > 0) && (
         <Card ref={suggestionsRef} className="absolute w-full mt-2 p-2 shadow-lg z-50 max-h-[400px] overflow-y-auto">
           {suggestions.length > 0 && suggestions.map((suggestion, index) => (
             <button

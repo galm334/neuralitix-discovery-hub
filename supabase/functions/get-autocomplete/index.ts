@@ -63,15 +63,18 @@ serve(async (req) => {
     const searchTerms = correctedQuery
       .split(' ')
       .filter(word => word.length > 2)
-      .join(' & ');
+      .join(' | '); // Changed from & to | for broader matches
 
     console.log('Search terms:', searchTerms);
 
-    // Search for relevant tools
+    // Search for relevant tools with a more lenient search
     const { data: tools, error: toolsError } = await supabaseClient
       .from('ai_tools')
       .select('name, description, category')
-      .textSearch('search_vector', searchTerms)
+      .textSearch('search_vector', `${searchTerms}`, {
+        type: 'websearch',
+        config: 'english'
+      })
       .limit(5);
 
     if (toolsError) {
@@ -81,18 +84,14 @@ serve(async (req) => {
 
     console.log('Found tools:', tools?.length ?? 0);
 
-    // Generate suggestions based on the corrected query only
+    // Generate suggestions based on the corrected query
     const suggestions = [
       `Find AI tools for ${correctedQuery}`,
       `Search for AI ${correctedQuery} assistants`,
       `Discover AI tools for ${correctedQuery}`,
       `Compare AI ${correctedQuery} tools`,
       `Find best AI tools for ${correctedQuery}`
-    ].filter(suggestion => 
-      // Only include suggestions that use the corrected words
-      !suggestion.includes(query.toLowerCase()) && 
-      suggestion.includes(correctedQuery)
-    );
+    ];
 
     return new Response(
       JSON.stringify({ 
