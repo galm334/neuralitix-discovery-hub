@@ -41,7 +41,7 @@ export function CategoryToolList({ category, filters, sortBy = "rating" }: Categ
     description: "Advanced AI-powered tool that helps users achieve better results faster.",
     image: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b",
     price: index % 2 === 0 ? "Free" : "$10/month",
-    rating: 9.8 - (index * 0.1),
+    rating: Number((9.8 - (index * 0.1)).toFixed(1)), // Format to one decimal place
     saves: 1234 - index,
     isVerified: index < 10,
   }));
@@ -144,7 +144,7 @@ export function CategoryToolList({ category, filters, sortBy = "rating" }: Categ
           <CategoryInsights category={category || ""} />
         </>
       ) : (
-        <div className="text-center text-sm text-muted-foreground mt-4">
+        <div className="text-center text-white mt-4">
           {isSwipingDown ? "Release to load more" : "Swipe down to load more"}
         </div>
       )}

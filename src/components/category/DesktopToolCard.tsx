@@ -21,7 +21,7 @@ export function DesktopToolCard({ tool, index }: DesktopToolCardProps) {
   return (
     <div className="relative flex flex-col p-4 bg-[#F1F0FB]/30 first:rounded-t-lg last:rounded-b-lg">
       <div className="flex items-start gap-4">
-        <div className="text-2xl font-bold text-muted-foreground mt-1">
+        <div className="text-2xl font-bold text-white mt-1">
           #{index + 1}
         </div>
         <div className="w-16 h-16 flex-shrink-0">
@@ -37,7 +37,7 @@ export function DesktopToolCard({ tool, index }: DesktopToolCardProps) {
               to={`/tool/${tool.title.toLowerCase().replace(/\s+/g, '-')}`}
               className="hover:text-primary transition-colors"
             >
-              <h3 className="text-xl font-semibold">{tool.title}</h3>
+              <h3 className="text-xl font-semibold text-white">{tool.title}</h3>
             </Link>
             <div className="flex items-center gap-4">
               <Link 
@@ -57,13 +57,13 @@ export function DesktopToolCard({ tool, index }: DesktopToolCardProps) {
 
       <div className="flex items-center justify-between mb-2">
         <div className="flex-1">
-          <p className="text-sm text-muted-foreground line-clamp-2 max-w-[100ch]">
+          <p className="text-sm text-white line-clamp-2 max-w-[100ch]">
             {tool.description}
           </p>
         </div>
       </div>
 
-      <div className="flex items-center justify-between pt-4 border-t border-[#E5DEFF] text-sm text-muted-foreground">
+      <div className="flex items-center justify-between pt-4 border-t border-[#E5DEFF] text-sm text-white">
         <span>Score: {tool.rating}</span>
         <span>{tool.price}</span>
         <div className="flex items-center gap-1">

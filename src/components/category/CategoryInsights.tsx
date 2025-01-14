@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -11,36 +11,38 @@ export function CategoryInsights({ category }: CategoryInsightsProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const generateInsights = async () => {
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('generate-insights', {
-        body: { category },
-      });
+  useEffect(() => {
+    const generateInsights = async () => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase.functions.invoke('generate-insights', {
+          body: { category },
+        });
 
-      if (error) throw error;
-      setInsights(data.insights);
-    } catch (error) {
-      console.error('Error generating insights:', error);
-      toast({
-        variant: "destructive",
-        title: "Error generating insights",
-        description: "Please try again later.",
-      });
+        if (error) throw error;
+        setInsights(data.insights);
+      } catch (error) {
+        console.error('Error generating insights:', error);
+        toast({
+          variant: "destructive",
+          title: "Error generating insights",
+          description: "Please try again later.",
+        });
+      }
+      setIsLoading(false);
+    };
+
+    if (category) {
+      generateInsights();
     }
-    setIsLoading(false);
-  };
+  }, [category, toast]);
 
-  if (!insights) {
+  if (isLoading || !insights) {
     return (
-      <div className="space-y-4">
-        <button
-          onClick={generateInsights}
-          disabled={isLoading}
-          className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
-        >
-          {isLoading ? "Generating..." : "Generate Insights"}
-        </button>
+      <div className="mt-12 animate-pulse">
+        <div className="h-4 bg-primary/10 rounded w-3/4 mb-4"></div>
+        <div className="h-4 bg-primary/10 rounded w-1/2 mb-4"></div>
+        <div className="h-4 bg-primary/10 rounded w-2/3"></div>
       </div>
     );
   }
