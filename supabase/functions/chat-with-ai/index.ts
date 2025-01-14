@@ -25,10 +25,15 @@ serve(async (req) => {
     if (!isFollowUp) {
       console.log('Performing direct database search');
       
+      const searchTerms = query.split(' ').filter(Boolean);
+      const searchConditions = searchTerms.map(term => 
+        `description.ilike.%${term}% OR category.ilike.%${term}% OR name.ilike.%${term}%`
+      );
+      
       const { data: tools, error: searchError } = await supabase
         .from('ai_tools')
         .select('name, description, category')
-        .or(`description.ilike.%${query}%,category.ilike.%${query}%,name.ilike.%${query}%`)
+        .or(searchConditions.join(','))
         .limit(5);
 
       if (searchError) {
