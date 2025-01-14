@@ -18,15 +18,33 @@ serve(async (req) => {
 
   try {
     console.log('Starting chat-with-ai function');
+    
+    if (!openAIApiKey) {
+      throw new Error('OpenAI API key not configured');
+    }
+
+    // First, let's check available models
+    console.log('Checking available OpenAI models...');
+    const modelsResponse = await fetch('https://api.openai.com/v1/models', {
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+      },
+    });
+
+    if (!modelsResponse.ok) {
+      const error = await modelsResponse.json();
+      console.error('OpenAI Models API error:', error);
+      throw new Error('Failed to fetch available models');
+    }
+
+    const models = await modelsResponse.json();
+    console.log('Available models:', models.data.map((m: any) => m.id));
+
     const { query } = await req.json();
     console.log('Received query:', query);
 
     if (!query) {
       throw new Error('No query provided');
-    }
-
-    if (!openAIApiKey) {
-      throw new Error('OpenAI API key not configured');
     }
 
     const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
@@ -68,6 +86,14 @@ serve(async (req) => {
 
     console.log('Found similar tools:', tools);
 
+    // Use the first available model from our preferred list
+    const preferredModels = ['gpt-4o-mini', 'gpt-4o'];
+    const availableModel = preferredModels.find(model => 
+      models.data.some((m: any) => m.id === model)
+    ) || 'gpt-4o-mini'; // fallback to gpt-4o-mini if none found
+
+    console.log(`Using model: ${availableModel}`);
+
     console.log('Generating AI response...');
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -76,7 +102,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: availableModel,
         messages: [
           {
             role: 'system',
@@ -101,13 +127,17 @@ serve(async (req) => {
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      console.error('OpenAI Chat API error:', error);
+      const responseText = await response.text();
+      console.error('OpenAI Chat API error:', responseText);
       throw new Error('Failed to generate response');
     }
 
     const data = await response.json();
     console.log('Generated response:', data);
+
+    if (!data.choices || !data.choices.length || !data.choices[0].message?.content) {
+      throw new Error('AI response is empty or malformed');
+    }
 
     return new Response(
       JSON.stringify({ 
