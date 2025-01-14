@@ -6,6 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 const Chat = () => {
   const [messages, setMessages] = useState<Array<{
@@ -144,7 +145,7 @@ const Chat = () => {
       const { data: aiResponse, error: aiError } = await supabase.functions.invoke('chat-with-ai', {
         body: { 
           query: newMessage,
-          isFollowUp: true // This is a follow-up question
+          isFollowUp: true
         }
       });
 
@@ -186,11 +187,21 @@ const Chat = () => {
   };
 
   const renderMessage = (message: any) => {
+    const isAssistant = message.role === "assistant";
     return (
-      <div className={`max-w-[80%] rounded-lg px-4 py-2 ${
-        message.role === "assistant" ? "bg-muted" : "bg-primary text-primary-foreground"
-      }`}>
-        {message.content}
+      <div 
+        className={`max-w-[80%] space-y-2 ${
+          isAssistant ? "bg-muted" : "bg-primary text-primary-foreground"
+        } rounded-lg px-4 py-2`}
+      >
+        <div className="prose prose-sm dark:prose-invert">
+          {message.content.split('\n').map((line: string, i: number) => {
+            if (line.startsWith('###')) {
+              return <h3 key={i} className="mt-2 mb-1">{line.replace('###', '')}</h3>;
+            }
+            return <p key={i} className="my-1">{line}</p>;
+          })}
+        </div>
       </div>
     );
   };

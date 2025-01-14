@@ -25,11 +25,14 @@ serve(async (req) => {
     if (!isFollowUp) {
       console.log('Performing direct database search');
       
-      const searchTerms = query.split(' ').filter(Boolean);
+      // Split query into words and create search conditions for each word
+      const searchTerms = query.toLowerCase().split(' ').filter(Boolean);
       const searchConditions = searchTerms.map(term => 
         `description.ilike.%${term}% OR category.ilike.%${term}% OR name.ilike.%${term}%`
       );
       
+      console.log('Search conditions:', searchConditions);
+
       const { data: tools, error: searchError } = await supabase
         .from('ai_tools')
         .select('name, description, category')
@@ -102,7 +105,11 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in chat-with-ai function:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        message: "Sorry, I encountered an error while processing your request. Please try again.",
+        tools: []
+      }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
