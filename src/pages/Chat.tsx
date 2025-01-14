@@ -16,75 +16,14 @@ interface SearchResult {
   logo_url: string | null;
 }
 
-declare global {
-  interface Window {
-    ZapChat?: {
-      open: () => void;
-      close: () => void;
-      toggle: () => void;
-    };
-  }
-}
-
 const SearchResults = () => {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const { conversationId } = useParams();
 
-  // Add a state to track if Zapier chat is ready
-  const [isChatReady, setIsChatReady] = useState(false);
-
-  // Check for Zapier chat availability
-  useEffect(() => {
-    const checkChatAvailability = () => {
-      const chatElement = document.querySelector('zapier-interfaces-chatbot-embed');
-      if (chatElement || window.ZapChat) {
-        setIsChatReady(true);
-        return true;
-      }
-      return false;
-    };
-
-    // Check immediately
-    if (!checkChatAvailability()) {
-      // If not available, set up an observer to watch for the chat widget
-      const observer = new MutationObserver((mutations, obs) => {
-        if (checkChatAvailability()) {
-          obs.disconnect(); // Stop observing once found
-        }
-      });
-
-      observer.observe(document.body, {
-        childList: true,
-        subtree: true
-      });
-
-      // Cleanup
-      return () => observer.disconnect();
-    }
-  }, []);
-
   const handleChatNow = () => {
-    if (!isChatReady) {
-      toast.error("Chat is initializing. Please wait a moment and try again.");
-      return;
-    }
-
-    // Try to use the Zapier Chat API if available
-    if (window.ZapChat && typeof window.ZapChat.open === 'function') {
-      window.ZapChat.open();
-      toast.success("Opening chat window...");
-    } else {
-      // Fallback: try to find and click the chat button
-      const chatButton = document.querySelector('[data-testid="chat-button"]') as HTMLElement;
-      if (chatButton) {
-        chatButton.click();
-        toast.success("Opening chat window...");
-      } else {
-        toast.error("Chat is not available at the moment. Please refresh the page.");
-      }
-    }
+    window.open('https://actions.zapier.com/start/', 'actions', 'width=650,height=700');
   };
 
   useEffect(() => {
@@ -169,10 +108,6 @@ const SearchResults = () => {
       </div>
     );
   }
-
-  const topic = searchQuery
-    .replace(/find|ai|tools|for/gi, '')
-    .trim();
 
   return (
     <div className="container mx-auto py-8 px-4">
