@@ -37,14 +37,34 @@ const SearchResults = () => {
           return;
         }
 
-        const searchQuery = messages[0].content;
+        const searchQuery = messages[0].content.toLowerCase();
         console.log("Search query:", searchQuery);
 
-        // Then search for tools using direct text search on name, description, and category
+        // Split the search query into words and remove common words
+        const searchTerms = searchQuery
+          .replace(/find|ai|tools|for/gi, '')
+          .trim()
+          .split(/\s+/)
+          .filter(term => term.length > 0);
+
+        console.log("Search terms:", searchTerms);
+
+        if (searchTerms.length === 0) {
+          setResults([]);
+          setIsLoading(false);
+          return;
+        }
+
+        // Build the OR conditions for each search term
+        const conditions = searchTerms.map(term => 
+          `name.ilike.%${term}%,description.ilike.%${term}%,category.ilike.%${term}%`
+        ).join(',');
+
+        // Then search for tools using direct text search
         const { data: tools, error } = await supabase
           .from("ai_tools")
           .select("id, name, description, category, logo_url")
-          .or(`name.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%,category.ilike.%${searchQuery}%`)
+          .or(conditions)
           .limit(10);
 
         if (error) {
