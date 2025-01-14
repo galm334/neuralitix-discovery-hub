@@ -25,9 +25,13 @@ serve(async (req) => {
       throw new Error('No query provided');
     }
 
+    if (!openAIApiKey) {
+      throw new Error('OpenAI API key not configured');
+    }
+
     const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
 
-    // Get embedding for the query
+    console.log('Generating embedding for query...');
     const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
       method: 'POST',
       headers: {
@@ -47,9 +51,10 @@ serve(async (req) => {
     }
 
     const { data: embeddingData } = await embeddingResponse.json();
+    console.log('Embedding generated successfully');
     const embedding = embeddingData[0].embedding;
 
-    // Search for similar tools using vector similarity
+    console.log('Searching for similar tools...');
     const { data: tools, error: searchError } = await supabase.rpc('match_tools', {
       query_embedding: embedding,
       match_threshold: 0.5,
@@ -63,7 +68,7 @@ serve(async (req) => {
 
     console.log('Found similar tools:', tools);
 
-    // Generate response using GPT-4
+    console.log('Generating AI response...');
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
