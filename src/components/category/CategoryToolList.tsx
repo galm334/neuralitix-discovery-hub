@@ -89,7 +89,7 @@ export function CategoryToolList({ category, filters, sortBy = "rating" }: Categ
               </div>
             </div>
             <div className="flex items-center justify-between pt-4 border-t border-[#E5DEFF] text-sm text-muted-foreground">
-              <span>Rank #{index + 1}</span>
+              <span>Score: {tool.rating}/10</span>
               <span>{tool.price}</span>
               <div className="flex items-center gap-1">
                 <Bookmark className="w-4 h-4" />
