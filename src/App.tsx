@@ -9,6 +9,7 @@ import Trending from "@/pages/Trending";
 import JustAdded from "@/pages/JustAdded";
 import ToolPage from "@/pages/ToolPage";
 import CategoryPage from "@/pages/CategoryPage";
+import Chat from "@/pages/Chat";
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
               <Route path="/just-added" element={<JustAdded />} />
               <Route path="/tool/:toolId" element={<ToolPage />} />
               <Route path="/category/:category" element={<CategoryPage />} />
+              <Route path="/chat/:conversationId" element={<Chat />} />
             </Routes>
           </main>
           <Toaster />
