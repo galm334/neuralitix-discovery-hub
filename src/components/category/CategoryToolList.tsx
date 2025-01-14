@@ -55,7 +55,7 @@ export function CategoryToolList({ category, filters, sortBy = "rating" }: Categ
     <div className="space-y-8">
       <div className="space-y-5">
         {sortedTools.map((tool, index) => (
-          <div key={tool.title} className="relative flex flex-col p-4 bg-[#F1F0FB]/50 first:rounded-t-lg last:rounded-b-lg">
+          <div key={tool.title} className="relative flex flex-col p-4 bg-[#F1F0FB]/30 first:rounded-t-lg last:rounded-b-lg">
             <div className="flex items-start gap-4 mb-4">
               <div className="text-2xl font-bold text-muted-foreground mt-1">
                 #{index + 1}
