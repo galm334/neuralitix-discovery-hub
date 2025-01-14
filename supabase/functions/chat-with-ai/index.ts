@@ -24,13 +24,6 @@ serve(async (req) => {
     // For initial queries, do a direct database search
     if (!isFollowUp) {
       console.log('Performing direct database search');
-      // Convert the query into a format suitable for full-text search
-      const searchQuery = query
-        .split(' ')
-        .filter(word => word.length > 0)
-        .join(' & ');
-      
-      console.log('Formatted search query:', searchQuery);
       
       const { data: tools, error: searchError } = await supabase
         .from('ai_tools')
