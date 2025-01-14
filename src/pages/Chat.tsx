@@ -27,7 +27,7 @@ const SearchResults = () => {
     const chatbotElement = document.querySelector('zapier-interfaces-chatbot-embed');
     if (chatbotElement) {
       // Set the is-open attribute to true to open the chatbot
-      chatbotElement.setAttribute('is-open', 'true');
+      chatbotElement.setAttribute('is-open', "true");
     }
   };
 
