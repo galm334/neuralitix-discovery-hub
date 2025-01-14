@@ -8,18 +8,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 interface CategorySidebarProps {
   onFilterChange: (filters: any) => void;
   onSortChange: (sort: string) => void;
+  isMobile?: boolean;
 }
 
-export function CategorySidebar({ onFilterChange, onSortChange }: CategorySidebarProps) {
+export function CategorySidebar({ onFilterChange, onSortChange, isMobile }: CategorySidebarProps) {
   return (
     <div className="space-y-6 sticky top-4">
-      <div className="relative">
-        <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-        <Input 
-          placeholder="Search tools..." 
-          className="pl-9"
-        />
-      </div>
+      {!isMobile && (
+        <div className="relative">
+          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+          <Input 
+            placeholder="Search tools..." 
+            className="pl-9"
+          />
+        </div>
+      )}
 
       <div className="space-y-4">
         <h3 className="font-semibold">Sort By</h3>
