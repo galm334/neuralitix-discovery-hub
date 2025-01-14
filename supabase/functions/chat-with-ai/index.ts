@@ -27,7 +27,7 @@ serve(async (req) => {
       const { data: tools, error: searchError } = await supabase
         .from('ai_tools')
         .select('name, description, category')
-        .or(`description.ilike.%${query}%,category.ilike.%${query}%,name.ilike.%${query}%`)
+        .textSearch('description', query)
         .limit(5);
 
       if (searchError) {
@@ -37,9 +37,9 @@ serve(async (req) => {
 
       console.log('Found tools:', tools);
 
-      let response = "Here are the AI tools I found that match your search:\n\n";
+      let response = "";
       if (tools && tools.length > 0) {
-        response += "## Verified Tools\n\n";
+        response = "Here are some AI tools that match your search:\n\n";
         tools.forEach(tool => {
           response += `### ${tool.name}\n`;
           response += `${tool.description}\n`;
@@ -47,9 +47,10 @@ serve(async (req) => {
         });
         response += "\nWould you like to know more about any of these tools? Feel free to ask follow-up questions!";
       } else {
-        response += "I couldn't find any exact matches in our database. Would you like me to provide some general suggestions or help refine your search?";
+        response = "I couldn't find any exact matches in our database. Could you try rephrasing your search or being more specific about what kind of AI tool you're looking for?";
       }
 
+      console.log('Sending response:', response);
       return new Response(
         JSON.stringify({ 
           message: response,
