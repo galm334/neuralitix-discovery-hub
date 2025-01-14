@@ -61,44 +61,20 @@ const Chat = () => {
     setIsLoading(true);
     
     try {
-      // First, try to correct common partial words
-      const commonTerms: Record<string, string> = {
-        'writ': 'writing',
-        'blog': 'blogging',
-        'edit': 'editing',
-        'content': 'content creation',
-        'copy': 'copywriting',
-        'market': 'marketing',
-        'trans': 'translation',
-        'summar': 'summarization',
-        'proof': 'proofreading',
-      };
-
-      // Correct any partial words in the query
-      const words = userQuery.toLowerCase().split(' ');
-      const correctedWords = words.map(word => {
-        for (const [partial, full] of Object.entries(commonTerms)) {
-          if (word.startsWith(partial)) {
-            return full;
-          }
-        }
-        return word;
-      });
-
-      const correctedQuery = correctedWords.join(' ');
-      console.log('Corrected query:', correctedQuery);
-
-      const { data: tools, error: searchError } = await supabase
+      const { data: tools, error } = await supabase
         .from('ai_tools')
         .select('name, description, category')
-        .textSearch('search_vector', correctedQuery)
+        .textSearch('search_vector', `'${userQuery.toLowerCase()}'`, {
+          type: 'plain',
+          config: 'english'
+        })
         .limit(3);
 
-      if (searchError) throw searchError;
+      if (error) throw error;
       
       console.log('Found tools:', tools);
 
-      let responseContent = `Here are some AI tools that match your search for "${correctedQuery}":\n\n`;
+      let responseContent = `Here are some AI tools that match your search for "${userQuery}":\n\n`;
       
       if (tools && tools.length > 0) {
         tools.forEach((tool) => {
