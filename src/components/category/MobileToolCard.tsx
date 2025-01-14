@@ -22,7 +22,7 @@ export function MobileToolCard({ tool, index }: MobileToolCardProps) {
     <div className="relative flex flex-col p-4 bg-[#F1F0FB]/30 first:rounded-t-lg last:rounded-b-lg">
       <div className="flex items-start gap-4">
         <div className="flex items-center gap-4">
-          <span className="text-lg font-semibold text-muted-foreground h-16 flex items-center">#{index + 1}</span>
+          <span className="text-2xl font-bold text-muted-foreground h-16 flex items-center">#{index + 1}</span>
           <div className="w-16 h-16 flex-shrink-0">
             <img
               src={tool.image}
