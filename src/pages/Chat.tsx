@@ -23,11 +23,11 @@ const SearchResults = () => {
   const { conversationId } = useParams();
 
   const handleChatNow = () => {
-    // This will trigger the Zapier chatbot
+    // Find the chatbot element
     const chatbotElement = document.querySelector('zapier-interfaces-chatbot-embed');
     if (chatbotElement) {
-      // @ts-ignore - custom element
-      chatbotElement.openChat();
+      // Set the is-open attribute to true to open the chatbot
+      chatbotElement.setAttribute('is-open', 'true');
     }
   };
 
