@@ -25,18 +25,14 @@ serve(async (req) => {
     if (!isFollowUp) {
       console.log('Performing direct database search');
       
-      // Split query into words and create search conditions for each word
-      const searchTerms = query.toLowerCase().split(' ').filter(Boolean);
-      const searchConditions = searchTerms.map(term => 
-        `description.ilike.%${term}% OR category.ilike.%${term}% OR name.ilike.%${term}%`
-      );
-      
-      console.log('Search conditions:', searchConditions);
+      // Extract search terms and create a combined search condition
+      const searchTerm = query.toLowerCase();
+      console.log('Search term:', searchTerm);
 
       const { data: tools, error: searchError } = await supabase
         .from('ai_tools')
         .select('name, description, category')
-        .or(searchConditions.join(','))
+        .or(`description.ilike.%${searchTerm}%,category.ilike.%${searchTerm}%,name.ilike.%${searchTerm}%`)
         .limit(5);
 
       if (searchError) {
