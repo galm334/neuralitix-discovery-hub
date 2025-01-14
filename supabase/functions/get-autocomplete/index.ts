@@ -28,30 +28,35 @@ serve(async (req) => {
 
     console.log('Searching for query:', query);
 
-    // Generate more natural autocomplete suggestions based on the query
-    const suggestions = [
-      `Find AI tools for writing blog posts`,
-      `Search for AI writing assistants`,
-      `Discover AI tools for content writing`,
-      `Compare AI writing and editing tools`,
-      `Find AI tools for writing marketing copy`
-    ].filter(suggestion => 
-      suggestion.toLowerCase().includes(query.toLowerCase())
-    );
+    // Format the query for text search by splitting into words and joining with &
+    const formattedQuery = query
+      .split(' ')
+      .filter(word => word.length > 0)
+      .map(word => word.replace(/[^a-zA-Z0-9]/g, ''))
+      .join(' & ');
 
     // Search for relevant tools
-    const { data: tools, error } = await supabaseClient
+    const { data: tools, error: toolsError } = await supabaseClient
       .from('ai_tools')
       .select('name, description, category')
-      .textSearch('search_vector', query)
+      .textSearch('search_vector', formattedQuery)
       .limit(5);
 
-    if (error) {
-      console.error('Database search error:', error);
-      throw error;
+    if (toolsError) {
+      console.error('Database search error:', toolsError);
+      throw toolsError;
     }
 
     console.log('Found tools:', tools?.length ?? 0);
+
+    // Generate more natural autocomplete suggestions based on the query
+    const suggestions = [
+      `Find AI tools for ${query}`,
+      `Search for AI ${query} assistants`,
+      `Discover AI tools for ${query}`,
+      `Compare AI ${query} tools`,
+      `Find best AI tools for ${query}`
+    ];
 
     return new Response(
       JSON.stringify({ 
