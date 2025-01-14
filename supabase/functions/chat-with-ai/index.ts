@@ -25,7 +25,6 @@ serve(async (req) => {
     if (!isFollowUp) {
       console.log('Performing direct database search');
       
-      // Extract search terms and create a combined search condition
       const searchTerm = query.toLowerCase();
       console.log('Search term:', searchTerm);
 
