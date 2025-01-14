@@ -32,11 +32,7 @@ export const SearchBar = () => {
         inputRef.current &&
         !inputRef.current.contains(event.target as Node)
       ) {
-        const closeTimeout = setTimeout(() => {
-          setShowSuggestions(false);
-        }, 1000);
-
-        return () => clearTimeout(closeTimeout);
+        setShowSuggestions(false);
       }
     };
 
@@ -50,6 +46,7 @@ export const SearchBar = () => {
     const fetchSuggestions = async () => {
       if (debouncedQuery.length >= 3) {
         try {
+          console.log('Fetching suggestions for query:', debouncedQuery);
           const { data, error } = await supabase.functions.invoke('get-autocomplete', {
             body: { query: debouncedQuery }
           });
@@ -59,6 +56,7 @@ export const SearchBar = () => {
             return;
           }
 
+          console.log('Received suggestions:', data);
           if (data) {
             setSuggestions(data.suggestions || []);
             setTools(data.tools || []);
@@ -81,7 +79,6 @@ export const SearchBar = () => {
     try {
       console.log('Starting search with query:', searchQuery);
       
-      // First create a new conversation
       const { data: conversationData, error: conversationError } = await supabase
         .from('chat_conversations')
         .insert([
@@ -94,7 +91,6 @@ export const SearchBar = () => {
       
       console.log('Created conversation:', conversationData);
 
-      // Then create the initial message
       const { error: messageError } = await supabase
         .from('chat_messages')
         .insert([
@@ -108,8 +104,6 @@ export const SearchBar = () => {
       if (messageError) throw messageError;
       
       console.log('Created initial message for conversation:', conversationData.id);
-
-      // Navigate to the chat page with the new conversation ID
       navigate(`/chat/${conversationData.id}`);
     } catch (error) {
       console.error('Error starting chat:', error);
@@ -146,7 +140,7 @@ export const SearchBar = () => {
         </Button>
       </div>
 
-      {showSuggestions && (query.length >= 3) && (suggestions.length > 0 || tools.length > 0) && (
+      {showSuggestions && (suggestions.length > 0 || tools.length > 0) && (
         <Card ref={suggestionsRef} className="absolute w-full mt-2 p-2 shadow-lg z-50 max-h-[400px] overflow-y-auto">
           {suggestions.map((suggestion, index) => (
             <button
