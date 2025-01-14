@@ -29,12 +29,48 @@ serve(async (req) => {
 
     console.log('Original query:', query);
 
-    // Format search terms for prefix matching
-    const searchTerm = `${query.toLowerCase()}:*`;
+    // Check if the query starts with "writ"
+    if (query.toLowerCase().startsWith('writ')) {
+      // For "writ" related queries, we'll specifically search for writing tools
+      const { data: tools, error: toolsError } = await supabaseClient
+        .from('ai_tools')
+        .select('name, description, category')
+        .textSearch('search_vector', 'writing', {
+          type: 'plain',
+          config: 'english'
+        })
+        .limit(5);
 
+      if (toolsError) {
+        console.error('Database search error:', toolsError);
+        throw toolsError;
+      }
+
+      console.log('Found tools:', tools?.length ?? 0);
+
+      // If we found writing-related tools, suggest writing-specific queries
+      if (tools && tools.length > 0) {
+        const suggestions = [
+          'I need an AI tool for writing blog posts',
+          'Find AI tools for writing and content creation',
+          'What are the best AI writing assistants?',
+          'Compare AI tools for writing and editing',
+        ];
+
+        return new Response(
+          JSON.stringify({ suggestions, tools }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200,
+          }
+        );
+      }
+    }
+
+    // For other queries, use prefix matching
+    const searchTerm = `${query.toLowerCase()}:*`;
     console.log('Formatted search term:', searchTerm);
 
-    // Search for relevant tools using prefix matching
     const { data: tools, error: toolsError } = await supabaseClient
       .from('ai_tools')
       .select('name, description, category')
@@ -51,18 +87,11 @@ serve(async (req) => {
 
     console.log('Found tools:', tools?.length ?? 0);
 
-    // Generate suggestions based on matching tools
+    // Generate suggestions based on found tools
     let suggestions: string[] = [];
     if (tools && tools.length > 0) {
-      // Get unique categories and create category-based suggestions
       const categories = [...new Set(tools.map(tool => tool.category))];
-      
-      // Create suggestions based on the found categories
-      suggestions = [
-        'Find AI tools for writing',
-        ...categories.map(category => `Find ${category} AI tools`),
-        'Compare AI tools for writing',
-      ];
+      suggestions = categories.map(category => `Find AI tools for ${category.toLowerCase()}`);
     }
 
     return new Response(
