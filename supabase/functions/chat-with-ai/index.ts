@@ -29,8 +29,7 @@ serve(async (req) => {
       .textSearch('search_vector', query.replace(/[^\w\s]/g, ' '), {
         type: 'plain',
         config: 'english'
-      })
-      .limit(5);
+      });
 
     if (searchError) {
       console.error('Error searching tools:', searchError);
@@ -41,19 +40,21 @@ serve(async (req) => {
 
     let systemPrompt = `You are a helpful AI assistant that helps users find AI tools. You should always be friendly and conversational.
 
-When suggesting tools, use clear formatting:
-- For verified tools from our database, use "## Verified Tools" as a heading
-- For web suggestions, use "## Additional Suggestions" as a heading
-- For each tool, use "### [Tool Name]" as a subheading
-- Format descriptions as clear paragraphs
-- Use bullet points for key features
-- End with a call to action asking if they need more specific information
+Format your response with clear sections:
+1. If verified tools are found, list them under "## Verified Tools"
+2. Then list web suggestions under "## Additional Suggestions"
+3. For each tool (both verified and suggestions):
+   - Use "### [Tool Name]" as a subheading
+   - Write a clear paragraph for the description
+   - List key features with bullet points
+4. End with a friendly offer to help with more specific information
 
-Current query: "${query}"`;
+Current query: "${query}"
 
-    if (tools && tools.length > 0) {
-      systemPrompt += `\n\nI found these verified tools in our database:\n${JSON.stringify(tools, null, 2)}`;
-    }
+${tools && tools.length > 0 
+  ? `Found these verified tools:\n${JSON.stringify(tools, null, 2)}`
+  : 'No verified tools found in our database.'
+}`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -70,9 +71,12 @@ Current query: "${query}"`;
           },
           { 
             role: 'user', 
-            content: tools && tools.length > 0 
-              ? "Please format the verified tools and suggest some additional popular tools from the web, maintaining clear formatting with proper headers and paragraphs."
-              : "Since no verified tools were found, please suggest some popular tools from the web, using clear formatting with headers and paragraphs for each tool."
+            content: `Please format the response with:
+1. Verified tools section (if any found)
+2. Additional suggestions section
+3. Clear headings and paragraphs for each tool
+4. Bullet points for features
+5. A friendly closing note`
           }
         ],
         temperature: 0.7,
