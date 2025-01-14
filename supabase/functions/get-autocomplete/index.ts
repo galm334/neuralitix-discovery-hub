@@ -29,7 +29,7 @@ serve(async (req) => {
 
     console.log('Original query:', query);
 
-    // Check if the query starts with "writ"
+    // Check if the query starts with "writ" or "writi"
     if (query.toLowerCase().startsWith('writ')) {
       // For "writ" related queries, we'll specifically search for writing tools
       const { data: tools, error: toolsError } = await supabaseClient
@@ -46,25 +46,23 @@ serve(async (req) => {
         throw toolsError;
       }
 
-      console.log('Found tools:', tools?.length ?? 0);
+      console.log('Found writing tools:', tools?.length ?? 0);
 
-      // If we found writing-related tools, suggest writing-specific queries
-      if (tools && tools.length > 0) {
-        const suggestions = [
-          'I need an AI tool for writing blog posts',
-          'Find AI tools for writing and content creation',
-          'What are the best AI writing assistants?',
-          'Compare AI tools for writing and editing',
-        ];
+      // Always provide writing-specific suggestions when query starts with "writ"
+      const suggestions = [
+        'I need an AI tool for writing blog posts',
+        'Find AI tools for writing and content creation',
+        'What are the best AI writing assistants?',
+        'Compare AI tools for writing and editing',
+      ];
 
-        return new Response(
-          JSON.stringify({ suggestions, tools }),
-          {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 200,
-          }
-        );
-      }
+      return new Response(
+        JSON.stringify({ suggestions, tools: tools || [] }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        }
+      );
     }
 
     // For other queries, use prefix matching
@@ -105,7 +103,7 @@ serve(async (req) => {
           'Content-Type': 'application/json' 
         },
         status: 200,
-      },
+      }
     );
   } catch (error) {
     console.error('Function error:', error);
