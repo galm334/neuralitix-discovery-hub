@@ -1,7 +1,6 @@
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Bookmark, CheckCircle2, ExternalLink } from "lucide-react";
+import { Bookmark, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -14,6 +13,112 @@ interface CategoryToolListProps {
   };
   sortBy?: string;
 }
+
+interface Tool {
+  title: string;
+  description: string;
+  image: string;
+  price: string;
+  rating: number;
+  saves: number;
+  isVerified: boolean;
+}
+
+// Separate component for tool card on mobile
+const MobileToolCard = ({ tool, index }: { tool: Tool; index: number }) => {
+  return (
+    <div className="relative flex flex-col p-4 bg-[#F1F0FB]/30 first:rounded-t-lg last:rounded-b-lg">
+      <div className="flex items-start gap-4">
+        <div className="w-16 h-16 flex-shrink-0">
+          <img
+            src={tool.image}
+            alt={tool.title}
+            className="w-full h-full object-cover rounded-lg"
+          />
+        </div>
+        <div className="flex-1">
+          <h3 className="text-xl font-semibold">{tool.title}</h3>
+        </div>
+      </div>
+
+      <div className="mt-4 space-y-3 w-full">
+        <p className="text-sm text-muted-foreground">
+          {tool.description}
+        </p>
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
+          <span>Score: {tool.rating}</span>
+          <span>{tool.price}</span>
+          <div className="flex items-center gap-1">
+            <Bookmark className="w-4 h-4" />
+            <span>{tool.saves.toLocaleString()}</span>
+          </div>
+        </div>
+        <Button className="w-full bg-[#6366F1] hover:bg-[#6366F1]/90">
+          Try now
+          <ExternalLink className="w-4 h-4 ml-2" />
+        </Button>
+        <Link 
+          to={`/tool/${tool.title.toLowerCase().replace(/\s+/g, '-')}`} 
+          className="block text-center text-primary hover:underline"
+        >
+          Learn more
+        </Link>
+      </div>
+    </div>
+  );
+};
+
+// Separate component for tool card on desktop
+const DesktopToolCard = ({ tool, index }: { tool: Tool; index: number }) => {
+  return (
+    <div className="relative flex flex-col p-4 bg-[#F1F0FB]/30 first:rounded-t-lg last:rounded-b-lg">
+      <div className="flex items-start gap-4">
+        <div className="text-2xl font-bold text-muted-foreground mt-1">
+          #{index + 1}
+        </div>
+        <div className="w-16 h-16 flex-shrink-0">
+          <img
+            src={tool.image}
+            alt={tool.title}
+            className="w-full h-full object-cover rounded-lg"
+          />
+        </div>
+        <div className="flex-1">
+          <h3 className="text-xl font-semibold">{tool.title}</h3>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex-1">
+          <p className="text-sm text-muted-foreground line-clamp-2 max-w-[100ch]">
+            {tool.description}
+          </p>
+        </div>
+        <div className="flex items-center gap-4 ml-4">
+          <Link 
+            to={`/tool/${tool.title.toLowerCase().replace(/\s+/g, '-')}`} 
+            className="text-primary hover:underline"
+          >
+            See more
+          </Link>
+          <Button className="bg-[#6366F1] hover:bg-[#6366F1]/90" size="sm">
+            Try now
+            <ExternalLink className="w-4 h-4 ml-2" />
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between pt-4 border-t border-[#E5DEFF] text-sm text-muted-foreground">
+        <span>Score: {tool.rating}</span>
+        <span>{tool.price}</span>
+        <div className="flex items-center gap-1">
+          <Bookmark className="w-4 h-4" />
+          <span>{tool.saves.toLocaleString()}</span>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const tools = [
   {
@@ -56,83 +161,11 @@ export function CategoryToolList({ category, filters, sortBy = "rating" }: Categ
     <div className="space-y-8">
       <div className="space-y-5">
         {sortedTools.map((tool, index) => (
-          <div key={tool.title} className="relative flex flex-col p-4 bg-[#F1F0FB]/30 first:rounded-t-lg last:rounded-b-lg">
-            <div className="flex items-start gap-4">
-              {!isMobile && (
-                <div className="text-2xl font-bold text-muted-foreground mt-1">
-                  #{index + 1}
-                </div>
-              )}
-              <div className="w-16 h-16 flex-shrink-0">
-                <img
-                  src={tool.image}
-                  alt={tool.title}
-                  className="w-full h-full object-cover rounded-lg"
-                />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-xl font-semibold">{tool.title}</h3>
-              </div>
-            </div>
-
-            {isMobile && (
-              <div className="mt-4 space-y-3">
-                <p className="text-sm text-muted-foreground">
-                  {tool.description}
-                </p>
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <span>Score: {tool.rating}</span>
-                  <span>{tool.price}</span>
-                  <div className="flex items-center gap-1">
-                    <Bookmark className="w-4 h-4" />
-                    <span>{tool.saves.toLocaleString()}</span>
-                  </div>
-                </div>
-                <Button className="w-full bg-[#6366F1] hover:bg-[#6366F1]/90">
-                  Try now
-                  <ExternalLink className="w-4 h-4 ml-2" />
-                </Button>
-                <Link 
-                  to={`/tool/${tool.title.toLowerCase().replace(/\s+/g, '-')}`} 
-                  className="block text-center text-primary hover:underline"
-                >
-                  Learn more
-                </Link>
-              </div>
-            )}
-
-            {!isMobile && (
-              <>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex-1">
-                    <p className="text-sm text-muted-foreground line-clamp-2 max-w-[100ch]">
-                      {tool.description}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-4 ml-4">
-                    <Link 
-                      to={`/tool/${tool.title.toLowerCase().replace(/\s+/g, '-')}`} 
-                      className="text-primary hover:underline"
-                    >
-                      See more
-                    </Link>
-                    <Button className="bg-[#6366F1] hover:bg-[#6366F1]/90" size="sm">
-                      Try now
-                      <ExternalLink className="w-4 h-4 ml-2" />
-                    </Button>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between pt-4 border-t border-[#E5DEFF] text-sm text-muted-foreground">
-                  <span>Score: {tool.rating}</span>
-                  <span>{tool.price}</span>
-                  <div className="flex items-center gap-1">
-                    <Bookmark className="w-4 h-4" />
-                    <span>{tool.saves.toLocaleString()}</span>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
+          isMobile ? (
+            <MobileToolCard key={tool.title} tool={tool} index={index} />
+          ) : (
+            <DesktopToolCard key={tool.title} tool={tool} index={index} />
+          )
         ))}
       </div>
 
