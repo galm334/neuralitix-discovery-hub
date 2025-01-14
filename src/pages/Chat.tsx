@@ -25,34 +25,39 @@ const SearchResults = () => {
   const handleChatNow = () => {
     const chatbotElement = document.querySelector('zapier-interfaces-chatbot-embed') as HTMLElement;
     if (chatbotElement) {
-      console.log('Chatbot element found, current state:', {
-        isPopup: chatbotElement.getAttribute('is-popup'),
-        isOpen: chatbotElement.getAttribute('is-open'),
-        display: window.getComputedStyle(chatbotElement).display,
-        visibility: window.getComputedStyle(chatbotElement).visibility,
-      });
+      // First, ensure any existing event listeners are removed
+      const clone = chatbotElement.cloneNode(true);
+      chatbotElement.parentNode?.replaceChild(clone, chatbotElement);
+      
+      // Get the fresh reference
+      const freshElement = document.querySelector('zapier-interfaces-chatbot-embed') as HTMLElement;
+      
+      // Set initial state
+      freshElement.setAttribute('is-popup', 'true');
+      freshElement.setAttribute('is-open', 'true');
+      
+      // Force layout recalculation
+      void freshElement.getBoundingClientRect();
+      
+      // Apply styles directly
+      freshElement.style.setProperty('display', 'block', 'important');
+      freshElement.style.setProperty('visibility', 'visible', 'important');
+      freshElement.style.setProperty('opacity', '1', 'important');
+      freshElement.style.setProperty('pointer-events', 'auto', 'important');
+      
+      // Create and dispatch a custom event
+      const openEvent = new CustomEvent('zapier-chat-open', { bubbles: true });
+      freshElement.dispatchEvent(openEvent);
 
-      // First, ensure the element is configured as a popup
-      chatbotElement.setAttribute('is-popup', 'true');
-      
-      // Force a reflow to ensure changes are applied
-      void chatbotElement.offsetHeight;
-      
-      // Then set it to open
-      chatbotElement.setAttribute('is-open', 'true');
-      
-      // Log the state after changes
-      console.log('Chatbot element after changes:', {
-        isPopup: chatbotElement.getAttribute('is-popup'),
-        isOpen: chatbotElement.getAttribute('is-open'),
-        display: window.getComputedStyle(chatbotElement).display,
-        visibility: window.getComputedStyle(chatbotElement).visibility,
+      console.log('Chatbot element state after modifications:', {
+        element: freshElement,
+        isPopup: freshElement.getAttribute('is-popup'),
+        isOpen: freshElement.getAttribute('is-open'),
+        display: window.getComputedStyle(freshElement).display,
+        visibility: window.getComputedStyle(freshElement).visibility,
+        opacity: window.getComputedStyle(freshElement).opacity,
+        pointerEvents: window.getComputedStyle(freshElement).pointerEvents,
       });
-
-      // Attempt to force visibility through style
-      chatbotElement.style.display = '';
-      chatbotElement.style.visibility = 'visible';
-      chatbotElement.style.opacity = '1';
 
       toast.success("Opening chat window...");
     } else {
