@@ -22,7 +22,7 @@ serve(async (req) => {
     const { query } = await req.json();
     console.log('Received query:', query);
 
-    // First, search for relevant tools in the database
+    // Search for relevant tools in the database
     const { data: tools, error: searchError } = await supabase
       .from('ai_tools')
       .select('name, description, category')
@@ -30,7 +30,7 @@ serve(async (req) => {
         type: 'plain',
         config: 'english'
       })
-      .limit(3);
+      .limit(5);
 
     if (searchError) {
       console.error('Error searching tools:', searchError);
@@ -41,18 +41,18 @@ serve(async (req) => {
 
     let systemPrompt = `You are a helpful AI assistant that helps users find AI tools. You should always be friendly and conversational.
 
-Your responses should be well-formatted and easy to read. When suggesting tools, use clear sections and bullet points.
+When suggesting tools, use clear formatting:
+- For verified tools from our database, use "## Verified Tools" as a heading
+- For web suggestions, use "## Additional Suggestions" as a heading
+- For each tool, use "### [Tool Name]" as a subheading
+- Format descriptions as clear paragraphs
+- Use bullet points for key features
+- End with a call to action asking if they need more specific information
 
-Current context: The user is looking for AI tools and has asked: "${query}"`;
+Current query: "${query}"`;
 
-    let assistantMessage = '';
-    
     if (tools && tools.length > 0) {
-      systemPrompt += `\n\nI found these relevant tools in our verified database:\n${JSON.stringify(tools, null, 2)}`;
-      assistantMessage = "Based on your request, I found some verified AI tools that might help. Let me tell you about them:";
-    } else {
-      systemPrompt += "\n\nI couldn't find any verified tools in our database for this specific request.";
-      assistantMessage = "I searched our verified database but couldn't find exact matches for your request. Would you like me to suggest some tools from the wider web? While these wouldn't be verified by our team yet, they might still be helpful. Just let me know if you'd like to explore those options.";
+      systemPrompt += `\n\nI found these verified tools in our database:\n${JSON.stringify(tools, null, 2)}`;
     }
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -64,9 +64,18 @@ Current context: The user is looking for AI tools and has asked: "${query}"`;
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'assistant', content: assistantMessage },
+          { 
+            role: 'system', 
+            content: systemPrompt 
+          },
+          { 
+            role: 'user', 
+            content: tools && tools.length > 0 
+              ? "Please format the verified tools and suggest some additional popular tools from the web, maintaining clear formatting with proper headers and paragraphs."
+              : "Since no verified tools were found, please suggest some popular tools from the web, using clear formatting with headers and paragraphs for each tool."
+          }
         ],
+        temperature: 0.7,
       }),
     });
 
