@@ -81,7 +81,7 @@ serve(async (req) => {
 
     console.log('Found tools:', tools?.length ?? 0);
 
-    // Generate suggestions based on the corrected query and found tools
+    // Generate suggestions based on the corrected query only
     const suggestions = [
       `Find AI tools for ${correctedQuery}`,
       `Search for AI ${correctedQuery} assistants`,
@@ -89,8 +89,9 @@ serve(async (req) => {
       `Compare AI ${correctedQuery} tools`,
       `Find best AI tools for ${correctedQuery}`
     ].filter(suggestion => 
-      // Only include suggestions that use complete words
-      !suggestion.includes(query.toLowerCase())
+      // Only include suggestions that use the corrected words
+      !suggestion.includes(query.toLowerCase()) && 
+      suggestion.includes(correctedQuery)
     );
 
     return new Response(

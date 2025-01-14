@@ -91,7 +91,7 @@ const Chat = () => {
       const { data: tools, error: searchError } = await supabase
         .from('ai_tools')
         .select('name, description, category')
-        .textSearch('search_vector', correctedQuery.split(' ').join(' & '))
+        .textSearch('search_vector', correctedQuery)
         .limit(3);
 
       if (searchError) throw searchError;
@@ -114,7 +114,7 @@ slug: ${toolSlug}
         responseContent = "I couldn't find any exact matches for your search. Could you please try rephrasing your query or being more specific about what kind of AI tool you're looking for?";
       }
 
-      console.log('Inserting assistant response');
+      console.log('Inserting assistant response:', responseContent);
       const { error: messageError } = await supabase
         .from("chat_messages")
         .insert([
@@ -137,7 +137,7 @@ slug: ${toolSlug}
 
   const subscribeToMessages = () => {
     return supabase
-      .channel('chat-messages')
+      .channel(`chat_${conversationId}`)
       .on(
         'postgres_changes',
         {
