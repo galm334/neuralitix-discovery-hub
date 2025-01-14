@@ -79,16 +79,20 @@ export const SearchBar = () => {
 
   const handleSearch = async (searchQuery: string) => {
     try {
+      console.log('Starting search with query:', searchQuery);
+      
       // First create a new conversation
       const { data: conversationData, error: conversationError } = await supabase
         .from('chat_conversations')
         .insert([
-          { thread_id: 'new' } // You might want to generate a more meaningful thread_id
+          { thread_id: 'new' }
         ])
         .select()
         .single();
 
       if (conversationError) throw conversationError;
+      
+      console.log('Created conversation:', conversationData);
 
       // Then create the initial message
       const { error: messageError } = await supabase
@@ -102,6 +106,8 @@ export const SearchBar = () => {
         ]);
 
       if (messageError) throw messageError;
+      
+      console.log('Created initial message for conversation:', conversationData.id);
 
       // Navigate to the chat page with the new conversation ID
       navigate(`/chat/${conversationData.id}`);

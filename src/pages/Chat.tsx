@@ -21,12 +21,18 @@ const Chat = () => {
   const { conversationId } = useParams();
 
   useEffect(() => {
+    console.log('Chat mounted, fetching messages for conversation:', conversationId);
     fetchMessages();
-    subscribeToMessages();
+    const unsubscribe = subscribeToMessages();
+    return () => {
+      unsubscribe();
+    };
   }, [conversationId]);
 
   useEffect(() => {
+    console.log('Messages updated:', messages);
     if (messages.length === 1 && messages[0].role === 'user' && !initialResponseSent) {
+      console.log('Triggering initial response for query:', messages[0].content);
       handleInitialResponse(messages[0].content);
     }
     scrollToBottom();
@@ -41,16 +47,19 @@ const Chat = () => {
         .order("created_at", { ascending: true });
 
       if (error) throw error;
+      console.log('Fetched messages:', data);
       setMessages(data || []);
     } catch (error) {
-      toast.error("Error fetching messages");
       console.error("Error fetching messages:", error);
+      toast.error("Error fetching messages");
     }
   };
 
   const handleInitialResponse = async (userQuery: string) => {
+    console.log('Generating initial response for query:', userQuery);
     setInitialResponseSent(true);
     setIsLoading(true);
+    
     try {
       const { data: tools, error: searchError } = await supabase
         .from('ai_tools')
@@ -59,6 +68,8 @@ const Chat = () => {
         .limit(3);
 
       if (searchError) throw searchError;
+      
+      console.log('Found tools:', tools);
 
       let responseContent = `Based on your search for "${userQuery}", here are some relevant AI tools that might help:\n\n`;
       
@@ -77,18 +88,22 @@ slug: ${toolSlug}
         responseContent += "I couldn't find any exact matches, but I can help you explore similar tools. What specific features are you looking for?";
       }
 
-      const { error: messageError } = await supabase.from("chat_messages").insert([
-        {
-          conversation_id: conversationId,
-          content: responseContent,
-          role: "assistant",
-        },
-      ]);
+      console.log('Inserting assistant response');
+      const { error: messageError } = await supabase
+        .from("chat_messages")
+        .insert([
+          {
+            conversation_id: conversationId,
+            content: responseContent,
+            role: "assistant",
+          }
+        ]);
 
       if (messageError) throw messageError;
+      console.log('Assistant response inserted successfully');
     } catch (error) {
-      toast.error("Error sending initial response");
       console.error("Error sending initial response:", error);
+      toast.error("Error sending initial response");
     } finally {
       setIsLoading(false);
     }
