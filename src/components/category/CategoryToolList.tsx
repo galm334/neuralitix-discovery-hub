@@ -52,9 +52,9 @@ export function CategoryToolList({ category, filters, sortBy = "rating" }: Categ
 
   return (
     <div className="space-y-8">
-      <div className="space-y-6">
+      <div className="space-y-[1px]">
         {sortedTools.map((tool, index) => (
-          <div key={tool.title} className="relative flex flex-col p-4 rounded-lg border-2 border-[#9b87f5]/20 hover:shadow-lg transition-shadow">
+          <div key={tool.title} className="relative flex flex-col p-4 bg-[#F1F0FB] first:rounded-t-lg last:rounded-b-lg">
             <div className="flex items-start gap-4 mb-4">
               <div className="text-2xl font-bold text-muted-foreground mt-1">
                 #{index + 1}
@@ -87,7 +87,7 @@ export function CategoryToolList({ category, filters, sortBy = "rating" }: Categ
                 </p>
               </div>
             </div>
-            <div className="flex items-center justify-between pt-4 border-t border-[#9b87f5]/20 text-sm text-muted-foreground">
+            <div className="flex items-center justify-between pt-4 border-t border-[#E5DEFF] text-sm text-muted-foreground">
               <span>Rank #{index + 1}</span>
               <span>{tool.price}</span>
               <div className="flex items-center gap-1">
