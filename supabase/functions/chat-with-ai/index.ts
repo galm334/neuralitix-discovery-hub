@@ -32,7 +32,10 @@ serve(async (req) => {
       const { data: tools, error: searchError } = await supabase
         .from('ai_tools')
         .select('name, description, category')
-        .or(`description.ilike.%${searchTerm}%,category.ilike.%${searchTerm}%,name.ilike.%${searchTerm}%`)
+        .textSearch('search_vector', searchTerm, {
+          type: 'plain',
+          config: 'english'
+        })
         .limit(5);
 
       if (searchError) {
