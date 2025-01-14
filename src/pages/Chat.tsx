@@ -15,6 +15,7 @@ const Chat = () => {
   }>>([]);
   const [newMessage, setNewMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [initialResponseSent, setInitialResponseSent] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { conversationId } = useParams();
 
@@ -24,6 +25,9 @@ const Chat = () => {
   }, [conversationId]);
 
   useEffect(() => {
+    if (messages.length === 1 && messages[0].role === 'user' && !initialResponseSent) {
+      handleInitialResponse(messages[0].content);
+    }
     scrollToBottom();
   }, [messages]);
 
@@ -40,6 +44,27 @@ const Chat = () => {
     } catch (error) {
       toast.error("Error fetching messages");
       console.error("Error fetching messages:", error);
+    }
+  };
+
+  const handleInitialResponse = async (userQuery: string) => {
+    setInitialResponseSent(true);
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.from("chat_messages").insert([
+        {
+          conversation_id: conversationId,
+          content: `Here are some AI tools that match your query: "${userQuery}"\n\n1. WriterBot - An AI-powered writing assistant\n2. ContentGenius - Advanced content generation tool\n3. BlogMaster AI - Specialized in blog post creation\n\nWould you like more specific information about any of these tools?`,
+          role: "assistant",
+        },
+      ]);
+
+      if (error) throw error;
+    } catch (error) {
+      toast.error("Error sending initial response");
+      console.error("Error sending initial response:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
