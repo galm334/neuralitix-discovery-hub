@@ -22,11 +22,25 @@ serve(async (req) => {
     const { query } = await req.json();
     console.log('Received query:', query);
 
-    // First try category and description search
+    // Extract key terms from the query for search
+    const searchTerms = query.toLowerCase()
+      .replace(/i need|an|ai|tool|for|that|can/gi, '')
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+    
+    console.log('Extracted search terms:', searchTerms);
+
+    // Build dynamic search conditions
+    const searchConditions = searchTerms.map(term => 
+      `category.ilike.%${term}%,description.ilike.%${term}%,name.ilike.%${term}%`
+    ).join(',');
+
+    // First try direct search using extracted terms
     let { data: tools, error: searchError } = await supabase
       .from('ai_tools')
       .select('*')
-      .or(`category.ilike.%writing%,description.ilike.%writing%,name.ilike.%writing%`);
+      .or(searchConditions);
 
     if (searchError) {
       console.error('Error in search:', searchError);
@@ -39,7 +53,7 @@ serve(async (req) => {
       const { data: textSearchTools, error: textSearchError } = await supabase
         .from('ai_tools')
         .select('*')
-        .textSearch('search_vector', query.replace(/[^\w\s]/g, ' '), {
+        .textSearch('search_vector', searchTerms.join(' '), {
           type: 'plain',
           config: 'english'
         });
