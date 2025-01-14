@@ -1,6 +1,10 @@
+import { useState, useEffect, useRef } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MobileToolCard } from "./MobileToolCard";
 import { DesktopToolCard } from "./DesktopToolCard";
+import { CategoryInsights } from "./CategoryInsights";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface CategoryToolListProps {
   category?: string;
@@ -22,29 +26,25 @@ interface Tool {
   isVerified: boolean;
 }
 
-const tools = [
-  {
-    title: "CodeReviewer AI",
-    description: "Advanced AI-powered code review tool that helps developers write better code faster. Features include real-time suggestions.",
-    image: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b",
-    price: "Free",
-    rating: 9.8,
-    saves: 1234,
-    isVerified: true,
-  },
-  {
-    title: "DataViz Assistant",
-    description: "Intelligent data visualization platform that automatically generates beautiful charts and insights. Supports multiple data.",
-    image: "https://images.unsplash.com/photo-1531297484001-80022131f5a1",
-    price: "$10/month",
-    rating: 9.5,
-    saves: 892,
-    isVerified: true,
-  },
-];
+const TOOLS_PER_PAGE = 25;
 
 export function CategoryToolList({ category, filters, sortBy = "rating" }: CategoryToolListProps) {
   const isMobile = useIsMobile();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isSwipingUp, setIsSwipingUp] = useState(false);
+  const [isSwipingDown, setIsSwipingDown] = useState(false);
+  const touchStartY = useRef(0);
+
+  // Simulated tools array (replace with your actual data)
+  const tools = Array(100).fill(null).map((_, index) => ({
+    title: `Tool ${index + 1}`,
+    description: "Advanced AI-powered tool that helps users achieve better results faster.",
+    image: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b",
+    price: index % 2 === 0 ? "Free" : "$10/month",
+    rating: 9.8 - (index * 0.1),
+    saves: 1234 - index,
+    isVerified: index < 10,
+  }));
 
   const sortedTools = [...tools].sort((a, b) => {
     switch (sortBy) {
@@ -53,37 +53,99 @@ export function CategoryToolList({ category, filters, sortBy = "rating" }: Categ
       case "saves":
         return b.saves - a.saves;
       case "newest":
-        return 0; // In real implementation, compare dates
+        return 0;
       default:
         return 0;
     }
   });
 
+  const totalPages = Math.ceil(sortedTools.length / TOOLS_PER_PAGE);
+  const startIndex = (currentPage - 1) * TOOLS_PER_PAGE;
+  const currentTools = sortedTools.slice(startIndex, startIndex + TOOLS_PER_PAGE);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    const touchY = e.touches[0].clientY;
+    const diff = touchStartY.current - touchY;
+
+    if (diff > 50 && currentPage < totalPages) {
+      setIsSwipingDown(true);
+    } else if (diff < -50 && currentPage > 1) {
+      setIsSwipingUp(true);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (isSwipingDown) {
+      setCurrentPage(prev => Math.min(prev + 1, totalPages));
+    } else if (isSwipingUp) {
+      setCurrentPage(prev => Math.max(prev - 1, 1));
+    }
+    setIsSwipingDown(false);
+    setIsSwipingUp(false);
+  };
+
   return (
-    <div className="space-y-8">
+    <div 
+      className="space-y-8"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
       <div className="space-y-5">
-        {sortedTools.map((tool, index) => (
+        {currentTools.map((tool, index) => (
           isMobile ? (
-            <MobileToolCard key={tool.title} tool={tool} index={index} />
+            <MobileToolCard key={tool.title} tool={tool} index={startIndex + index} />
           ) : (
-            <DesktopToolCard key={tool.title} tool={tool} index={index} />
+            <DesktopToolCard key={tool.title} tool={tool} index={startIndex + index} />
           )
         ))}
       </div>
 
-      {!isMobile && (
-        <div className="mt-12 prose prose-invert max-w-none">
-          <h2>Category Insights</h2>
-          <p>
-            This category has shown significant growth over the past year, with a steady increase in both user adoption and feature innovation. 
-            Tools in this space are increasingly focusing on AI-powered automation and seamless integration capabilities.
-          </p>
-          <h3>Market Trends</h3>
-          <ul>
-            <li>Growing demand for AI-powered automation features</li>
-            <li>Increased focus on team collaboration capabilities</li>
-            <li>Rising interest in cross-platform compatibility</li>
-          </ul>
+      {!isMobile ? (
+        <>
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-8">
+              <Button
+                variant="outline"
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4 mr-2" />
+                Previous
+              </Button>
+              
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <Button
+                    key={page}
+                    variant={currentPage === page ? "default" : "outline"}
+                    onClick={() => setCurrentPage(page)}
+                    className="w-10 h-10 p-0"
+                  >
+                    {page}
+                  </Button>
+                ))}
+              </div>
+
+              <Button
+                variant="outline"
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+              >
+                Next
+                <ChevronRight className="h-4 w-4 ml-2" />
+              </Button>
+            </div>
+          )}
+          <CategoryInsights category={category || ""} />
+        </>
+      ) : (
+        <div className="text-center text-sm text-muted-foreground mt-4">
+          {isSwipingDown ? "Release to load more" : "Swipe down to load more"}
         </div>
       )}
     </div>
