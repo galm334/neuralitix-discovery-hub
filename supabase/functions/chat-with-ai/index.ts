@@ -12,7 +12,6 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -28,53 +27,43 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
 
-    // Extract key terms from the query for search
-    const searchTerms = query.toLowerCase()
-      .replace(/i need|an|ai|tool|for|that|can/gi, '')
-      .trim()
-      .split(/\s+/)
-      .filter(Boolean);
-    
-    console.log('Extracted search terms:', searchTerms);
+    // Get embedding for the query
+    const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'text-embedding-3-small',
+        input: query,
+      }),
+    });
 
-    // Build dynamic search conditions
-    const searchConditions = searchTerms.map(term => 
-      `category.ilike.%${term}%,description.ilike.%${term}%,name.ilike.%${term}%`
-    ).join(',');
+    if (!embeddingResponse.ok) {
+      const error = await embeddingResponse.json();
+      console.error('OpenAI Embedding API error:', error);
+      throw new Error('Failed to generate embedding');
+    }
 
-    // First try direct search using extracted terms
-    let { data: tools, error: searchError } = await supabase
-      .from('ai_tools')
-      .select('*')
-      .or(searchConditions);
+    const { data: embeddingData } = await embeddingResponse.json();
+    const embedding = embeddingData[0].embedding;
+
+    // Search for similar tools using vector similarity
+    const { data: tools, error: searchError } = await supabase.rpc('match_tools', {
+      query_embedding: embedding,
+      match_threshold: 0.5,
+      match_count: 5
+    });
 
     if (searchError) {
-      console.error('Error in search:', searchError);
+      console.error('Error in vector search:', searchError);
       throw searchError;
     }
 
-    console.log('Found tools:', tools);
+    console.log('Found similar tools:', tools);
 
-    const systemPrompt = `You are a helpful AI assistant that helps users find AI tools. You should always be friendly and conversational.
-
-Your task is to help the user find AI tools for "${query}".
-
-${tools && tools.length > 0 
-  ? `I found these tools in our database:\n${JSON.stringify(tools, null, 2)}`
-  : 'No exact matches found in our database, but I can suggest some popular alternatives.'}
-
-Please format your response like this:
-1. Start with a brief greeting
-2. If we found verified tools, list them under "## Verified Tools"
-3. Then list web suggestions under "## Additional Suggestions"
-4. For each tool:
-   - Use "### [Tool Name]" as heading
-   - Write a clear description paragraph
-   - List key features with bullet points
-5. End with a friendly closing note`;
-
-    console.log('Using system prompt:', systemPrompt);
-
+    // Generate response using GPT-4
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -84,7 +73,22 @@ Please format your response like this:
       body: JSON.stringify({
         model: 'gpt-4o',
         messages: [
-          { role: 'system', content: systemPrompt },
+          {
+            role: 'system',
+            content: `You are a helpful AI assistant that helps users find AI tools. You should always be friendly and conversational.
+            Format your response like this:
+            1. Start with a brief greeting
+            2. If we found verified tools, list them under "## Verified Tools"
+            3. Then list web suggestions under "## Additional Suggestions"
+            4. For each tool:
+               - Use "### [Tool Name]" as heading
+               - Write a clear description paragraph
+               - List key features with bullet points
+            5. End with a friendly closing note
+            
+            Here are the tools I found in our database:
+            ${JSON.stringify(tools, null, 2)}`
+          },
           { role: 'user', content: query }
         ],
         temperature: 0.7,
@@ -92,26 +96,32 @@ Please format your response like this:
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      console.error('OpenAI API error:', errorData);
-      throw new Error(errorData.error?.message || 'Error from OpenAI API');
+      const error = await response.json();
+      console.error('OpenAI Chat API error:', error);
+      throw new Error('Failed to generate response');
     }
 
     const data = await response.json();
-    console.log('OpenAI response:', data);
+    console.log('Generated response:', data);
 
-    return new Response(JSON.stringify({ 
-      message: data.choices[0].message.content,
-      tools: tools || []
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({ 
+        message: data.choices[0].message.content,
+        tools: tools || []
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
 
   } catch (error) {
     console.error('Error in chat-with-ai function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
   }
 });
