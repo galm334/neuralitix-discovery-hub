@@ -79,13 +79,24 @@ const Chat = () => {
         throw new Error('No message in response');
       }
 
-      console.log('Inserting assistant response:', data.message);
+      // Format the response to include tools if available
+      let formattedMessage = data.message;
+      if (data.tools && data.tools.length > 0) {
+        formattedMessage += "\n\nHere are some relevant AI tools:\n\n";
+        data.tools.forEach((tool: any) => {
+          formattedMessage += `### ${tool.name}\n`;
+          formattedMessage += `${tool.description}\n`;
+          formattedMessage += `Category: ${tool.category}\n\n`;
+        });
+      }
+
+      console.log('Inserting assistant response:', formattedMessage);
       const { error: messageError } = await supabase
         .from("chat_messages")
         .insert([
           {
             conversation_id: conversationId,
-            content: data.message,
+            content: formattedMessage,
             role: "assistant",
           }
         ]);
@@ -127,7 +138,6 @@ const Chat = () => {
     setIsLoading(true);
     try {
       console.log('Sending new message:', newMessage);
-      // First insert the user message
       const { error: userMessageError } = await supabase
         .from("chat_messages")
         .insert([
@@ -141,7 +151,6 @@ const Chat = () => {
       if (userMessageError) throw userMessageError;
 
       console.log('User message inserted, calling chat-with-ai...');
-      // Then get response
       const { data: aiResponse, error: aiError } = await supabase.functions.invoke('chat-with-ai', {
         body: { 
           query: newMessage,
@@ -191,13 +200,13 @@ const Chat = () => {
     return (
       <div 
         className={`max-w-[80%] space-y-2 ${
-          isAssistant ? "bg-muted" : "bg-primary text-primary-foreground"
+          isAssistant ? "bg-muted p-4" : "bg-primary text-primary-foreground"
         } rounded-lg px-4 py-2`}
       >
         <div className="prose prose-sm dark:prose-invert">
           {message.content.split('\n').map((line: string, i: number) => {
             if (line.startsWith('###')) {
-              return <h3 key={i} className="mt-2 mb-1">{line.replace('###', '')}</h3>;
+              return <h3 key={i} className="mt-2 mb-1 text-lg font-semibold">{line.replace('###', '')}</h3>;
             }
             return <p key={i} className="my-1">{line}</p>;
           })}
