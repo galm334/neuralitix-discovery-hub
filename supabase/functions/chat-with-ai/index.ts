@@ -53,25 +53,6 @@ serve(async (req) => {
       throw searchError;
     }
 
-    // If no results, try full text search
-    if (!tools || tools.length === 0) {
-      console.log('No direct matches found, trying full text search');
-      const { data: textSearchTools, error: textSearchError } = await supabase
-        .from('ai_tools')
-        .select('*')
-        .textSearch('search_vector', searchTerms.join(' '), {
-          type: 'plain',
-          config: 'english'
-        });
-
-      if (textSearchError) {
-        console.error('Error in text search:', textSearchError);
-        throw textSearchError;
-      }
-
-      tools = textSearchTools;
-    }
-
     console.log('Found tools:', tools);
 
     const systemPrompt = `You are a helpful AI assistant that helps users find AI tools. You should always be friendly and conversational.
