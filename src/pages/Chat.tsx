@@ -23,11 +23,14 @@ const SearchResults = () => {
   const { conversationId } = useParams();
 
   const handleChatNow = () => {
-    // Find the chatbot element
     const chatbotElement = document.querySelector('zapier-interfaces-chatbot-embed');
     if (chatbotElement) {
-      // Set the is-open attribute to true to open the chatbot
-      chatbotElement.setAttribute('is-open', "true");
+      // Use is-popup attribute to control visibility
+      chatbotElement.setAttribute('is-popup', 'true');
+      // Force a reflow to ensure the attribute change takes effect
+      void chatbotElement.offsetHeight;
+      // Then set is-open to true
+      chatbotElement.setAttribute('is-open', 'true');
     }
   };
 
