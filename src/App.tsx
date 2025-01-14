@@ -29,6 +29,12 @@ function App() {
             </Routes>
           </main>
           <Toaster />
+          <div className="fixed bottom-0 right-0 z-50">
+            <zapier-interfaces-chatbot-embed 
+              is-popup='true' 
+              chatbot-id='clqec2l2r00ca28qsdfz0m4my'
+            />
+          </div>
         </div>
       </SidebarProvider>
     </BrowserRouter>

@@ -3,9 +3,10 @@ import { useParams } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, Link2 } from "lucide-react";
+import { Loader2, Link2, MessageSquare } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 
 interface SearchResult {
   id: string;
@@ -20,6 +21,15 @@ const SearchResults = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const { conversationId } = useParams();
+
+  const handleChatNow = () => {
+    // This will trigger the Zapier chatbot
+    const chatbotElement = document.querySelector('zapier-interfaces-chatbot-embed');
+    if (chatbotElement) {
+      // @ts-ignore - custom element
+      chatbotElement.openChat();
+    }
+  };
 
   useEffect(() => {
     const fetchSearchQuery = async () => {
@@ -152,6 +162,17 @@ const SearchResults = () => {
               </div>
             </Card>
           ))}
+        </div>
+        
+        <div className="mt-12 text-center">
+          <p className="text-lg mb-4">Still unsure? Ask our AI assistant for personalized recommendations!</p>
+          <Button 
+            onClick={handleChatNow}
+            className="bg-primary text-white px-6"
+          >
+            <MessageSquare className="mr-2 h-5 w-5" />
+            Chat Now
+          </Button>
         </div>
       </ScrollArea>
     </div>
