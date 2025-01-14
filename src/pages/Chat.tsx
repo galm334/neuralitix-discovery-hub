@@ -1,12 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 
 const Chat = () => {
   const [messages, setMessages] = useState<Array<{
@@ -15,7 +12,6 @@ const Chat = () => {
     role: string;
     created_at: string;
   }>>([]);
-  const [newMessage, setNewMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [initialResponseSent, setInitialResponseSent] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -131,64 +127,6 @@ const Chat = () => {
       .subscribe();
   };
 
-  const sendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMessage.trim()) return;
-
-    setIsLoading(true);
-    try {
-      console.log('Sending new message:', newMessage);
-      const { error: userMessageError } = await supabase
-        .from("chat_messages")
-        .insert([
-          {
-            conversation_id: conversationId,
-            content: newMessage,
-            role: "user",
-          }
-        ]);
-
-      if (userMessageError) throw userMessageError;
-
-      console.log('User message inserted, calling chat-with-ai...');
-      const { data: aiResponse, error: aiError } = await supabase.functions.invoke('chat-with-ai', {
-        body: { 
-          query: newMessage,
-          isFollowUp: true
-        }
-      });
-
-      console.log('Received response:', aiResponse);
-
-      if (aiError) throw aiError;
-
-      if (!aiResponse.message) {
-        throw new Error('No message in response');
-      }
-
-      console.log('Inserting response:', aiResponse.message);
-      const { error: assistantMessageError } = await supabase
-        .from("chat_messages")
-        .insert([
-          {
-            conversation_id: conversationId,
-            content: aiResponse.message,
-            role: "assistant",
-          }
-        ]);
-
-      if (assistantMessageError) throw assistantMessageError;
-
-      console.log('Response inserted successfully');
-      setNewMessage("");
-    } catch (error) {
-      console.error("Error in chat interaction:", error);
-      toast.error("Error sending message");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const scrollToBottom = () => {
     if (scrollRef.current) {
       scrollRef.current.scrollIntoView({ behavior: "smooth" });
@@ -217,8 +155,8 @@ const Chat = () => {
 
   return (
     <div className="flex flex-col h-screen max-h-screen p-4">
-      <div className="flex-1 mb-4">
-        <ScrollArea className="h-[calc(100vh-8rem)] rounded-lg border bg-background p-4">
+      <div className="flex-1">
+        <ScrollArea className="h-[calc(100vh-2rem)] rounded-lg border bg-background p-4">
           <div className="space-y-4">
             {messages.map((message) => (
               <div
@@ -239,19 +177,6 @@ const Chat = () => {
           </div>
         </ScrollArea>
       </div>
-
-      <form onSubmit={sendMessage} className="flex gap-2">
-        <Input
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          placeholder="Type your message..."
-          disabled={isLoading}
-          className="flex-1"
-        />
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send"}
-        </Button>
-      </form>
     </div>
   );
 };
