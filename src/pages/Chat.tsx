@@ -60,8 +60,7 @@ const Chat = () => {
 
       if (searchError) throw searchError;
 
-      // Format the response with initial sentence and structured tool list
-      let responseContent = `Here are some relevant AI tools that can help with ${userQuery}:\n\n`;
+      let responseContent = `Based on your search for "${userQuery}", here are some relevant AI tools that might help:\n\n`;
       
       if (tools && tools.length > 0) {
         tools.forEach((tool) => {
@@ -149,6 +148,7 @@ slug: ${toolSlug}
 
   const renderMessage = (message: any) => {
     if (message.role === "assistant" && message.content.includes("<tool>")) {
+      const introText = message.content.split("\n\n")[0];
       const tools = message.content
         .split("<tool>")
         .slice(1)
@@ -164,36 +164,36 @@ slug: ${toolSlug}
           return toolData;
         });
 
-      const introText = message.content.split("\n\n")[0];
-
       return (
-        <div className="space-y-4">
+        <div className="space-y-4 w-full max-w-3xl">
           <p className="text-muted-foreground">{introText}</p>
           <div className="space-y-4">
             {tools.map((tool: any, index: number) => (
-              <div key={index} className="flex gap-4 p-4 bg-muted rounded-lg">
+              <div key={index} className="flex gap-4 p-4 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors">
                 <Link to={`/tool/${tool.slug}`} className="shrink-0">
                   <img
                     src={tool.logo}
                     alt={tool.name}
-                    className="w-16 h-16 rounded object-cover"
+                    className="w-16 h-16 rounded-lg object-cover bg-background"
                   />
                 </Link>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start justify-between gap-2 mb-2">
                     <Link 
                       to={`/tool/${tool.slug}`}
                       className="text-lg font-semibold hover:text-primary transition-colors"
                     >
                       {tool.name}
                     </Link>
-                    <Badge variant="secondary">{tool.category}</Badge>
+                    <Badge variant="secondary" className="shrink-0">
+                      {tool.category}
+                    </Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <p className="text-sm text-muted-foreground">
                     {tool.description}
                     <Link 
                       to={`/tool/${tool.slug}`}
-                      className="ml-2 text-primary hover:underline"
+                      className="ml-2 text-primary hover:underline inline-flex items-center"
                     >
                       See more
                     </Link>
