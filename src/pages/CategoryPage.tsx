@@ -73,6 +73,7 @@ export default function CategoryPage() {
               <CategorySidebar 
                 onFilterChange={setSelectedFilters} 
                 onSortChange={setSortBy}
+                isMobile={true}
               />
             </SheetContent>
           </Sheet>
@@ -88,6 +89,7 @@ export default function CategoryPage() {
             <CategorySidebar 
               onFilterChange={setSelectedFilters} 
               onSortChange={setSortBy}
+              isMobile={false}
             />
           </div>
         )}
