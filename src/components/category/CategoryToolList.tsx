@@ -1,6 +1,7 @@
-import { AIToolCard } from "@/components/AIToolCard";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Bookmark } from "lucide-react";
+import { Bookmark, CheckCircle2, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface CategoryToolListProps {
@@ -52,9 +53,9 @@ export function CategoryToolList({ category, filters, sortBy = "rating" }: Categ
 
   return (
     <div className="space-y-8">
-      <div className="space-y-[1px]">
+      <div className="space-y-5">
         {sortedTools.map((tool, index) => (
-          <div key={tool.title} className="relative flex flex-col p-4 bg-[#F1F0FB] first:rounded-t-lg last:rounded-b-lg">
+          <div key={tool.title} className="relative flex flex-col p-4 bg-[#F1F0FB]/50 first:rounded-t-lg last:rounded-b-lg">
             <div className="flex items-start gap-4 mb-4">
               <div className="text-2xl font-bold text-muted-foreground mt-1">
                 #{index + 1}
