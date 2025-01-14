@@ -23,9 +23,9 @@ const Chat = () => {
   useEffect(() => {
     console.log('Chat mounted, fetching messages for conversation:', conversationId);
     fetchMessages();
-    const unsubscribe = subscribeToMessages();
+    const subscription = subscribeToMessages();
     return () => {
-      unsubscribe();
+      subscription.unsubscribe();
     };
   }, [conversationId]);
 
@@ -63,7 +63,7 @@ const Chat = () => {
     try {
       const { data: tools, error: searchError } = await supabase
         .from('ai_tools')
-        .select('name, description, category, logo_url')
+        .select('name, description, category')
         .textSearch('search_vector', userQuery.split(' ').join(' & '))
         .limit(3);
 
@@ -71,7 +71,7 @@ const Chat = () => {
       
       console.log('Found tools:', tools);
 
-      let responseContent = `Based on your search for "${userQuery}", here are some relevant AI tools that might help:\n\n`;
+      let responseContent = `Here are some AI tools that match your search:\n\n`;
       
       if (tools && tools.length > 0) {
         tools.forEach((tool) => {
@@ -80,7 +80,6 @@ const Chat = () => {
 name: ${tool.name}
 description: ${tool.description}
 category: ${tool.category}
-logo: ${tool.logo_url || '/placeholder.svg'}
 slug: ${toolSlug}
 </tool>\n`;
         });
@@ -110,25 +109,22 @@ slug: ${toolSlug}
   };
 
   const subscribeToMessages = () => {
-    const channel = supabase
-      .channel("schema-db-changes")
+    return supabase
+      .channel('chat-messages')
       .on(
-        "postgres_changes",
+        'postgres_changes',
         {
-          event: "INSERT",
-          schema: "public",
-          table: "chat_messages",
+          event: 'INSERT',
+          schema: 'public',
+          table: 'chat_messages',
           filter: `conversation_id=eq.${conversationId}`,
         },
         (payload) => {
+          console.log('Received new message:', payload);
           setMessages((current) => [...current, payload.new as any]);
         }
       )
       .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
   };
 
   const sendMessage = async (e: React.FormEvent) => {
@@ -184,37 +180,26 @@ slug: ${toolSlug}
           <p className="text-muted-foreground">{introText}</p>
           <div className="space-y-4">
             {tools.map((tool: any, index: number) => (
-              <div key={index} className="flex gap-4 p-4 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors">
-                <Link to={`/tool/${tool.slug}`} className="shrink-0">
-                  <img
-                    src={tool.logo}
-                    alt={tool.name}
-                    className="w-16 h-16 rounded-lg object-cover bg-background"
-                  />
-                </Link>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <Link 
-                      to={`/tool/${tool.slug}`}
-                      className="text-lg font-semibold hover:text-primary transition-colors"
-                    >
-                      {tool.name}
-                    </Link>
-                    <Badge variant="secondary" className="shrink-0">
-                      {tool.category}
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    {tool.description}
-                    <Link 
-                      to={`/tool/${tool.slug}`}
-                      className="ml-2 text-primary hover:underline inline-flex items-center"
-                    >
-                      See more
-                    </Link>
-                  </p>
+              <Link 
+                key={index}
+                to={`/tool/${tool.slug}`}
+                className="block p-4 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors"
+              >
+                <div className="flex justify-between items-start gap-2 mb-2">
+                  <h3 className="text-lg font-semibold hover:text-primary transition-colors">
+                    {tool.name}
+                  </h3>
+                  <Badge variant="secondary" className="shrink-0">
+                    {tool.category}
+                  </Badge>
                 </div>
-              </div>
+                <p className="text-sm text-muted-foreground">
+                  {tool.description}
+                  <span className="ml-2 text-primary hover:underline">
+                    See more
+                  </span>
+                </p>
+              </Link>
             ))}
           </div>
         </div>
