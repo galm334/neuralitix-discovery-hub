@@ -3,6 +3,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Bookmark, CheckCircle2, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface CategoryToolListProps {
   category?: string;
@@ -14,7 +15,6 @@ interface CategoryToolListProps {
   sortBy?: string;
 }
 
-// Mock data - replace with real data from your backend
 const tools = [
   {
     title: "CodeReviewer AI",
@@ -37,7 +37,8 @@ const tools = [
 ];
 
 export function CategoryToolList({ category, filters, sortBy = "rating" }: CategoryToolListProps) {
-  // Sort tools based on the selected criteria
+  const isMobile = useIsMobile();
+
   const sortedTools = [...tools].sort((a, b) => {
     switch (sortBy) {
       case "rating":
@@ -57,9 +58,11 @@ export function CategoryToolList({ category, filters, sortBy = "rating" }: Categ
         {sortedTools.map((tool, index) => (
           <div key={tool.title} className="relative flex flex-col p-4 bg-[#F1F0FB]/30 first:rounded-t-lg last:rounded-b-lg">
             <div className="flex items-start gap-4 mb-4">
-              <div className="text-2xl font-bold text-muted-foreground mt-1">
-                #{index + 1}
-              </div>
+              {!isMobile && (
+                <div className="text-2xl font-bold text-muted-foreground mt-1">
+                  #{index + 1}
+                </div>
+              )}
               <div className="w-16 h-16 flex-shrink-0">
                 <img
                   src={tool.image}
@@ -70,49 +73,77 @@ export function CategoryToolList({ category, filters, sortBy = "rating" }: Categ
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-xl font-semibold">{tool.title}</h3>
-                  <div className="flex items-center gap-4">
-                    <Link 
-                      to={`/tool/${tool.title.toLowerCase().replace(/\s+/g, '-')}`} 
-                      className="text-primary hover:underline"
-                    >
-                      See more
-                    </Link>
-                    <Button className="bg-[#6366F1] hover:bg-[#6366F1]/90" size="sm">
+                  {!isMobile && (
+                    <div className="flex items-center gap-4">
+                      <Link 
+                        to={`/tool/${tool.title.toLowerCase().replace(/\s+/g, '-')}`} 
+                        className="text-primary hover:underline"
+                      >
+                        See more
+                      </Link>
+                      <Button className="bg-[#6366F1] hover:bg-[#6366F1]/90" size="sm">
+                        Try now
+                        <ExternalLink className="w-4 h-4 ml-2" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+                <p className="text-sm text-muted-foreground line-clamp-2 max-w-[100ch] mb-4">
+                  {tool.description}
+                </p>
+                {isMobile && (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <span>Score: {tool.rating}</span>
+                      <span>{tool.price}</span>
+                      <div className="flex items-center gap-1">
+                        <Bookmark className="w-4 h-4" />
+                        <span>{tool.saves.toLocaleString()}</span>
+                      </div>
+                    </div>
+                    <Button className="w-full bg-[#6366F1] hover:bg-[#6366F1]/90">
                       Try now
                       <ExternalLink className="w-4 h-4 ml-2" />
                     </Button>
+                    <Link 
+                      to={`/tool/${tool.title.toLowerCase().replace(/\s+/g, '-')}`} 
+                      className="block text-center text-primary hover:underline"
+                    >
+                      Learn more
+                    </Link>
                   </div>
+                )}
+              </div>
+            </div>
+            {!isMobile && (
+              <div className="flex items-center justify-between pt-4 border-t border-[#E5DEFF] text-sm text-muted-foreground">
+                <span>Score: {tool.rating}</span>
+                <span>{tool.price}</span>
+                <div className="flex items-center gap-1">
+                  <Bookmark className="w-4 h-4" />
+                  <span>{tool.saves.toLocaleString()}</span>
                 </div>
-                <p className="text-sm text-muted-foreground line-clamp-2 max-w-[100ch]">
-                  {tool.description}
-                </p>
               </div>
-            </div>
-            <div className="flex items-center justify-between pt-4 border-t border-[#E5DEFF] text-sm text-muted-foreground">
-              <span>Score: {tool.rating}</span>
-              <span>{tool.price}</span>
-              <div className="flex items-center gap-1">
-                <Bookmark className="w-4 h-4" />
-                <span>{tool.saves.toLocaleString()}</span>
-              </div>
-            </div>
+            )}
           </div>
         ))}
       </div>
 
-      <div className="mt-12 prose prose-invert max-w-none">
-        <h2>Category Insights</h2>
-        <p>
-          This category has shown significant growth over the past year, with a steady increase in both user adoption and feature innovation. 
-          Tools in this space are increasingly focusing on AI-powered automation and seamless integration capabilities.
-        </p>
-        <h3>Market Trends</h3>
-        <ul>
-          <li>Growing demand for AI-powered automation features</li>
-          <li>Increased focus on team collaboration capabilities</li>
-          <li>Rising interest in cross-platform compatibility</li>
-        </ul>
-      </div>
+      {!isMobile && (
+        <div className="mt-12 prose prose-invert max-w-none">
+          <h2>Category Insights</h2>
+          <p>
+            This category has shown significant growth over the past year, with a steady increase in both user adoption and feature innovation. 
+            Tools in this space are increasingly focusing on AI-powered automation and seamless integration capabilities.
+          </p>
+          <h3>Market Trends</h3>
+          <ul>
+            <li>Growing demand for AI-powered automation features</li>
+            <li>Increased focus on team collaboration capabilities</li>
+            <li>Rising interest in cross-platform compatibility</li>
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
