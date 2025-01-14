@@ -20,8 +20,8 @@ export function Sidebar({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className={`${isOpen ? 'w-56' : 'w-0'} transition-all duration-300 hidden md:block`}>
-      <nav className={`fixed top-0 left-0 h-full w-56 bg-background border-r border-border pt-14`}>
+    <div className={`${isOpen ? 'w-44' : 'w-0'} transition-all duration-300 hidden md:block`}>
+      <nav className={`fixed top-0 left-0 h-full w-44 bg-background border-r border-border pt-14`}>
         {children}
       </nav>
     </div>
