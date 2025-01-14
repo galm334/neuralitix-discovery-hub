@@ -8,16 +8,9 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-interface Tool {
-  name: string;
-  description: string;
-  category: string;
-}
-
 export const SearchBar = () => {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [tools, setTools] = useState<Tool[]>([]);
   const debouncedQuery = useDebounce(query, 300);
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -32,7 +25,6 @@ export const SearchBar = () => {
         !inputRef.current.contains(event.target as Node)
       ) {
         setSuggestions([]);
-        setTools([]);
       }
     };
 
@@ -58,15 +50,12 @@ export const SearchBar = () => {
 
           console.log('Received suggestions:', data);
           setSuggestions(data?.suggestions || []);
-          setTools(data?.tools || []);
         } catch (error) {
           console.error("Error fetching suggestions:", error);
           setSuggestions([]);
-          setTools([]);
         }
       } else {
         setSuggestions([]);
-        setTools([]);
       }
     };
 
@@ -138,9 +127,9 @@ export const SearchBar = () => {
         </Button>
       </div>
 
-      {debouncedQuery.length >= 3 && (suggestions.length > 0 || tools.length > 0) && (
+      {debouncedQuery.length >= 3 && suggestions.length > 0 && (
         <Card ref={suggestionsRef} className="absolute w-full mt-2 p-2 shadow-lg z-50 max-h-[400px] overflow-y-auto">
-          {suggestions.length > 0 && suggestions.map((suggestion, index) => (
+          {suggestions.map((suggestion, index) => (
             <button
               key={`suggestion-${index}`}
               className="w-full text-left px-4 py-2 hover:bg-muted rounded-md"
@@ -152,23 +141,6 @@ export const SearchBar = () => {
               {suggestion}
             </button>
           ))}
-          {tools.length > 0 && (
-            <div className="border-t mt-2 pt-2">
-              <div className="px-4 py-1 text-sm text-muted-foreground">
-                Related Tools
-              </div>
-              {tools.map((tool, index) => (
-                <button
-                  key={`tool-${index}`}
-                  className="w-full text-left px-4 py-2 hover:bg-muted rounded-md"
-                  onClick={() => navigate(`/tool/${tool.name.toLowerCase().replace(/\s+/g, '-')}`)}
-                >
-                  <div className="font-medium">{tool.name}</div>
-                  <div className="text-sm text-muted-foreground">{tool.description}</div>
-                </button>
-              ))}
-            </div>
-          )}
         </Card>
       )}
     </div>
