@@ -22,18 +22,34 @@ serve(async (req) => {
     const { query } = await req.json();
     console.log('Received query:', query);
 
-    // Search for relevant tools in the database
-    const { data: tools, error: searchError } = await supabase
+    // First try exact name match
+    let { data: tools, error: exactMatchError } = await supabase
       .from('ai_tools')
-      .select('name, description, category')
-      .textSearch('search_vector', query.replace(/[^\w\s]/g, ' '), {
-        type: 'plain',
-        config: 'english'
-      });
+      .select('*')
+      .ilike('name', '%writer%');
 
-    if (searchError) {
-      console.error('Error searching tools:', searchError);
-      throw searchError;
+    if (exactMatchError) {
+      console.error('Error in exact match search:', exactMatchError);
+      throw exactMatchError;
+    }
+
+    // If no exact matches, try full text search
+    if (!tools || tools.length === 0) {
+      console.log('No exact matches found, trying full text search');
+      const { data: textSearchTools, error: textSearchError } = await supabase
+        .from('ai_tools')
+        .select('*')
+        .textSearch('search_vector', query.replace(/[^\w\s]/g, ' '), {
+          type: 'plain',
+          config: 'english'
+        });
+
+      if (textSearchError) {
+        console.error('Error in text search:', textSearchError);
+        throw textSearchError;
+      }
+
+      tools = textSearchTools;
     }
 
     console.log('Found tools:', tools);
@@ -53,8 +69,9 @@ Current query: "${query}"
 
 ${tools && tools.length > 0 
   ? `Found these verified tools:\n${JSON.stringify(tools, null, 2)}`
-  : 'No verified tools found in our database.'
-}`;
+  : 'No verified tools found in our database.'}`;
+
+    console.log('Using system prompt:', systemPrompt);
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
