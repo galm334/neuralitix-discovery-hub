@@ -3,8 +3,9 @@ import { useParams } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Link2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { Link } from "react-router-dom";
 
 interface SearchResult {
   id: string;
@@ -17,6 +18,7 @@ interface SearchResult {
 const SearchResults = () => {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
   const { conversationId } = useParams();
 
   useEffect(() => {
@@ -37,11 +39,12 @@ const SearchResults = () => {
           return;
         }
 
-        const searchQuery = messages[0].content.toLowerCase();
-        console.log("Search query:", searchQuery);
+        const query = messages[0].content.toLowerCase();
+        setSearchQuery(query);
+        console.log("Search query:", query);
 
         // Split the search query into words and remove common words
-        const searchTerms = searchQuery
+        const searchTerms = query
           .replace(/find|ai|tools|for/gi, '')
           .trim()
           .split(/\s+/)
@@ -101,25 +104,51 @@ const SearchResults = () => {
     );
   }
 
+  // Extract the main topic from the search query by removing common words
+  const topic = searchQuery
+    .replace(/find|ai|tools|for/gi, '')
+    .trim();
+
   return (
-    <div className="container mx-auto py-8">
+    <div className="container mx-auto py-8 px-4">
       <ScrollArea className="h-[calc(100vh-4rem)]">
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <h2 className="text-2xl font-semibold mb-6">
+          I've found some great tools for {topic}—here's what I recommend:
+        </h2>
+        <div className="space-y-6">
           {results.map((tool) => (
             <Card key={tool.id} className="p-6 hover:shadow-lg transition-shadow">
-              <div className="space-y-4">
-                {tool.logo_url && (
-                  <img
-                    src={tool.logo_url}
-                    alt={tool.name}
-                    className="h-12 w-12 object-contain"
-                  />
-                )}
-                <div>
-                  <h3 className="text-lg font-semibold">{tool.name}</h3>
-                  <p className="text-sm text-muted-foreground">{tool.category}</p>
+              <div className="flex gap-4">
+                <div className="w-16 h-16 flex-shrink-0">
+                  {tool.logo_url ? (
+                    <img
+                      src={tool.logo_url}
+                      alt={`${tool.name} logo`}
+                      className="w-full h-full object-contain rounded-lg"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-muted rounded-lg flex items-center justify-center">
+                      <Link2 className="w-6 h-6 text-muted-foreground" />
+                    </div>
+                  )}
                 </div>
-                <p className="text-sm">{tool.description}</p>
+                <div className="flex-1">
+                  <Link 
+                    to={`/tool/${tool.name.toLowerCase().replace(/\s+/g, '-')}`}
+                    className="text-xl font-semibold hover:text-primary transition-colors"
+                  >
+                    {tool.name}
+                  </Link>
+                  <p className="text-muted-foreground mt-2">
+                    {tool.description}
+                    <Link 
+                      to={`/tool/${tool.name.toLowerCase().replace(/\s+/g, '-')}`}
+                      className="ml-2 text-primary hover:underline inline-flex items-center"
+                    >
+                      See more
+                    </Link>
+                  </p>
+                </div>
               </div>
             </Card>
           ))}
