@@ -40,17 +40,17 @@ const SearchResults = () => {
         const searchQuery = messages[0].content;
         console.log("Search query:", searchQuery);
 
-        // Then search for tools using the query
+        // Then search for tools using direct text search on name, description, and category
         const { data: tools, error } = await supabase
           .from("ai_tools")
           .select("id, name, description, category, logo_url")
-          .textSearch("search_vector", searchQuery, {
-            type: "plain",
-            config: "english"
-          })
+          .or(`name.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%,category.ilike.%${searchQuery}%`)
           .limit(10);
 
-        if (error) throw error;
+        if (error) {
+          console.error("Error fetching results:", error);
+          throw error;
+        }
 
         console.log("Search results:", tools);
         setResults(tools || []);
