@@ -13,7 +13,7 @@ interface CategorySidebarProps {
 
 export function CategorySidebar({ onFilterChange, onSortChange, isMobile }: CategorySidebarProps) {
   return (
-    <div className="space-y-6 sticky top-4">
+    <div className="space-y-6">
       {!isMobile && (
         <div className="relative">
           <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
