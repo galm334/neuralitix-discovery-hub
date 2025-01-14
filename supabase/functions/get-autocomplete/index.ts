@@ -1,6 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase_supabase-js@2.39.0';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -31,7 +31,8 @@ serve(async (req) => {
       .toLowerCase()
       .split(' ')
       .filter(term => term.length > 2)
-      .map(term => `${term}:*`)
+      .map(term => term.replace(/[^a-z0-9]/g, ''))
+      .filter(Boolean)
       .join(' & ');
 
     console.log('Formatted search terms:', searchTerms);
@@ -40,7 +41,7 @@ serve(async (req) => {
     const { data: tools, error: toolsError } = await supabaseClient
       .from('ai_tools')
       .select('name, description, category')
-      .textSearch('search_vector', `'${searchTerms}'`, {
+      .textSearch('search_vector', searchTerms, {
         type: 'plain',
         config: 'english'
       })
