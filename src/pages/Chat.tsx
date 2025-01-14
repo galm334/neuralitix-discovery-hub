@@ -23,7 +23,7 @@ const SearchResults = () => {
   const { conversationId } = useParams();
 
   const handleChatNow = () => {
-    const chatbotElement = document.querySelector('zapier-interfaces-chatbot-embed');
+    const chatbotElement = document.querySelector('zapier-interfaces-chatbot-embed') as HTMLElement;
     if (chatbotElement) {
       // Use is-popup attribute to control visibility
       chatbotElement.setAttribute('is-popup', 'true');
