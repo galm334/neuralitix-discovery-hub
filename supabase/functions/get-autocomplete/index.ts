@@ -15,8 +15,11 @@ serve(async (req) => {
   try {
     const { query } = await req.json();
     
-    if (!query || typeof query !== 'string') {
-      throw new Error('Query parameter is required and must be a string');
+    if (!query || typeof query !== 'string' || query.length < 3) {
+      return new Response(
+        JSON.stringify({ suggestions: [], tools: [] }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
     }
 
     const supabaseClient = createClient(
@@ -26,18 +29,16 @@ serve(async (req) => {
 
     console.log('Original query:', query);
 
-    // Format search terms for tsquery
+    // Format search terms for tsquery - only use complete words
     const searchTerms = query
       .toLowerCase()
       .split(' ')
-      .filter(term => term.length > 2)
-      .map(term => term.replace(/[^a-z0-9]/g, ''))
-      .filter(Boolean)
+      .filter(term => term.length >= 3)
       .join(' & ');
 
     console.log('Formatted search terms:', searchTerms);
 
-    // Search for relevant tools using websearch_to_tsquery for better parsing
+    // Search for relevant tools
     const { data: tools, error: toolsError } = await supabaseClient
       .from('ai_tools')
       .select('name, description, category')
@@ -54,14 +55,16 @@ serve(async (req) => {
 
     console.log('Found tools:', tools?.length ?? 0);
 
-    // Generate suggestions based on the query
-    const suggestions = [
-      `Find AI tools for ${query}`,
-      `Search for AI ${query} assistants`,
-      `Discover AI tools for ${query}`,
-      `Compare AI ${query} tools`,
-      `Find best AI tools for ${query}`
-    ];
+    // Only generate suggestions if we found matching tools
+    let suggestions: string[] = [];
+    if (tools && tools.length > 0) {
+      const categories = [...new Set(tools.map(tool => tool.category))];
+      suggestions = [
+        `Find AI tools for ${query}`,
+        ...categories.map(category => `Find ${category} AI tools`),
+        `Compare AI tools for ${query}`,
+      ];
+    }
 
     return new Response(
       JSON.stringify({ 
