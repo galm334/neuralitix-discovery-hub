@@ -25,6 +25,29 @@ const Index = () => {
   const debouncedQuery = useDebounce(query, 300);
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(event.target as Node) &&
+        inputRef.current &&
+        !inputRef.current.contains(event.target as Node)
+      ) {
+        const closeTimeout = setTimeout(() => {
+          setShowSuggestions(false);
+        }, 1000);
+
+        return () => clearTimeout(closeTimeout);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   useEffect(() => {
     const fetchSuggestions = async () => {
@@ -102,7 +125,7 @@ const Index = () => {
 
             {/* Autocomplete suggestions */}
             {showSuggestions && (query.length >= 3) && (suggestions.length > 0 || tools.length > 0) && (
-              <Card className="absolute w-full mt-2 p-2 shadow-lg z-50 max-h-[400px] overflow-y-auto">
+              <Card ref={suggestionsRef} className="absolute w-full mt-2 p-2 shadow-lg z-50 max-h-[400px] overflow-y-auto">
                 {suggestions.map((suggestion, index) => (
                   <button
                     key={`suggestion-${index}`}
