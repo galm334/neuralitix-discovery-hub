@@ -6,7 +6,7 @@ import { CategorySidebar } from "@/components/category/CategorySidebar";
 import { Home, Search, Filter } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function CategoryPage() {
@@ -70,9 +70,6 @@ export default function CategoryPage() {
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-[300px]">
-              <SheetHeader>
-                <SheetTitle>Filters</SheetTitle>
-              </SheetHeader>
               <CategorySidebar 
                 onFilterChange={setSelectedFilters} 
                 onSortChange={setSortBy}
