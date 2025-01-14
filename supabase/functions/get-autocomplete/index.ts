@@ -28,8 +28,30 @@ serve(async (req) => {
 
     console.log('Searching for query:', query);
 
-    // Format the query for text search by splitting into words and joining with &
-    const formattedQuery = query
+    // Common writing-related terms to complete partial words
+    const commonTerms = {
+      'writ': 'writing',
+      'blog': 'blogging',
+      'edit': 'editing',
+      'content': 'content',
+      'copy': 'copywriting',
+      'market': 'marketing',
+      'trans': 'translation',
+      'summar': 'summarization',
+      'proof': 'proofreading',
+    };
+
+    // Find the matching term for the partial word
+    let searchTerm = query.toLowerCase();
+    for (const [partial, full] of Object.entries(commonTerms)) {
+      if (query.toLowerCase().startsWith(partial)) {
+        searchTerm = full;
+        break;
+      }
+    }
+
+    // Format the query for text search
+    const formattedQuery = searchTerm
       .split(' ')
       .filter(word => word.length > 0)
       .map(word => word.replace(/[^a-zA-Z0-9]/g, ''))
@@ -49,13 +71,13 @@ serve(async (req) => {
 
     console.log('Found tools:', tools?.length ?? 0);
 
-    // Generate more natural autocomplete suggestions based on the query
+    // Generate complete, natural suggestions based on the completed search term
     const suggestions = [
-      `Find AI tools for ${query}`,
-      `Search for AI ${query} assistants`,
-      `Discover AI tools for ${query}`,
-      `Compare AI ${query} tools`,
-      `Find best AI tools for ${query}`
+      `Find AI tools for ${searchTerm}`,
+      `Search for AI ${searchTerm} assistants`,
+      `Discover AI tools for ${searchTerm}`,
+      `Compare AI ${searchTerm} tools`,
+      `Find best AI tools for ${searchTerm}`
     ];
 
     return new Response(
