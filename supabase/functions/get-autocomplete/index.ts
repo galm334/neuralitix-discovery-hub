@@ -7,6 +7,7 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -14,11 +15,17 @@ serve(async (req) => {
   try {
     const { query } = await req.json()
     
+    if (!query || typeof query !== 'string') {
+      throw new Error('Query parameter is required and must be a string')
+    }
+
     // Create Supabase client
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
+
+    console.log('Searching for query:', query)
 
     // Generate autocomplete suggestions based on the query
     const suggestions = [
@@ -36,19 +43,40 @@ serve(async (req) => {
       .textSearch('search_vector', query)
       .limit(5)
 
-    if (error) throw error
+    if (error) {
+      console.error('Database search error:', error)
+      throw error
+    }
+
+    console.log('Found tools:', tools?.length ?? 0)
 
     return new Response(
-      JSON.stringify({ suggestions, tools }),
+      JSON.stringify({ 
+        suggestions, 
+        tools: tools ?? [] 
+      }),
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        },
         status: 200,
       },
     )
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 400,
-    })
+    console.error('Function error:', error)
+    return new Response(
+      JSON.stringify({ 
+        error: error.message,
+        details: error.stack 
+      }),
+      {
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        },
+        status: 400,
+      }
+    )
   }
 })
