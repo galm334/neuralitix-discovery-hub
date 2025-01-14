@@ -2,10 +2,6 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-const supabaseUrl = Deno.env.get('SUPABASE_URL');
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -17,49 +13,56 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Starting chat-with-ai function');
+    const { query, isFollowUp = false } = await req.json();
+    console.log('Processing query:', query, 'isFollowUp:', isFollowUp);
+
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    // For initial queries, do a direct database search
+    if (!isFollowUp) {
+      console.log('Performing direct database search');
+      const { data: tools, error: searchError } = await supabase
+        .from('ai_tools')
+        .select('name, description, category')
+        .or(`description.ilike.%${query}%,category.ilike.%${query}%,name.ilike.%${query}%`)
+        .limit(5);
+
+      if (searchError) {
+        console.error('Database search error:', searchError);
+        throw searchError;
+      }
+
+      console.log('Found tools:', tools);
+
+      let response = "Here are the AI tools I found that match your search:\n\n";
+      if (tools && tools.length > 0) {
+        response += "## Verified Tools\n\n";
+        tools.forEach(tool => {
+          response += `### ${tool.name}\n`;
+          response += `${tool.description}\n`;
+          response += `Category: ${tool.category}\n\n`;
+        });
+        response += "\nWould you like to know more about any of these tools? Feel free to ask follow-up questions!";
+      } else {
+        response += "I couldn't find any exact matches in our database. Would you like me to provide some general suggestions or help refine your search?";
+      }
+
+      return new Response(
+        JSON.stringify({ 
+          message: response,
+          tools: tools || []
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // For follow-up questions, use OpenAI
+    console.log('Processing follow-up question with AI');
+    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
     
-    if (!openAIApiKey) {
-      throw new Error('OpenAI API key not configured');
-    }
-
-    const { query } = await req.json();
-    console.log('Received query:', query);
-
-    if (!query) {
-      throw new Error('No query provided');
-    }
-
-    // Initialize Supabase client
-    const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
-
-    // First search for relevant tools directly from the database
-    console.log('Searching for relevant tools...');
-    const { data: tools, error: searchError } = await supabase
-      .from('ai_tools')
-      .select('name, description, category')
-      .or(`description.ilike.%${query}%,category.ilike.%${query}%,name.ilike.%${query}%`)
-      .limit(5);
-
-    if (searchError) {
-      console.error('Error searching tools:', searchError);
-      throw searchError;
-    }
-
-    console.log('Found tools:', tools);
-
-    // Prepare system prompt with found tools
-    let systemPrompt = `You are a helpful AI assistant that helps users find AI tools. You should always be friendly and conversational.`;
-    
-    if (tools && tools.length > 0) {
-      systemPrompt += `\n\nI found these relevant tools in our database:\n${JSON.stringify(tools, null, 2)}`;
-      systemPrompt += `\n\nMake sure to highlight these verified tools first in your response under "## Verified Tools", then you can suggest additional tools if relevant.`;
-    } else {
-      systemPrompt += `\n\nI couldn't find any exact matches in our database, but you can suggest some relevant tools under "## Suggested Tools".`;
-    }
-
-    // Generate AI response
-    console.log('Generating AI response...');
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -69,42 +72,31 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         messages: [
-          { role: 'system', content: systemPrompt },
+          { 
+            role: 'system', 
+            content: 'You are a helpful AI assistant that helps users understand AI tools better. Provide detailed, informative responses to follow-up questions about AI tools.' 
+          },
           { role: 'user', content: query }
         ],
-        temperature: 0.7,
       }),
     });
 
-    if (!response.ok) {
-      const responseText = await response.text();
-      console.error('OpenAI Chat API error:', responseText);
-      throw new Error('Failed to generate response');
-    }
+    const aiResponse = await response.json();
+    console.log('AI Response:', aiResponse);
 
-    const data = await response.json();
-    console.log('Generated response:', data);
-
-    if (!data.choices?.[0]?.message?.content) {
-      throw new Error('AI response is empty or malformed');
-    }
-
-    // Return the message content and found tools
     return new Response(
       JSON.stringify({ 
-        message: data.choices[0].message.content,
-        tools: tools || []
+        message: aiResponse.choices[0].message.content,
+        tools: []
       }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
     console.error('Error in chat-with-ai function:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      {
+      { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }

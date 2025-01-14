@@ -64,7 +64,10 @@ const Chat = () => {
     try {
       console.log('Calling chat-with-ai function...');
       const { data, error } = await supabase.functions.invoke('chat-with-ai', {
-        body: { query: userQuery }
+        body: { 
+          query: userQuery,
+          isFollowUp: false
+        }
       });
 
       console.log('Received response from chat-with-ai:', data, error);
@@ -72,7 +75,7 @@ const Chat = () => {
       if (error) throw error;
       
       if (!data.message) {
-        throw new Error('No message in AI response');
+        throw new Error('No message in response');
       }
 
       console.log('Inserting assistant response:', data.message);
@@ -86,14 +89,11 @@ const Chat = () => {
           }
         ]);
 
-      if (messageError) {
-        console.error('Error inserting assistant message:', messageError);
-        throw messageError;
-      }
+      if (messageError) throw messageError;
       console.log('Assistant response inserted successfully');
     } catch (error) {
       console.error("Error sending initial response:", error);
-      toast.error("Error getting AI response");
+      toast.error("Error getting response");
     } finally {
       setIsLoading(false);
     }
@@ -137,27 +137,26 @@ const Chat = () => {
           }
         ]);
 
-      if (userMessageError) {
-        console.error('Error inserting user message:', userMessageError);
-        throw userMessageError;
-      }
+      if (userMessageError) throw userMessageError;
 
       console.log('User message inserted, calling chat-with-ai...');
-      // Then get AI response
+      // Then get response
       const { data: aiResponse, error: aiError } = await supabase.functions.invoke('chat-with-ai', {
-        body: { query: newMessage }
+        body: { 
+          query: newMessage,
+          isFollowUp: true // This is a follow-up question
+        }
       });
 
-      console.log('Received AI response:', aiResponse);
+      console.log('Received response:', aiResponse);
 
       if (aiError) throw aiError;
 
       if (!aiResponse.message) {
-        throw new Error('No message in AI response');
+        throw new Error('No message in response');
       }
 
-      console.log('Inserting AI response:', aiResponse.message);
-      // Insert AI response
+      console.log('Inserting response:', aiResponse.message);
       const { error: assistantMessageError } = await supabase
         .from("chat_messages")
         .insert([
@@ -168,12 +167,9 @@ const Chat = () => {
           }
         ]);
 
-      if (assistantMessageError) {
-        console.error('Error inserting assistant message:', assistantMessageError);
-        throw assistantMessageError;
-      }
+      if (assistantMessageError) throw assistantMessageError;
 
-      console.log('AI response inserted successfully');
+      console.log('Response inserted successfully');
       setNewMessage("");
     } catch (error) {
       console.error("Error in chat interaction:", error);
