@@ -32,7 +32,45 @@ const SearchResults = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const { conversationId } = useParams();
 
+  // Add a state to track if Zapier chat is ready
+  const [isChatReady, setIsChatReady] = useState(false);
+
+  // Check for Zapier chat availability
+  useEffect(() => {
+    const checkChatAvailability = () => {
+      const chatElement = document.querySelector('zapier-interfaces-chatbot-embed');
+      if (chatElement || window.ZapChat) {
+        setIsChatReady(true);
+        return true;
+      }
+      return false;
+    };
+
+    // Check immediately
+    if (!checkChatAvailability()) {
+      // If not available, set up an observer to watch for the chat widget
+      const observer = new MutationObserver((mutations, obs) => {
+        if (checkChatAvailability()) {
+          obs.disconnect(); // Stop observing once found
+        }
+      });
+
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true
+      });
+
+      // Cleanup
+      return () => observer.disconnect();
+    }
+  }, []);
+
   const handleChatNow = () => {
+    if (!isChatReady) {
+      toast.error("Chat is initializing. Please wait a moment and try again.");
+      return;
+    }
+
     // Try to use the Zapier Chat API if available
     if (window.ZapChat && typeof window.ZapChat.open === 'function') {
       window.ZapChat.open();
@@ -140,7 +178,7 @@ const SearchResults = () => {
     <div className="container mx-auto py-8 px-4">
       <ScrollArea className="h-[calc(100vh-4rem)]">
         <h2 className="text-2xl font-semibold mb-6">
-          I've found some great tools for {topic}—here's what I recommend:
+          I've found some great tools for {searchQuery.replace(/find|ai|tools|for/gi, '').trim()}—here's what I recommend:
         </h2>
         <div className="space-y-6">
           {results.map((tool) => (
