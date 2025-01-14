@@ -33,43 +33,20 @@ serve(async (req) => {
     // Initialize Supabase client
     const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
 
-    // First generate embedding for the query
-    console.log('Generating embedding for query...');
-    const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'text-embedding-3-small',
-        input: query,
-      }),
-    });
-
-    if (!embeddingResponse.ok) {
-      const error = await embeddingResponse.json();
-      console.error('OpenAI Embedding API error:', error);
-      throw new Error('Failed to generate embedding');
-    }
-
-    const { data: embeddingData } = await embeddingResponse.json();
-    const embedding = embeddingData[0].embedding;
-
-    // Search for similar tools using the embedding
-    console.log('Searching for similar tools...');
-    const { data: tools, error: searchError } = await supabase.rpc('match_tools', {
-      query_embedding: embedding,
-      match_threshold: 0.5,
-      match_count: 5
-    });
+    // First search for relevant tools directly from the database
+    console.log('Searching for relevant tools...');
+    const { data: tools, error: searchError } = await supabase
+      .from('ai_tools')
+      .select('name, description, category')
+      .or(`description.ilike.%${query}%,category.ilike.%${query}%,name.ilike.%${query}%`)
+      .limit(5);
 
     if (searchError) {
-      console.error('Error in vector search:', searchError);
+      console.error('Error searching tools:', searchError);
       throw searchError;
     }
 
-    console.log('Found similar tools:', tools);
+    console.log('Found tools:', tools);
 
     // Prepare system prompt with found tools
     const systemPrompt = `You are a helpful AI assistant that helps users find AI tools. You should always be friendly and conversational.
@@ -118,7 +95,7 @@ serve(async (req) => {
       throw new Error('AI response is empty or malformed');
     }
 
-    // Return the message content directly
+    // Return the message content and found tools
     return new Response(
       JSON.stringify({ 
         message: data.choices[0].message.content,
