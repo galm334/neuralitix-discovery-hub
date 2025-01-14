@@ -69,6 +69,10 @@ const Chat = () => {
       
       console.log('AI response:', data);
 
+      if (!data.message) {
+        throw new Error('No message in AI response');
+      }
+
       const { error: messageError } = await supabase
         .from("chat_messages")
         .insert([
@@ -133,6 +137,10 @@ const Chat = () => {
       });
 
       if (aiError) throw aiError;
+
+      if (!aiResponse.message) {
+        throw new Error('No message in AI response');
+      }
 
       // Insert AI response
       const { error: assistantMessageError } = await supabase

@@ -23,23 +23,6 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured');
     }
 
-    // First, let's check available models
-    console.log('Checking available OpenAI models...');
-    const modelsResponse = await fetch('https://api.openai.com/v1/models', {
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-      },
-    });
-
-    if (!modelsResponse.ok) {
-      const error = await modelsResponse.json();
-      console.error('OpenAI Models API error:', error);
-      throw new Error('Failed to fetch available models');
-    }
-
-    const models = await modelsResponse.json();
-    console.log('Available models:', models.data.map((m: any) => m.id));
-
     const { query } = await req.json();
     console.log('Received query:', query);
 
@@ -86,13 +69,19 @@ serve(async (req) => {
 
     console.log('Found similar tools:', tools);
 
-    // Use the first available model from our preferred list
-    const preferredModels = ['gpt-4o-mini', 'gpt-4o'];
-    const availableModel = preferredModels.find(model => 
-      models.data.some((m: any) => m.id === model)
-    ) || 'gpt-4o-mini'; // fallback to gpt-4o-mini if none found
-
-    console.log(`Using model: ${availableModel}`);
+    const systemPrompt = `You are a helpful AI assistant that helps users find AI tools. You should always be friendly and conversational.
+    Format your response like this:
+    1. Start with a brief greeting
+    2. If we found verified tools, list them under "## Verified Tools"
+    3. Then list web suggestions under "## Additional Suggestions"
+    4. For each tool:
+       - Use "### [Tool Name]" as heading
+       - Write a clear description paragraph
+       - List key features with bullet points
+    5. End with a friendly closing note
+    
+    Here are the tools I found in our database:
+    ${JSON.stringify(tools, null, 2)}`;
 
     console.log('Generating AI response...');
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -102,24 +91,9 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: availableModel,
+        model: 'gpt-4o-mini',
         messages: [
-          {
-            role: 'system',
-            content: `You are a helpful AI assistant that helps users find AI tools. You should always be friendly and conversational.
-            Format your response like this:
-            1. Start with a brief greeting
-            2. If we found verified tools, list them under "## Verified Tools"
-            3. Then list web suggestions under "## Additional Suggestions"
-            4. For each tool:
-               - Use "### [Tool Name]" as heading
-               - Write a clear description paragraph
-               - List key features with bullet points
-            5. End with a friendly closing note
-            
-            Here are the tools I found in our database:
-            ${JSON.stringify(tools, null, 2)}`
-          },
+          { role: 'system', content: systemPrompt },
           { role: 'user', content: query }
         ],
         temperature: 0.7,
@@ -135,7 +109,7 @@ serve(async (req) => {
     const data = await response.json();
     console.log('Generated response:', data);
 
-    if (!data.choices || !data.choices.length || !data.choices[0].message?.content) {
+    if (!data.choices?.[0]?.message?.content) {
       throw new Error('AI response is empty or malformed');
     }
 
