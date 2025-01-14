@@ -23,7 +23,7 @@ const SearchResults = () => {
   const { conversationId } = useParams();
 
   const handleChatNow = () => {
-    window.open('https://actions.zapier.com/start/', 'actions', 'width=650,height=700');
+    window.open('https://interfaces.zapier.com/assets/web-components/zapier-interfaces/zapier-interfaces.esm.js', 'actions', 'width=650,height=700');
   };
 
   useEffect(() => {
