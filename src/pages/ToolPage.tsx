@@ -1,13 +1,7 @@
-import { useState, useEffect } from "react";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { ChevronRight } from "lucide-react";
+import { useState } from "react";
 import { ToolHeader } from "@/components/tool/ToolHeader";
-import { ToolUpdates } from "@/components/tool/ToolUpdates";
-import { ToolReviews } from "@/components/tool/ToolReviews";
-import { ToolProsAndCons } from "@/components/tool/ToolProsAndCons";
-import { ToolFAQ } from "@/components/tool/ToolFAQ";
-import { ToolPricing } from "@/components/tool/ToolPricing";
+import { ToolPageMobileView } from "@/components/tool/ToolPageMobileView";
+import { ToolPageDesktopView } from "@/components/tool/ToolPageDesktopView";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const reviews = [
@@ -127,7 +121,6 @@ const pricingTiers = [
 
 const ToolPage = () => {
   const isMobile = useIsMobile();
-  const [activeTab, setActiveTab] = useState("overview");
 
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
@@ -154,137 +147,24 @@ const ToolPage = () => {
           />
 
           {isMobile ? (
-            <div className="mt-8 space-y-12">
-              <div id="overview">
-                <h2 className="text-2xl font-semibold mb-6">Overview</h2>
-                <div className="w-full aspect-[21/9] mb-8 rounded-lg overflow-hidden">
-                  <img 
-                    src="/placeholder.svg"
-                    alt="CodeReviewer AI Featured"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="prose prose-invert max-w-none">
-                  <h2>What sets CodeReviewer AI apart</h2>
-                  <p>
-                    CodeReviewer AI is a cutting-edge AI agent that revolutionizes how we approach tasks. 
-                    Built with the latest advancements in artificial intelligence and machine learning, 
-                    it offers an intuitive and powerful solution for professionals and enthusiasts alike.
-                  </p>
-                  <div className="mt-8">
-                    <h3>Tags</h3>
-                    <div className="flex flex-wrap gap-2 mt-4">
-                      {["Writing", "AI", "Machine Learning", "Automation", "Productivity"].map((tag) => (
-                        <Badge key={tag} variant="secondary" className="bg-accent/50">
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div id="updates">
-                <ToolUpdates updates={updates} />
-              </div>
-
-              <div id="reviews">
-                <h2 className="text-2xl font-semibold mb-6">Reviews</h2>
-                <ToolReviews reviews={reviews} />
-              </div>
-
-              <div className="flex items-center justify-between py-4 border-t">
-                <span className="text-sm text-muted-foreground">More sections</span>
-                <div className="flex gap-4">
-                  <button onClick={() => scrollToSection('pros-cons')} className="flex items-center text-sm">
-                    Pros & Cons <ChevronRight className="h-4 w-4 ml-1" />
-                  </button>
-                  <button onClick={() => scrollToSection('faq')} className="flex items-center text-sm">
-                    FAQ <ChevronRight className="h-4 w-4 ml-1" />
-                  </button>
-                  <button onClick={() => scrollToSection('pricing')} className="flex items-center text-sm">
-                    Pricing <ChevronRight className="h-4 w-4 ml-1" />
-                  </button>
-                </div>
-              </div>
-
-              <div id="pros-cons">
-                <h2 className="text-2xl font-semibold mb-6">Pros & Cons</h2>
-                <ToolProsAndCons pros={pros} cons={cons} />
-              </div>
-
-              <div id="faq">
-                <h2 className="text-2xl font-semibold mb-6">FAQ</h2>
-                <ToolFAQ faqs={faqs} />
-              </div>
-
-              <div id="pricing">
-                <h2 className="text-2xl font-semibold mb-6">Pricing</h2>
-                <ToolPricing pricingTiers={pricingTiers} />
-              </div>
-            </div>
+            <ToolPageMobileView
+              updates={updates}
+              reviews={reviews}
+              pros={pros}
+              cons={cons}
+              faqs={faqs}
+              pricingTiers={pricingTiers}
+              scrollToSection={scrollToSection}
+            />
           ) : (
-            <Tabs defaultValue="overview" className="mt-8">
-              <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent overflow-x-auto flex-nowrap">
-                {["Overview", "Updates", "Reviews", "Pros & Cons", "FAQ", "Pricing"].map((tab) => (
-                  <TabsTrigger
-                    key={tab}
-                    value={tab.toLowerCase().replace(/ & /g, "-")}
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2 whitespace-nowrap"
-                  >
-                    {tab}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-
-              <TabsContent value="overview" className="mt-6">
-                <div className="w-full aspect-[21/9] mb-8 rounded-lg overflow-hidden">
-                  <img 
-                    src="/placeholder.svg"
-                    alt="CodeReviewer AI Featured"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="prose prose-invert max-w-none">
-                  <h2>What sets CodeReviewer AI apart</h2>
-                  <p>
-                    CodeReviewer AI is a cutting-edge AI agent that revolutionizes how we approach tasks. 
-                    Built with the latest advancements in artificial intelligence and machine learning, 
-                    it offers an intuitive and powerful solution for professionals and enthusiasts alike.
-                  </p>
-                  <div className="mt-8">
-                    <h3>Tags</h3>
-                    <div className="flex flex-wrap gap-2 mt-4">
-                      {["Writing", "AI", "Machine Learning", "Automation", "Productivity"].map((tag) => (
-                        <Badge key={tag} variant="secondary" className="bg-accent/50">
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="updates" className="mt-6">
-                <ToolUpdates updates={updates} />
-              </TabsContent>
-
-              <TabsContent value="reviews" className="mt-6">
-                <ToolReviews reviews={reviews} />
-              </TabsContent>
-
-              <TabsContent value="pros-cons" className="mt-6">
-                <ToolProsAndCons pros={pros} cons={cons} />
-              </TabsContent>
-
-              <TabsContent value="faq" className="mt-6">
-                <ToolFAQ faqs={faqs} />
-              </TabsContent>
-
-              <TabsContent value="pricing" className="mt-6">
-                <ToolPricing pricingTiers={pricingTiers} />
-              </TabsContent>
-            </Tabs>
+            <ToolPageDesktopView
+              updates={updates}
+              reviews={reviews}
+              pros={pros}
+              cons={cons}
+              faqs={faqs}
+              pricingTiers={pricingTiers}
+            />
           )}
         </div>
       </div>
