@@ -17,16 +17,19 @@ interface MobileToolCardProps {
   index: number;
 }
 
-export function MobileToolCard({ tool }: MobileToolCardProps) {
+export function MobileToolCard({ tool, index }: MobileToolCardProps) {
   return (
     <div className="relative flex flex-col p-4 bg-[#F1F0FB]/30 first:rounded-t-lg last:rounded-b-lg">
       <div className="flex items-start gap-4">
-        <div className="w-16 h-16 flex-shrink-0">
-          <img
-            src={tool.image}
-            alt={tool.title}
-            className="w-full h-full object-cover rounded-lg"
-          />
+        <div className="flex items-center gap-4">
+          <span className="text-lg font-semibold text-muted-foreground">#{index + 1}</span>
+          <div className="w-16 h-16 flex-shrink-0">
+            <img
+              src={tool.image}
+              alt={tool.title}
+              className="w-full h-full object-cover rounded-lg"
+            />
+          </div>
         </div>
         <div className="flex-1">
           <h3 className="text-xl font-semibold">{tool.title}</h3>

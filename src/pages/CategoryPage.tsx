@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { CategoryToolList } from "@/components/category/CategoryToolList";
 import { CategorySidebar } from "@/components/category/CategorySidebar";
-import { Home, Search, Filter, X } from "lucide-react";
+import { Home, Search, Filter } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -21,7 +21,6 @@ export default function CategoryPage() {
   const isMobile = useIsMobile();
 
   const categoryName = category?.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
-  const currentYear = new Date().getFullYear() + 1;
 
   return (
     <div className="container py-8">
@@ -46,7 +45,7 @@ export default function CategoryPage() {
       )}
 
       <div className="mt-8">
-        <h1 className="text-3xl md:text-4xl font-bold mb-4">Best {categoryName} Tools in {currentYear}</h1>
+        <h1 className="text-3xl md:text-4xl font-bold mb-4">Best {categoryName} Tools in 2025</h1>
         {!isMobile && (
           <p className="text-muted-foreground mb-8">
             Discover the top-rated {categoryName?.toLowerCase()} tools that are revolutionizing the industry.
