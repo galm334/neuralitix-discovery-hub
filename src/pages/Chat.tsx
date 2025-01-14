@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -51,29 +52,32 @@ const Chat = () => {
     setInitialResponseSent(true);
     setIsLoading(true);
     try {
-      // First, search for relevant tools
       const { data: tools, error: searchError } = await supabase
         .from('ai_tools')
-        .select('name, description, category')
+        .select('name, description, category, logo_url')
         .textSearch('search_vector', userQuery.split(' ').join(' & '))
         .limit(3);
 
       if (searchError) throw searchError;
 
-      // Format the tools into a response message
-      let responseContent = `Here are some AI tools that match your query: "${userQuery}"\n\n`;
+      // Format the response with initial sentence and structured tool list
+      let responseContent = `Here are some relevant AI tools that can help with ${userQuery}:\n\n`;
       
       if (tools && tools.length > 0) {
-        tools.forEach((tool, index) => {
-          responseContent += `${index + 1}. ${tool.name} - ${tool.description} (Category: ${tool.category})\n`;
+        tools.forEach((tool) => {
+          const toolSlug = tool.name.toLowerCase().replace(/\s+/g, '-');
+          responseContent += `<tool>
+name: ${tool.name}
+description: ${tool.description}
+category: ${tool.category}
+logo: ${tool.logo_url || '/placeholder.svg'}
+slug: ${toolSlug}
+</tool>\n`;
         });
       } else {
         responseContent += "I couldn't find any exact matches, but I can help you explore similar tools. What specific features are you looking for?";
       }
 
-      responseContent += "\nWould you like more specific information about any of these tools?";
-
-      // Insert the response message
       const { error: messageError } = await supabase.from("chat_messages").insert([
         {
           conversation_id: conversationId,
@@ -143,6 +147,72 @@ const Chat = () => {
     }
   };
 
+  const renderMessage = (message: any) => {
+    if (message.role === "assistant" && message.content.includes("<tool>")) {
+      const tools = message.content
+        .split("<tool>")
+        .slice(1)
+        .map((toolStr: string) => {
+          const lines = toolStr.split("\n").filter(Boolean);
+          const toolData: any = {};
+          lines.forEach((line: string) => {
+            if (line.includes(": ")) {
+              const [key, value] = line.split(": ");
+              toolData[key] = value;
+            }
+          });
+          return toolData;
+        });
+
+      const introText = message.content.split("\n\n")[0];
+
+      return (
+        <div className="space-y-4">
+          <p className="text-muted-foreground">{introText}</p>
+          <div className="space-y-4">
+            {tools.map((tool: any, index: number) => (
+              <div key={index} className="flex gap-4 p-4 bg-muted rounded-lg">
+                <Link to={`/tool/${tool.slug}`} className="shrink-0">
+                  <img
+                    src={tool.logo}
+                    alt={tool.name}
+                    className="w-16 h-16 rounded object-cover"
+                  />
+                </Link>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <Link 
+                      to={`/tool/${tool.slug}`}
+                      className="text-lg font-semibold hover:text-primary transition-colors"
+                    >
+                      {tool.name}
+                    </Link>
+                    <Badge variant="secondary">{tool.category}</Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {tool.description}
+                    <Link 
+                      to={`/tool/${tool.slug}`}
+                      className="ml-2 text-primary hover:underline"
+                    >
+                      See more
+                    </Link>
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="max-w-[80%] rounded-lg px-4 py-2 bg-muted">
+        {message.content}
+      </div>
+    );
+  };
+
   return (
     <div className="flex flex-col h-screen max-h-screen p-4">
       <div className="flex-1 mb-4">
@@ -155,15 +225,7 @@ const Chat = () => {
                   message.role === "user" ? "justify-end" : "justify-start"
                 }`}
               >
-                <div
-                  className={`max-w-[80%] rounded-lg px-4 py-2 ${
-                    message.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
-                  }`}
-                >
-                  {message.content}
-                </div>
+                {renderMessage(message)}
               </div>
             ))}
             <div ref={scrollRef} />
