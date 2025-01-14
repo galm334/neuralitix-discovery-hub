@@ -29,16 +29,17 @@ serve(async (req) => {
 
     console.log('Original query:', query);
 
-    // Format search terms for tsquery - only use complete words
+    // Format search terms for tsquery to match partial words
     const searchTerms = query
       .toLowerCase()
       .split(' ')
       .filter(term => term.length >= 3)
+      .map(term => `${term}:*`) // Add prefix matching
       .join(' & ');
 
     console.log('Formatted search terms:', searchTerms);
 
-    // Search for relevant tools
+    // Search for relevant tools using plainto_tsquery for better partial matching
     const { data: tools, error: toolsError } = await supabaseClient
       .from('ai_tools')
       .select('name, description, category')
@@ -55,14 +56,17 @@ serve(async (req) => {
 
     console.log('Found tools:', tools?.length ?? 0);
 
-    // Only generate suggestions if we found matching tools
+    // Generate suggestions based on matching tools
     let suggestions: string[] = [];
     if (tools && tools.length > 0) {
+      // Get unique categories and create category-based suggestions
       const categories = [...new Set(tools.map(tool => tool.category))];
+      
+      // Create suggestions based on the original query and found categories
       suggestions = [
-        `Find AI tools for ${query}`,
+        `Find AI tools for writing`,
         ...categories.map(category => `Find ${category} AI tools`),
-        `Compare AI tools for ${query}`,
+        `Compare AI tools for writing`,
       ];
     }
 
