@@ -25,12 +25,39 @@ const SearchResults = () => {
   const handleChatNow = () => {
     const chatbotElement = document.querySelector('zapier-interfaces-chatbot-embed') as HTMLElement;
     if (chatbotElement) {
-      // Use is-popup attribute to control visibility
+      console.log('Chatbot element found, current state:', {
+        isPopup: chatbotElement.getAttribute('is-popup'),
+        isOpen: chatbotElement.getAttribute('is-open'),
+        display: window.getComputedStyle(chatbotElement).display,
+        visibility: window.getComputedStyle(chatbotElement).visibility,
+      });
+
+      // First, ensure the element is configured as a popup
       chatbotElement.setAttribute('is-popup', 'true');
-      // Force a reflow to ensure the attribute change takes effect
+      
+      // Force a reflow to ensure changes are applied
       void chatbotElement.offsetHeight;
-      // Then set is-open to true
+      
+      // Then set it to open
       chatbotElement.setAttribute('is-open', 'true');
+      
+      // Log the state after changes
+      console.log('Chatbot element after changes:', {
+        isPopup: chatbotElement.getAttribute('is-popup'),
+        isOpen: chatbotElement.getAttribute('is-open'),
+        display: window.getComputedStyle(chatbotElement).display,
+        visibility: window.getComputedStyle(chatbotElement).visibility,
+      });
+
+      // Attempt to force visibility through style
+      chatbotElement.style.display = '';
+      chatbotElement.style.visibility = 'visible';
+      chatbotElement.style.opacity = '1';
+
+      toast.success("Opening chat window...");
+    } else {
+      console.error('Chatbot element not found');
+      toast.error("Chat widget not found. Please refresh the page.");
     }
   };
 
@@ -117,7 +144,6 @@ const SearchResults = () => {
     );
   }
 
-  // Extract the main topic from the search query by removing common words
   const topic = searchQuery
     .replace(/find|ai|tools|for/gi, '')
     .trim();
