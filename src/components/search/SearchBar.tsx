@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { useDebounce } from "@/hooks/use-debounce";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface Tool {
   name: string;
@@ -76,8 +77,38 @@ export const SearchBar = () => {
     fetchSuggestions();
   }, [debouncedQuery]);
 
-  const handleSearch = (searchQuery: string) => {
-    navigate(`/chat?q=${encodeURIComponent(searchQuery)}`);
+  const handleSearch = async (searchQuery: string) => {
+    try {
+      // First create a new conversation
+      const { data: conversationData, error: conversationError } = await supabase
+        .from('chat_conversations')
+        .insert([
+          { thread_id: 'new' } // You might want to generate a more meaningful thread_id
+        ])
+        .select()
+        .single();
+
+      if (conversationError) throw conversationError;
+
+      // Then create the initial message
+      const { error: messageError } = await supabase
+        .from('chat_messages')
+        .insert([
+          {
+            conversation_id: conversationData.id,
+            content: searchQuery,
+            role: 'user'
+          }
+        ]);
+
+      if (messageError) throw messageError;
+
+      // Navigate to the chat page with the new conversation ID
+      navigate(`/chat/${conversationData.id}`);
+    } catch (error) {
+      console.error('Error starting chat:', error);
+      toast.error('Failed to start chat. Please try again.');
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
