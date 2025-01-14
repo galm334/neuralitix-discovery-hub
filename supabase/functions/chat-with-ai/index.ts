@@ -22,20 +22,20 @@ serve(async (req) => {
     const { query } = await req.json();
     console.log('Received query:', query);
 
-    // First try exact name match
-    let { data: tools, error: exactMatchError } = await supabase
+    // First try category and description search
+    let { data: tools, error: searchError } = await supabase
       .from('ai_tools')
       .select('*')
-      .ilike('name', '%writer%');
+      .or(`category.ilike.%writing%,description.ilike.%writing%,name.ilike.%writing%`);
 
-    if (exactMatchError) {
-      console.error('Error in exact match search:', exactMatchError);
-      throw exactMatchError;
+    if (searchError) {
+      console.error('Error in search:', searchError);
+      throw searchError;
     }
 
-    // If no exact matches, try full text search
+    // If no results, try full text search
     if (!tools || tools.length === 0) {
-      console.log('No exact matches found, trying full text search');
+      console.log('No direct matches found, trying full text search');
       const { data: textSearchTools, error: textSearchError } = await supabase
         .from('ai_tools')
         .select('*')
@@ -54,22 +54,23 @@ serve(async (req) => {
 
     console.log('Found tools:', tools);
 
-    let systemPrompt = `You are a helpful AI assistant that helps users find AI tools. You should always be friendly and conversational.
+    const systemPrompt = `You are a helpful AI assistant that helps users find AI tools. You should always be friendly and conversational.
 
-Format your response with clear sections:
-1. If verified tools are found, list them under "## Verified Tools"
-2. Then list web suggestions under "## Additional Suggestions"
-3. For each tool (both verified and suggestions):
-   - Use "### [Tool Name]" as a subheading
-   - Write a clear paragraph for the description
-   - List key features with bullet points
-4. End with a friendly offer to help with more specific information
-
-Current query: "${query}"
+Your task is to help the user find AI tools for "${query}".
 
 ${tools && tools.length > 0 
-  ? `Found these verified tools:\n${JSON.stringify(tools, null, 2)}`
-  : 'No verified tools found in our database.'}`;
+  ? `I found these tools in our database:\n${JSON.stringify(tools, null, 2)}`
+  : 'No exact matches found in our database, but I can suggest some popular alternatives.'}
+
+Please format your response like this:
+1. Start with a brief greeting
+2. If we found verified tools, list them under "## Verified Tools"
+3. Then list web suggestions under "## Additional Suggestions"
+4. For each tool:
+   - Use "### [Tool Name]" as heading
+   - Write a clear description paragraph
+   - List key features with bullet points
+5. End with a friendly closing note`;
 
     console.log('Using system prompt:', systemPrompt);
 
@@ -82,19 +83,8 @@ ${tools && tools.length > 0
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         messages: [
-          { 
-            role: 'system', 
-            content: systemPrompt 
-          },
-          { 
-            role: 'user', 
-            content: `Please format the response with:
-1. Verified tools section (if any found)
-2. Additional suggestions section
-3. Clear headings and paragraphs for each tool
-4. Bullet points for features
-5. A friendly closing note`
-          }
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: query }
         ],
         temperature: 0.7,
       }),
