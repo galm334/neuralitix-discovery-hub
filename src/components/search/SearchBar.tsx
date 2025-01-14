@@ -140,9 +140,9 @@ export const SearchBar = () => {
         </Button>
       </div>
 
-      {showSuggestions && debouncedQuery.length >= 3 && (
+      {debouncedQuery.length >= 3 && (
         <Card ref={suggestionsRef} className="absolute w-full mt-2 p-2 shadow-lg z-50 max-h-[400px] overflow-y-auto">
-          {suggestions.map((suggestion, index) => (
+          {suggestions.length > 0 && suggestions.map((suggestion, index) => (
             <button
               key={`suggestion-${index}`}
               className="w-full text-left px-4 py-2 hover:bg-muted rounded-md"
