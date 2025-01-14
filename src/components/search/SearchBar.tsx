@@ -140,7 +140,7 @@ export const SearchBar = () => {
         </Button>
       </div>
 
-      {showSuggestions && (suggestions.length > 0 || tools.length > 0) && (
+      {showSuggestions && debouncedQuery.length >= 3 && (
         <Card ref={suggestionsRef} className="absolute w-full mt-2 p-2 shadow-lg z-50 max-h-[400px] overflow-y-auto">
           {suggestions.map((suggestion, index) => (
             <button
