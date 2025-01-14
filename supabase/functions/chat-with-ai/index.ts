@@ -49,20 +49,14 @@ serve(async (req) => {
     console.log('Found tools:', tools);
 
     // Prepare system prompt with found tools
-    const systemPrompt = `You are a helpful AI assistant that helps users find AI tools. You should always be friendly and conversational.
+    let systemPrompt = `You are a helpful AI assistant that helps users find AI tools. You should always be friendly and conversational.`;
     
-    Here are the relevant tools I found in our database:
-    ${JSON.stringify(tools, null, 2)}
-
-    Format your response like this:
-    1. Start with a brief greeting
-    2. If we found verified tools from our database, list them under "## Verified Tools"
-    3. Only if we didn't find relevant tools in our database, suggest alternatives under "## Additional Suggestions"
-    4. For each tool:
-       - Use "### [Tool Name]" as heading
-       - Write a clear description paragraph
-       - List key features with bullet points
-    5. End with a friendly closing note`;
+    if (tools && tools.length > 0) {
+      systemPrompt += `\n\nI found these relevant tools in our database:\n${JSON.stringify(tools, null, 2)}`;
+      systemPrompt += `\n\nMake sure to highlight these verified tools first in your response under "## Verified Tools", then you can suggest additional tools if relevant.`;
+    } else {
+      systemPrompt += `\n\nI couldn't find any exact matches in our database, but you can suggest some relevant tools under "## Suggested Tools".`;
+    }
 
     // Generate AI response
     console.log('Generating AI response...');
