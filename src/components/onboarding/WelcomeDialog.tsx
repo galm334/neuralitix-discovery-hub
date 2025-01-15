@@ -17,11 +17,14 @@ export const WelcomeDialog = ({ isOpen, onComplete }: WelcomeDialogProps) => {
   const navigate = useNavigate();
 
   const createProfile = async () => {
+    if (isCreatingProfile) return;
     setIsCreatingProfile(true);
     setProgress(25);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      // Get current session and verify it exists
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
       if (!session?.user?.id) {
         throw new Error("No user session found");
       }
@@ -46,25 +49,28 @@ export const WelcomeDialog = ({ isOpen, onComplete }: WelcomeDialogProps) => {
 
       setProgress(75);
 
-      // Verify session is still valid
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
-      if (!currentSession) {
-        throw new Error("Session expired");
+      // Final session verification
+      const { data: { session: finalSession }, error: finalSessionError } = await supabase.auth.getSession();
+      if (finalSessionError) throw finalSessionError;
+      if (!finalSession) {
+        throw new Error("Session lost during profile creation");
       }
 
       setProgress(100);
-      toast.success("Profile created successfully!");
-
+      
       // Small delay to show completion
       setTimeout(() => {
         onComplete();
+        // Redirect to home page
         navigate("/", { replace: true });
+        toast.success("Profile created successfully!");
       }, 500);
 
     } catch (error) {
-      console.error("Error creating profile:", error);
+      console.error("Error in profile creation:", error);
       toast.error("Failed to create profile. Please try again.");
       setIsCreatingProfile(false);
+      // On error, redirect to auth page
       navigate("/auth", { replace: true });
     }
   };
