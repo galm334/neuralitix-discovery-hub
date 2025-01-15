@@ -92,10 +92,12 @@ const Auth = () => {
           if (mutation.addedNodes.length) {
             const passwordInput = document.querySelector('input[type="password"]');
             if (passwordInput) {
+              passwordInput.addEventListener('focus', () => {
+                setShowPasswordRequirements(true);
+              });
               passwordInput.addEventListener('input', (e) => {
                 const target = e.target as HTMLInputElement;
                 setPassword(target.value);
-                setShowPasswordRequirements(target.value.length >= 3);
               });
               observer.disconnect();
             }
