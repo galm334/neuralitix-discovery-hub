@@ -3,6 +3,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { BrowserRouter } from "react-router-dom";
 import { SidebarProvider } from "@/contexts/SidebarContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AppSidebar } from "@/components/AppSidebar";
 import Index from "@/pages/Index";
 import Popular from "@/pages/Popular";
@@ -78,19 +79,22 @@ function App() {
           {!isAuthPage && !isLegalPage && <AppSidebar />}
           <main className="flex-1">
             <Routes>
-              <Route path="/" element={<Index />} />
+              {/* Public routes */}
               <Route path="/auth" element={<Auth />} />
               <Route path="/onboarding" element={<Onboarding />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/gdpr" element={<GDPR />} />
-              <Route path="/popular" element={<Popular />} />
-              <Route path="/trending" element={<Trending />} />
-              <Route path="/just-added" element={<JustAdded />} />
-              <Route path="/tool/:toolId" element={<ToolPage />} />
-              <Route path="/category/:category" element={<CategoryPage />} />
-              <Route path="/chat/:conversationId" element={<Chat />} />
               <Route path="/standalone-chat" element={<StandaloneChat />} />
+
+              {/* Protected routes */}
+              <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+              <Route path="/popular" element={<ProtectedRoute><Popular /></ProtectedRoute>} />
+              <Route path="/trending" element={<ProtectedRoute><Trending /></ProtectedRoute>} />
+              <Route path="/just-added" element={<ProtectedRoute><JustAdded /></ProtectedRoute>} />
+              <Route path="/tool/:toolId" element={<ProtectedRoute><ToolPage /></ProtectedRoute>} />
+              <Route path="/category/:category" element={<ProtectedRoute><CategoryPage /></ProtectedRoute>} />
+              <Route path="/chat/:conversationId" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
             </Routes>
           </main>
           <Toaster />
