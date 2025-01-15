@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Session } from '@supabase/supabase-js';
+import { Session, AuthError } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -43,12 +43,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const handleNavigation = async (session: Session) => {
-    const profile = await fetchProfile(session.user.id);
-    setProfile(profile);
+  const handleAuthError = (error: AuthError) => {
+    console.error('Auth error:', error);
+    
+    switch (error.message) {
+      case 'Token expired':
+      case 'Invalid JWT':
+        toast.error('Your session has expired. Please sign in again.');
+        navigate('/auth');
+        break;
+      case 'Network error':
+        toast.error('Network error. Please check your connection.');
+        break;
+      default:
+        toast.error('Authentication error. Please try again.');
+    }
+  };
 
-    if (!profile || !profile.terms_accepted) {
-      navigate('/onboarding');
+  const handleNavigation = async (session: Session) => {
+    try {
+      const profile = await fetchProfile(session.user.id);
+      setProfile(profile);
+
+      if (!profile || !profile.terms_accepted) {
+        navigate('/onboarding');
+      }
+    } catch (error) {
+      console.error('Navigation error:', error);
+      toast.error('Error loading user data');
     }
   };
 
@@ -59,29 +81,62 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
+    let mounted = true;
+
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session) {
-        handleNavigation(session);
+    const initializeAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) throw error;
+        
+        if (mounted) {
+          setSession(session);
+          if (session) {
+            await handleNavigation(session);
+          }
+          setIsLoading(false);
+        }
+      } catch (error) {
+        if (error instanceof AuthError) {
+          handleAuthError(error);
+        }
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
-      setIsLoading(false);
-    });
+    };
+
+    initializeAuth();
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state changed:', event);
-      setSession(session);
+      
+      if (mounted) {
+        setSession(session);
 
-      if (event === 'SIGNED_IN' && session) {
-        await handleNavigation(session);
-      } else if (event === 'SIGNED_OUT') {
-        setProfile(null);
-        navigate('/auth');
+        try {
+          if (event === 'SIGNED_IN' && session) {
+            await handleNavigation(session);
+          } else if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+            setProfile(null);
+            navigate('/auth');
+          } else if (event === 'TOKEN_REFRESHED') {
+            console.log('Session token refreshed');
+          } else if (event === 'USER_UPDATED') {
+            if (session) await refreshProfile();
+          }
+        } catch (error) {
+          if (error instanceof AuthError) {
+            handleAuthError(error);
+          }
+        }
       }
     });
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, [navigate]);
