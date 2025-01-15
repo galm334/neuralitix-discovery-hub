@@ -25,27 +25,7 @@ const Auth = () => {
 
         if (session?.user) {
           console.log("[Auth] Session found for user:", session.user.id);
-          // Check if profile exists
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('id, terms_accepted')
-            .eq('id', session.user.id)
-            .maybeSingle();
-
-          console.log("[Auth] Profile check result:", { profile, profileError });
-
-          if (profileError) {
-            console.error("[Auth] Profile check error:", profileError);
-            throw profileError;
-          }
-
-          if (!profile) {
-            console.log("[Auth] No profile found, redirecting to onboarding");
-            navigate("/onboarding", { replace: true });
-          } else {
-            console.log("[Auth] Profile found, redirecting to home");
-            navigate("/", { replace: true });
-          }
+          await checkAndHandleProfile(session.user.id);
         }
       } catch (error) {
         console.error("[Auth] Error in checkSession:", error);
@@ -67,31 +47,7 @@ const Auth = () => {
       
       if (event === 'SIGNED_IN' && session?.user) {
         console.log("[Auth] User signed in, checking profile");
-        
-        try {
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('id, terms_accepted')
-            .eq('id', session.user.id)
-            .maybeSingle();
-
-          console.log("[Auth] Profile check result:", { profile, profileError });
-
-          if (profileError) {
-            throw profileError;
-          }
-
-          if (!profile) {
-            console.log("[Auth] No profile found, redirecting to onboarding");
-            navigate("/onboarding", { replace: true });
-          } else {
-            console.log("[Auth] Profile found, redirecting to home");
-            navigate("/", { replace: true });
-          }
-        } catch (error) {
-          console.error("[Auth] Error in auth state change:", error);
-          setError(getErrorMessage(error as AuthError));
-        }
+        await checkAndHandleProfile(session.user.id);
       }
     });
 
@@ -99,6 +55,34 @@ const Auth = () => {
       subscription.unsubscribe();
     };
   }, [navigate]);
+
+  const checkAndHandleProfile = async (userId: string) => {
+    try {
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, terms_accepted')
+        .eq('id', userId)
+        .maybeSingle();
+
+      console.log("[Auth] Profile check result:", { profile, profileError });
+
+      if (profileError) {
+        console.error("[Auth] Profile check error:", profileError);
+        throw profileError;
+      }
+
+      if (!profile) {
+        console.log("[Auth] No profile found, redirecting to onboarding");
+        navigate("/onboarding", { replace: true });
+      } else {
+        console.log("[Auth] Profile found, redirecting to home");
+        navigate("/", { replace: true });
+      }
+    } catch (error) {
+      console.error("[Auth] Error in checkAndHandleProfile:", error);
+      setError(getErrorMessage(error as AuthError));
+    }
+  };
 
   const getErrorMessage = (error: AuthError) => {
     if (error instanceof AuthApiError) {
