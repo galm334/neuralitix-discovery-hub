@@ -19,7 +19,6 @@ const Auth = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordValid, setPasswordValid] = useState(false);
   const [passwordsMatch, setPasswordsMatch] = useState(false);
-  const [showPasswordRequirements, setShowPasswordRequirements] = useState(false);
 
   // Password validation criteria
   const hasMinLength = password.length >= 8;
@@ -85,28 +84,17 @@ const Auth = () => {
       }
     });
 
-    // Setup email and password input listeners
-    const setupInputListeners = () => {
+    // Setup password input listener
+    const setupPasswordListener = () => {
       const observer = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
           if (mutation.addedNodes.length) {
-            const emailInput = document.querySelector('input[type="email"]');
             const passwordInput = document.querySelector('input[type="password"]');
-            
-            if (emailInput) {
-              emailInput.addEventListener('input', () => {
-                setShowPasswordRequirements(true);
-              });
-            }
-            
             if (passwordInput) {
               passwordInput.addEventListener('input', (e) => {
                 const target = e.target as HTMLInputElement;
                 setPassword(target.value);
               });
-            }
-
-            if (emailInput && passwordInput) {
               observer.disconnect();
             }
           }
@@ -121,7 +109,7 @@ const Auth = () => {
       return observer;
     };
 
-    const observer = setupInputListeners();
+    const observer = setupPasswordListener();
 
     return () => {
       subscription.unsubscribe();
@@ -183,7 +171,7 @@ const Auth = () => {
             redirectTo={window.location.origin}
           />
 
-          {authType === "signup" && showPasswordRequirements && (
+          {authType === "signup" && (
             <div className="mt-4 w-full">
               <Label htmlFor="confirm-password">Confirm Password</Label>
               <Input
@@ -207,28 +195,26 @@ const Auth = () => {
             </div>
           )}
 
-          {showPasswordRequirements && (
-            <div className="mt-4 bg-background border rounded-lg p-4 shadow-sm">
-              <p className="font-medium mb-2">Password requirements:</p>
-              <ul className="space-y-1">
-                <li className={`flex items-center gap-2 ${hasMinLength ? 'text-green-500' : 'text-muted-foreground'}`}>
-                  {hasMinLength ? <Check size={16} /> : '•'} At least 8 characters
-                </li>
-                <li className={`flex items-center gap-2 ${hasUpperCase ? 'text-green-500' : 'text-muted-foreground'}`}>
-                  {hasUpperCase ? <Check size={16} /> : '•'} One uppercase letter
-                </li>
-                <li className={`flex items-center gap-2 ${hasLowerCase ? 'text-green-500' : 'text-muted-foreground'}`}>
-                  {hasLowerCase ? <Check size={16} /> : '•'} One lowercase letter
-                </li>
-                <li className={`flex items-center gap-2 ${hasNumber ? 'text-green-500' : 'text-muted-foreground'}`}>
-                  {hasNumber ? <Check size={16} /> : '•'} One number
-                </li>
-                <li className={`flex items-center gap-2 ${hasSpecialChar ? 'text-green-500' : 'text-muted-foreground'}`}>
-                  {hasSpecialChar ? <Check size={16} /> : '•'} One special character
-                </li>
-              </ul>
-            </div>
-          )}
+          <div className="mt-4 bg-background border rounded-lg p-4 shadow-sm">
+            <p className="font-medium mb-2">Password requirements:</p>
+            <ul className="space-y-1">
+              <li className={`flex items-center gap-2 ${hasMinLength ? 'text-green-500' : 'text-muted-foreground'}`}>
+                {hasMinLength ? <Check size={16} /> : '•'} At least 8 characters
+              </li>
+              <li className={`flex items-center gap-2 ${hasUpperCase ? 'text-green-500' : 'text-muted-foreground'}`}>
+                {hasUpperCase ? <Check size={16} /> : '•'} One uppercase letter
+              </li>
+              <li className={`flex items-center gap-2 ${hasLowerCase ? 'text-green-500' : 'text-muted-foreground'}`}>
+                {hasLowerCase ? <Check size={16} /> : '•'} One lowercase letter
+              </li>
+              <li className={`flex items-center gap-2 ${hasNumber ? 'text-green-500' : 'text-muted-foreground'}`}>
+                {hasNumber ? <Check size={16} /> : '•'} One number
+              </li>
+              <li className={`flex items-center gap-2 ${hasSpecialChar ? 'text-green-500' : 'text-muted-foreground'}`}>
+                {hasSpecialChar ? <Check size={16} /> : '•'} One special character
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
