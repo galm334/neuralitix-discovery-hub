@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Auth as SupabaseAuth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { toast } from "sonner";
+import { AuthError, AuthApiError } from "@supabase/supabase-js";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -29,7 +29,12 @@ const Auth = () => {
           const { data: profiles, error: profileError } = await supabase
             .from('profiles')
             .select('id, terms_accepted')
-            .eq('id', session.user.id);
+            .eq('id', session.user.id)
+            .headers({
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+              'Prefer': 'return=representation'
+            });
 
           console.log("[Auth] Profile check result:", { profiles, profileError });
 
@@ -48,7 +53,7 @@ const Auth = () => {
         }
       } catch (error) {
         console.error("[Auth] Error in checkSession:", error);
-        setError("An error occurred while checking your session. Please try signing in again.");
+        setError(getErrorMessage(error as AuthError));
       } finally {
         setIsCheckingSession(false);
       }
@@ -57,7 +62,7 @@ const Auth = () => {
     checkSession();
   }, [navigate]);
 
-  // Auth state change handler
+  // Auth state change listener
   useEffect(() => {
     console.log("[Auth] Setting up auth state change listener");
     
@@ -71,7 +76,12 @@ const Auth = () => {
           const { data: profiles, error: profileError } = await supabase
             .from('profiles')
             .select('id, terms_accepted')
-            .eq('id', session.user.id);
+            .eq('id', session.user.id)
+            .headers({
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+              'Prefer': 'return=representation'
+            });
 
           console.log("[Auth] Profile check result:", { profiles, profileError });
 
@@ -88,8 +98,7 @@ const Auth = () => {
           }
         } catch (error) {
           console.error("[Auth] Error in auth state change:", error);
-          setError("An error occurred while checking your profile. Please try signing in again.");
-          toast.error("Authentication error. Please try again.");
+          setError(getErrorMessage(error as AuthError));
         }
       }
     });
@@ -98,6 +107,24 @@ const Auth = () => {
       subscription.unsubscribe();
     };
   }, [navigate]);
+
+  const getErrorMessage = (error: AuthError) => {
+    if (error instanceof AuthApiError) {
+      switch (error.code) {
+        case 'invalid_credentials':
+          return 'Invalid email or password. Please check your credentials and try again.';
+        case 'email_not_confirmed':
+          return 'Please verify your email address before signing in.';
+        case 'user_not_found':
+          return 'No user found with these credentials.';
+        case 'invalid_grant':
+          return 'Invalid login credentials.';
+        default:
+          return error.message;
+      }
+    }
+    return error.message;
+  };
 
   if (isCheckingSession) {
     return <div className="min-h-screen bg-background flex items-center justify-center">
