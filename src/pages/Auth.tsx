@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { X } from "lucide-react";
 import {
   Form,
   FormControl,
@@ -96,7 +97,16 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md space-y-8">
+      <div className="w-full max-w-md space-y-8 relative">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute right-0 top-0"
+          onClick={() => navigate("/")}
+        >
+          <X className="h-4 w-4" />
+        </Button>
+
         <div className="text-center">
           <h1 className="text-4xl font-bold">
             {authType === "signup" ? "Create an account" : "Welcome back"}
