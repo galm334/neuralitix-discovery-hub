@@ -55,8 +55,30 @@ const Auth = () => {
       }
     });
 
+    // Set up a mutation observer to watch for the password input
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.addedNodes.length) {
+          const passwordInput = document.querySelector('input[type="password"]');
+          if (passwordInput) {
+            passwordInput.addEventListener('input', (e) => {
+              const target = e.target as HTMLInputElement;
+              setPassword(target.value);
+            });
+            observer.disconnect();
+          }
+        }
+      });
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+
     return () => {
       subscription.unsubscribe();
+      observer.disconnect();
     };
   }, [navigate]);
 
@@ -123,10 +145,6 @@ const Auth = () => {
               }}
               providers={[]}
               redirectTo={window.location.origin}
-              onPasswordInput={(e) => {
-                const target = e.target as HTMLInputElement;
-                setPassword(target.value);
-              }}
             />
           </div>
 
