@@ -4,6 +4,8 @@ declare namespace JSX {
       React.HTMLAttributes<HTMLElement> & {
         'is-popup'?: string;
         'chatbot-id'?: string;
+        height?: string;
+        width?: string;
       },
       HTMLElement
     >;
