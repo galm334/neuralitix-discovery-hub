@@ -11,17 +11,27 @@ const Auth = () => {
   const [error, setError] = useState<string | null>(null);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
 
+  // Initial session check
   useEffect(() => {
     const checkSession = async () => {
       try {
+        console.log("[Auth] Checking initial session...");
         const { data: { session } } = await supabase.auth.getSession();
+        
         if (session?.user?.id) {
-          const { data: profile } = await supabase
+          console.log("[Auth] Found existing session, checking profile...");
+          const { data: profile, error: profileError } = await supabase
             .from("profiles")
             .select("terms_accepted")
             .eq("id", session.user.id)
             .single();
 
+          if (profileError) {
+            console.error("[Auth] Profile fetch error:", profileError);
+            throw profileError;
+          }
+
+          console.log("[Auth] Profile status:", profile);
           if (!profile?.terms_accepted) {
             navigate("/onboarding", { replace: true });
           } else {
@@ -29,7 +39,7 @@ const Auth = () => {
           }
         }
       } catch (error) {
-        console.error("Session check error:", error);
+        console.error("[Auth] Session check error:", error);
         toast.error("Failed to check session");
       } finally {
         setIsCheckingSession(false);
@@ -39,16 +49,21 @@ const Auth = () => {
     checkSession();
   }, [navigate]);
 
+  // Auth state change listener
   useEffect(() => {
+    console.log("[Auth] Setting up auth state listener");
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log("Auth event:", event);
+        console.log("[Auth] Event:", event);
+        console.log("[Auth] Session:", session);
         
         if (event === "SIGNED_IN" && session?.user?.id) {
           try {
-            // Wait briefly for the profile to be created by the database trigger
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            console.log("[Auth] Signed in, waiting for profile creation...");
+            // Wait for database trigger to create profile
+            await new Promise(resolve => setTimeout(resolve, 1500));
             
+            console.log("[Auth] Checking profile status...");
             const { data: profile, error: profileError } = await supabase
               .from("profiles")
               .select("terms_accepted")
@@ -56,17 +71,20 @@ const Auth = () => {
               .single();
 
             if (profileError) {
-              console.error("Profile fetch error:", profileError);
+              console.error("[Auth] Profile fetch error:", profileError);
               throw profileError;
             }
 
+            console.log("[Auth] Profile data:", profile);
             if (!profile?.terms_accepted) {
+              console.log("[Auth] Redirecting to onboarding...");
               navigate("/onboarding", { replace: true });
             } else {
+              console.log("[Auth] Redirecting to home...");
               navigate("/", { replace: true });
             }
           } catch (error) {
-            console.error("Error checking profile:", error);
+            console.error("[Auth] Error in auth flow:", error);
             setError("Failed to check user profile");
             toast.error("Authentication error occurred");
           }
@@ -74,7 +92,10 @@ const Auth = () => {
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      console.log("[Auth] Cleaning up auth listener");
+      subscription.unsubscribe();
+    };
   }, [navigate]);
 
   if (isCheckingSession) {
