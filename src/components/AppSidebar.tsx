@@ -1,4 +1,4 @@
-import { Home, Star, TrendingUp, Plus, Send, MessageSquare } from "lucide-react";
+import { Home, Star, TrendingUp, Plus, Send, MessageSquare, Menu, Mail, LucideIcon } from "lucide-react";
 import { Sidebar } from "./Sidebar";
 import { SidebarMenuItem } from "./SidebarMenuItem";
 import { useSidebar } from "@/contexts/SidebarContext";
@@ -14,12 +14,19 @@ const navigationItems = [
   { title: "Contact", url: "/contact", icon: MessageSquare },
 ];
 
+interface AuthOptionProps {
+  title: string;
+  icon?: LucideIcon;
+  onClick: () => void;
+}
+
 export function AppSidebar() {
-  const { isMobile } = useSidebar();
+  const { isMobile, openMobile, setOpenMobile } = useSidebar();
   const navigate = useNavigate();
 
   const handleAuthClick = (type: 'signin' | 'signup') => {
     navigate(`/auth?type=${type}`);
+    setOpenMobile(false);
   };
 
   const AuthButtons = () => (
@@ -42,13 +49,32 @@ export function AppSidebar() {
     </div>
   );
 
+  const AuthOption = ({ title, icon: Icon, onClick }: AuthOptionProps) => (
+    <button
+      onClick={onClick}
+      className="flex items-center gap-3 w-full px-4 py-3 text-sm text-foreground/70 hover:bg-accent/50 hover:text-foreground rounded-md"
+    >
+      {Icon && <Icon className="h-5 w-5" />}
+      <span>{title}</span>
+    </button>
+  );
+
   return (
     <>
       {/* Logo header for mobile */}
       {isMobile && (
         <div className="fixed top-0 left-0 right-0 h-14 bg-background border-b border-border flex items-center justify-between z-50 px-4">
-          <h1 className="text-2xl font-bold text-primary">Neuralitix</h1>
-          <AuthButtons />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            onClick={() => setOpenMobile(true)}
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+          <h1 className="text-2xl font-bold text-primary absolute left-1/2 -translate-x-1/2">
+            Neuralitix
+          </h1>
         </div>
       )}
       
@@ -71,22 +97,22 @@ export function AppSidebar() {
               icon={item.icon}
             />
           ))}
-          {/* Auth buttons in mobile menu */}
+          {/* Auth options in mobile menu */}
           {isMobile && (
-            <li className="mt-4 flex flex-col gap-2">
-              <Button 
-                variant="ghost" 
-                className="w-full justify-start text-white hover:text-white hover:bg-primary/80"
-                onClick={() => handleAuthClick('signin')}
-              >
-                Sign in
-              </Button>
-              <Button 
-                className="w-full justify-start bg-blue-500 text-white hover:bg-blue-600"
+            <li className="mt-4 space-y-2">
+              <AuthOption
+                title="Sign up"
                 onClick={() => handleAuthClick('signup')}
-              >
-                Sign up
-              </Button>
+              />
+              <AuthOption
+                title="Sign in with Email"
+                icon={Mail}
+                onClick={() => handleAuthClick('signin')}
+              />
+              <AuthOption
+                title="Sign in with Google"
+                onClick={() => handleAuthClick('signin')}
+              />
             </li>
           )}
         </ul>
