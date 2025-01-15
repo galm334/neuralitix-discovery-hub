@@ -30,13 +30,15 @@ const formSchema = z.object({
     ),
 });
 
+type FormValues = z.infer<typeof formSchema>;
+
 const Auth = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const authType = searchParams.get("type") || "signin";
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: "",
@@ -67,12 +69,18 @@ const Auth = () => {
     };
   }, [navigate]);
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: FormValues) => {
     try {
       setIsLoading(true);
       const { error } = authType === "signup" 
-        ? await supabase.auth.signUp(values)
-        : await supabase.auth.signInWithPassword(values);
+        ? await supabase.auth.signUp({
+            email: values.email,
+            password: values.password,
+          })
+        : await supabase.auth.signInWithPassword({
+            email: values.email,
+            password: values.password,
+          });
 
       if (error) throw error;
 
