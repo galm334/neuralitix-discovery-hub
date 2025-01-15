@@ -5,28 +5,32 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { AuthError, AuthChangeEvent, Session } from "@supabase/supabase-js";
+import { AuthError, AuthApiError, Session } from "@supabase/supabase-js";
 
 const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [error, setError] = useState<string | null>(null);
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event: AuthChangeEvent, session: Session | null) => {
+      async (event, session) => {
         console.log("Auth event:", event);
         
         if (event === "SIGNED_IN") {
           if (!session?.user?.id) return;
           
           try {
-            // Check if terms are accepted
+            // Wait briefly for the profile to be created by the database trigger
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Check if profile exists and terms are accepted
             const { data: profile, error: profileError } = await supabase
               .from("profiles")
               .select("terms_accepted")
               .eq("id", session.user.id)
-              .single();
+              .maybeSingle();
 
             if (profileError) {
               console.error("Profile fetch error:", profileError);
@@ -34,26 +38,20 @@ const Auth = () => {
               return;
             }
 
-            // Always redirect to onboarding for new Google sign-ups
-            if (session.user.app_metadata.provider === 'google') {
-              navigate("/onboarding");
+            // For Google sign-ups or if terms not accepted, go to onboarding
+            if (session.user.app_metadata.provider === 'google' || !profile?.terms_accepted) {
+              navigate("/onboarding", { replace: true });
               return;
             }
 
-            // For other providers, check terms acceptance
+            // For other cases where terms are accepted, go to home
             if (profile?.terms_accepted) {
-              navigate("/");
-            } else {
-              navigate("/onboarding");
+              navigate("/", { replace: true });
             }
           } catch (err) {
             console.error("Error checking profile:", err);
             setError(err instanceof Error ? err.message : "An error occurred");
           }
-        }
-
-        if (event === "SIGNED_OUT") {
-          console.log("User signed out");
         }
       }
     );
@@ -61,12 +59,27 @@ const Auth = () => {
     // Handle initial session
     const checkSession = async () => {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      setIsCheckingSession(false);
+      
       if (sessionError) {
         console.error("Session error:", sessionError);
         setError(sessionError.message);
+        return;
       }
+      
       if (session) {
-        console.log("Initial session:", session);
+        // Check profile and redirect if necessary
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("terms_accepted")
+          .eq("id", session.user.id)
+          .maybeSingle();
+
+        if (session.user.app_metadata.provider === 'google' || !profile?.terms_accepted) {
+          navigate("/onboarding", { replace: true });
+        } else if (profile?.terms_accepted) {
+          navigate("/", { replace: true });
+        }
       }
     };
 
@@ -75,15 +88,11 @@ const Auth = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  const handleAuthError = (error: AuthError) => {
-    console.error("Auth error:", error);
-    setError(error.message);
-    toast({
-      variant: "destructive",
-      title: "Authentication Error",
-      description: error.message,
-    });
-  };
+  if (isCheckingSession) {
+    return <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="animate-pulse">Loading...</div>
+    </div>;
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -116,7 +125,7 @@ const Auth = () => {
               },
             }}
             providers={["google"]}
-            redirectTo={`${window.location.origin}/onboarding`}
+            redirectTo={`${window.location.origin}/auth`}
           />
         </div>
       </div>
