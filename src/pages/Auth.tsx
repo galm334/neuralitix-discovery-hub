@@ -39,15 +39,13 @@ const Auth = () => {
             }
 
             // For Google sign-ups or if terms not accepted, go to onboarding
-            if (session.user.app_metadata.provider === 'google' || !profile?.terms_accepted) {
+            if (!profile?.terms_accepted) {
               navigate("/onboarding", { replace: true });
               return;
             }
 
-            // For other cases where terms are accepted, go to home
-            if (profile?.terms_accepted) {
-              navigate("/", { replace: true });
-            }
+            // For cases where terms are accepted, go to home
+            navigate("/", { replace: true });
           } catch (err) {
             console.error("Error checking profile:", err);
             setError(err instanceof Error ? err.message : "An error occurred");
@@ -58,28 +56,36 @@ const Auth = () => {
 
     // Handle initial session
     const checkSession = async () => {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      setIsCheckingSession(false);
-      
-      if (sessionError) {
-        console.error("Session error:", sessionError);
-        setError(sessionError.message);
-        return;
-      }
-      
-      if (session) {
-        // Check profile and redirect if necessary
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("terms_accepted")
-          .eq("id", session.user.id)
-          .maybeSingle();
-
-        if (session.user.app_metadata.provider === 'google' || !profile?.terms_accepted) {
-          navigate("/onboarding", { replace: true });
-        } else if (profile?.terms_accepted) {
-          navigate("/", { replace: true });
+      try {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error("Session error:", sessionError);
+          setError(sessionError.message);
+          setIsCheckingSession(false);
+          return;
         }
+        
+        if (session?.user?.id) {
+          // Check profile and redirect if necessary
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("terms_accepted")
+            .eq("id", session.user.id)
+            .maybeSingle();
+
+          if (!profile?.terms_accepted) {
+            navigate("/onboarding", { replace: true });
+          } else {
+            navigate("/", { replace: true });
+          }
+        }
+        
+        setIsCheckingSession(false);
+      } catch (err) {
+        console.error("Error checking session:", err);
+        setError(err instanceof Error ? err.message : "An error occurred");
+        setIsCheckingSession(false);
       }
     };
 
