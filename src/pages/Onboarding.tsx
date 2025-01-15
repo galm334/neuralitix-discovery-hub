@@ -53,7 +53,7 @@ const Onboarding = () => {
     setShowWelcome(true);
   };
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     setShowWelcome(false);
     navigate("/");
   };
@@ -73,17 +73,9 @@ const Onboarding = () => {
             <div className="space-y-4">
               <section>
                 <h2 className="text-xl font-bold mb-2">Terms and Conditions</h2>
-                <p>[Placeholder for Terms and Conditions]</p>
-              </section>
-              
-              <section>
-                <h2 className="text-xl font-bold mb-2">Privacy Policy</h2>
-                <p>[Placeholder for Privacy Policy]</p>
-              </section>
-              
-              <section>
-                <h2 className="text-xl font-bold mb-2">GDPR Compliance</h2>
-                <p>[Placeholder for GDPR information]</p>
+                <p>Updated on 16 November 2024</p>
+                <p>Welcome to Neuralitix (the "Site"), a platform designed to connect users with real estate agents and related services. These Terms of Use (the "Terms") govern your access to and use of the Site and its services. By accessing or using the Site, you agree to be bound by these Terms, including any additional terms and policies referenced herein or available by hyperlink. If you do not agree to these Terms, you must not access or use the Site.</p>
+                <p>Neuralitix is committed to providing a seamless, user-friendly experience to help users find the best real estate professionals.</p>
               </section>
             </div>
           </ScrollArea>
@@ -98,7 +90,22 @@ const Onboarding = () => {
               htmlFor="terms"
               className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
             >
-              I accept the terms and conditions, privacy policy, and GDPR compliance
+              I accept the terms and conditions, {" "}
+              <a 
+                href="/privacy" 
+                target="_blank" 
+                className="text-primary hover:underline"
+              >
+                privacy policy
+              </a>
+              , and {" "}
+              <a 
+                href="/gdpr" 
+                target="_blank" 
+                className="text-primary hover:underline"
+              >
+                GDPR compliance
+              </a>
             </label>
           </div>
 

@@ -13,6 +13,9 @@ import Chat from "@/pages/Chat";
 import StandaloneChat from "@/pages/StandaloneChat";
 import Auth from "@/pages/Auth";
 import Onboarding from "@/pages/Onboarding";
+import Terms from "@/pages/Terms";
+import Privacy from "@/pages/Privacy";
+import GDPR from "@/pages/GDPR";
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 
@@ -20,6 +23,7 @@ function App() {
   const location = useLocation();
   const isStandaloneChat = location.pathname === '/standalone-chat';
   const isAuthPage = location.pathname === '/auth' || location.pathname === '/onboarding';
+  const isLegalPage = ['/terms', '/privacy', '/gdpr'].includes(location.pathname);
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
@@ -69,12 +73,15 @@ function App() {
   return (
     <SidebarProvider>
       <div className="flex min-h-screen bg-background">
-        {!isAuthPage && <AppSidebar />}
+        {!isAuthPage && !isLegalPage && <AppSidebar />}
         <main className="flex-1">
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/gdpr" element={<GDPR />} />
             <Route path="/popular" element={<Popular />} />
             <Route path="/trending" element={<Trending />} />
             <Route path="/just-added" element={<JustAdded />} />
@@ -85,7 +92,7 @@ function App() {
           </Routes>
         </main>
         <Toaster />
-        {!isStandaloneChat && !isAuthPage && (
+        {!isStandaloneChat && !isAuthPage && !isLegalPage && (
           <div 
             className="fixed bottom-0 right-0 z-50" 
             style={{ 
