@@ -23,7 +23,18 @@ const SearchResults = () => {
   const { conversationId } = useParams();
 
   const handleChatNow = () => {
-    window.open('https://chatbot-f5d9ef.zapier.app/_z/embed/chatbot/clqec2l0w00c828qsq8mpmyu8/clqec2l2r00ca28qsdfz0m4my?isPopup=true', 'actions', 'width=650,height=700');
+    // Get the chatbot element
+    const chatbotEmbed = document.querySelector('zapier-interfaces-chatbot-embed');
+    if (chatbotEmbed) {
+      // Dispatch a custom event to open the chatbot
+      const event = new CustomEvent('zapier-interfaces-chatbot-open', {
+        bubbles: true,
+        composed: true
+      });
+      chatbotEmbed.dispatchEvent(event);
+    } else {
+      toast.error("Chat is not available at the moment");
+    }
   };
 
   useEffect(() => {
