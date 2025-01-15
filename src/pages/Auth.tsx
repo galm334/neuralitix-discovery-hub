@@ -18,6 +18,7 @@ const Auth = () => {
   const [passwordValid, setPasswordValid] = useState(false);
   const [passwordsMatch, setPasswordsMatch] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Password validation criteria
   const hasMinLength = password.length >= 8;
@@ -61,14 +62,16 @@ const Auth = () => {
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (mutation.addedNodes.length) {
-          const passwordInput = document.querySelector('input[type="password"]');
-          if (passwordInput) {
-            passwordInput.addEventListener('input', (e) => {
-              const target = e.target as HTMLInputElement;
-              setPassword(target.value);
-            });
-            observer.disconnect();
-          }
+          const passwordInputs = document.querySelectorAll('input[type="password"]');
+          passwordInputs.forEach((input, index) => {
+            if (index === 0) { // First password input
+              input.addEventListener('input', (e) => {
+                const target = e.target as HTMLInputElement;
+                setPassword(target.value);
+              });
+            }
+          });
+          observer.disconnect();
         }
       });
     });
@@ -150,23 +153,25 @@ const Auth = () => {
             />
             
             {authType === "signup" && (
-              <div className="mt-4 relative">
-                <Input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Confirm Password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="pr-10"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-2 top-1/2 -translate-y-1/2"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </Button>
+              <div className="mt-4 space-y-4">
+                <div className="relative">
+                  <Input
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="Confirm Password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-2 top-1/2 -translate-y-1/2"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
               </div>
             )}
           </div>
