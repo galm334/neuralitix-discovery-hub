@@ -12,12 +12,14 @@ const Auth = () => {
 
   useEffect(() => {
     // Listen for auth state changes specifically on the auth page
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
       console.log('Auth state changed in Auth.tsx:', event);
       
-      if (event === 'USER_ALREADY_EXISTS') {
-        toast.info("You already have an account. Signing you in...");
-        // The session will be handled by AuthContext
+      if (event === 'SIGNED_UP') {
+        const { error } = await supabase.auth.getUser();
+        if (error?.message?.includes('User already registered')) {
+          toast.info("You already have an account. Signing you in...");
+        }
       }
     });
 
