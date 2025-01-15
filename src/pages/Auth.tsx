@@ -19,9 +19,6 @@ const Auth = () => {
         if (error) throw error;
         
         if (session?.user) {
-          // Store session
-          localStorage.setItem('supabase.auth.token', session.access_token);
-          
           // Check if profile exists
           const { data: profile } = await supabase
             .from('profiles')
@@ -54,9 +51,6 @@ const Auth = () => {
         console.log("[Auth] User signed in, checking profile");
         
         try {
-          // Store session
-          localStorage.setItem('supabase.auth.token', session.access_token);
-          
           const { data: profile } = await supabase
             .from('profiles')
             .select('*')

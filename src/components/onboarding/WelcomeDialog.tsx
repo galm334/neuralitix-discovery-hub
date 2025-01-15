@@ -21,14 +21,10 @@ export const WelcomeDialog = ({ isOpen, onComplete }: WelcomeDialogProps) => {
     setProgress(25);
 
     try {
-      // Get current session
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user?.id) {
         throw new Error("No user session found");
       }
-
-      // Store current session
-      localStorage.setItem('supabase.auth.token', session.access_token);
 
       setProgress(50);
 
@@ -50,16 +46,11 @@ export const WelcomeDialog = ({ isOpen, onComplete }: WelcomeDialogProps) => {
 
       setProgress(75);
 
-      // Refresh session to ensure it's still valid
-      const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession();
-      if (refreshError) throw refreshError;
-
-      if (!refreshedSession) {
+      // Verify session is still valid
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      if (!currentSession) {
         throw new Error("Session expired");
       }
-
-      // Store refreshed session
-      localStorage.setItem('supabase.auth.token', refreshedSession.access_token);
 
       setProgress(100);
       toast.success("Profile created successfully!");
@@ -74,13 +65,7 @@ export const WelcomeDialog = ({ isOpen, onComplete }: WelcomeDialogProps) => {
       console.error("Error creating profile:", error);
       toast.error("Failed to create profile. Please try again.");
       setIsCreatingProfile(false);
-      
-      // Try to get a new session
-      const { error: refreshError } = await supabase.auth.refreshSession();
-      if (refreshError) {
-        console.error("Failed to refresh session:", refreshError);
-        navigate("/auth", { replace: true });
-      }
+      navigate("/auth", { replace: true });
     }
   };
 
