@@ -20,8 +20,7 @@ const StandaloneChat = () => {
           is-popup="false"
           chatbot-id="clqec2l2r00ca28qsdfz0m4my"
           height="600px"
-          width="400px"
-          className="md:w-[800px]"
+          className="w-[400px] md:w-[800px]"
         />
       </div>
     </div>
