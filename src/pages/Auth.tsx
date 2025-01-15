@@ -38,7 +38,6 @@ const Auth = () => {
   }, [password, confirmPassword]);
 
   useEffect(() => {
-    // Check initial session
     const checkSession = async () => {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       if (sessionError) {
@@ -54,62 +53,32 @@ const Auth = () => {
 
     checkSession();
 
-    // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log('Auth state changed:', event, 'Session:', session);
-
-      switch (event) {
-        case 'SIGNED_IN':
-          if (session) {
-            console.log('User signed in successfully');
-            navigate("/");
-          } else {
-            console.error('SIGNED_IN event but no session');
-            toast.error("Sign in failed. Please try again.");
-          }
-          break;
-
-        case 'USER_UPDATED':
-          console.log('User updated');
-          if (session) navigate("/");
-          break;
-
-        case 'SIGNED_OUT':
-          console.log('User signed out');
-          navigate("/auth");
-          break;
-
-        default:
-          console.log('Unhandled auth event:', event);
+      if (event === 'SIGNED_IN' && session) {
+        navigate("/");
       }
     });
 
-    // Setup password input listener
-    const setupPasswordListener = () => {
-      const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-          if (mutation.addedNodes.length) {
-            const passwordInput = document.querySelector('input[type="password"]');
-            if (passwordInput) {
-              passwordInput.addEventListener('input', (e) => {
-                const target = e.target as HTMLInputElement;
-                setPassword(target.value);
-              });
-              observer.disconnect();
-            }
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.addedNodes.length) {
+          const passwordInput = document.querySelector('input[type="password"]');
+          if (passwordInput) {
+            passwordInput.addEventListener('input', (e) => {
+              const target = e.target as HTMLInputElement;
+              setPassword(target.value);
+            });
+            observer.disconnect();
           }
-        });
+        }
       });
+    });
 
-      observer.observe(document.body, {
-        childList: true,
-        subtree: true
-      });
-
-      return observer;
-    };
-
-    const observer = setupPasswordListener();
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
 
     return () => {
       subscription.unsubscribe();
@@ -119,7 +88,7 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-3xl space-y-8 relative">
+      <div className="w-full max-w-4xl space-y-8 relative">
         <Button
           variant="ghost"
           size="icon"
@@ -130,7 +99,7 @@ const Auth = () => {
           <span className="sr-only">Close</span>
         </Button>
 
-        <div className="text-center">
+        <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-primary">
             {authType === "signup" ? "Create an account" : "Welcome back"}
           </h1>
@@ -140,10 +109,10 @@ const Auth = () => {
               : "Sign in to continue to Neuralitix"}
           </p>
         </div>
-        
+
         <div className="grid grid-cols-5 gap-0">
-          <div className="col-span-4">
-            <div className="w-[60%] mx-auto">
+          <div className="col-span-4 pr-8">
+            <div className="w-[60%] mx-auto space-y-6">
               <SupabaseAuth
                 supabaseClient={supabase}
                 view={authType === "signup" ? "sign_up" : "sign_in"}
