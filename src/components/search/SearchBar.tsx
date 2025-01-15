@@ -1,94 +1,19 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
-import { useDebounce } from "@/hooks/use-debounce";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useSearchSuggestions } from "@/hooks/use-search-suggestions";
+import SearchSuggestions from "./SearchSuggestions";
 
 export const SearchBar = () => {
   const [query, setQuery] = useState("");
-  const [suggestions, setSuggestions] = useState<string[]>([]);
-  const debouncedQuery = useDebounce(query, 300);
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        suggestionsRef.current &&
-        !suggestionsRef.current.contains(event.target as Node) &&
-        inputRef.current &&
-        !inputRef.current.contains(event.target as Node)
-      ) {
-        setSuggestions([]);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
-
-  useEffect(() => {
-    const fetchSuggestions = async () => {
-      if (debouncedQuery.length >= 2) {
-        try {
-          console.log('Fetching suggestions for query:', debouncedQuery);
-          const searchTerms = debouncedQuery
-            .toLowerCase()
-            .split(/\s+/)
-            .filter(term => term.length > 0);
-
-          if (searchTerms.length === 0) {
-            setSuggestions([]);
-            return;
-          }
-
-          const conditions = searchTerms.map(term => 
-            `name.ilike.%${term}%,description.ilike.%${term}%,category.ilike.%${term}%`
-          ).join(',');
-
-          const { data: tools, error } = await supabase
-            .from("ai_tools")
-            .select("name, description, category")
-            .or(conditions)
-            .limit(5);
-
-          if (error) {
-            console.error("Error fetching suggestions:", error);
-            return;
-          }
-
-          console.log('Found tools:', tools);
-
-          // Generate suggestions based on found tools
-          let newSuggestions: string[] = [];
-          if (tools && tools.length > 0) {
-            const categories = [...new Set(tools.map(tool => tool.category))];
-            newSuggestions = [
-              ...categories.map(category => `Find AI tools for ${category.toLowerCase()}`),
-              ...tools.map(tool => `Tell me about ${tool.name}`),
-            ];
-          }
-
-          console.log('Generated suggestions:', newSuggestions);
-          setSuggestions(newSuggestions);
-        } catch (error) {
-          console.error("Error fetching suggestions:", error);
-          setSuggestions([]);
-        }
-      } else {
-        setSuggestions([]);
-      }
-    };
-
-    fetchSuggestions();
-  }, [debouncedQuery]);
+  const suggestions = useSearchSuggestions(query);
 
   const handleSearch = async (searchQuery: string) => {
     try {
@@ -155,22 +80,14 @@ export const SearchBar = () => {
         </Button>
       </div>
 
-      {debouncedQuery.length >= 2 && suggestions.length > 0 && (
-        <Card ref={suggestionsRef} className="absolute w-full mt-2 p-2 shadow-lg z-50 max-h-[400px] overflow-y-auto">
-          {suggestions.map((suggestion, index) => (
-            <button
-              key={`suggestion-${index}`}
-              className="w-full text-left px-4 py-2 hover:bg-muted rounded-md"
-              onClick={() => {
-                setQuery(suggestion);
-                handleSearch(suggestion);
-              }}
-            >
-              {suggestion}
-            </button>
-          ))}
-        </Card>
-      )}
+      <SearchSuggestions
+        ref={suggestionsRef}
+        suggestions={suggestions}
+        onSuggestionClick={(suggestion) => {
+          setQuery(suggestion);
+          handleSearch(suggestion);
+        }}
+      />
     </div>
   );
 };
