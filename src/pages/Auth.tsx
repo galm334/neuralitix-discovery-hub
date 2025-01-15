@@ -198,7 +198,7 @@ const Auth = () => {
           )}
 
           {showPasswordRequirements && (
-            <div className="absolute left-full ml-4 top-0 w-64 bg-background border rounded-lg p-4 shadow-lg">
+            <div className="mt-4 bg-background border rounded-lg p-4 shadow-sm">
               <p className="font-medium mb-2">Password requirements:</p>
               <ul className="space-y-1">
                 <li className={`flex items-center gap-2 ${hasMinLength ? 'text-green-500' : 'text-muted-foreground'}`}>
