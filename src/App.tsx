@@ -59,7 +59,7 @@ function App() {
         </main>
         <Toaster />
         {!isStandaloneChat && (
-          <div className="fixed bottom-0 right-0 z-50" style={{ width: '400px' }}>
+          <div className="fixed bottom-0 right-0 z-50" style={{ width: '100px' }}>
             <zapier-interfaces-chatbot-embed 
               id="chatbot-embed"
               is-popup='true' 
