@@ -43,7 +43,8 @@ const Onboarding = () => {
 
   const handleComplete = () => {
     setShowWelcome(false);
-    navigate("/");
+    // Use replace to prevent going back to onboarding
+    navigate("/", { replace: true });
   };
 
   return (

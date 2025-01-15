@@ -1,6 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
 
 interface WelcomeDialogProps {
   isOpen: boolean;
@@ -8,15 +7,6 @@ interface WelcomeDialogProps {
 }
 
 export const WelcomeDialog = ({ isOpen, onComplete }: WelcomeDialogProps) => {
-  const navigate = useNavigate();
-
-  const handleComplete = () => {
-    // First close the dialog
-    onComplete();
-    // Then navigate to home
-    navigate("/", { replace: true });
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={() => {}}>
       <DialogContent className="sm:max-w-[425px]">
@@ -37,7 +27,7 @@ export const WelcomeDialog = ({ isOpen, onComplete }: WelcomeDialogProps) => {
           </div>
         </div>
         <div className="flex justify-end">
-          <Button onClick={handleComplete}>Let's Go ➡️</Button>
+          <Button onClick={onComplete}>Let's Go ➡️</Button>
         </div>
       </DialogContent>
     </Dialog>
