@@ -3,10 +3,9 @@ import { useParams } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, Link2, MessageSquare } from "lucide-react";
-import { Card } from "@/components/ui/card";
-import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
+import SearchResultCard from "@/components/search/SearchResultCard";
+import ChatNowButton from "@/components/search/ChatNowButton";
 
 interface SearchResult {
   id: string;
@@ -22,15 +21,9 @@ const SearchResults = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const { conversationId } = useParams();
 
-  const handleChatNow = () => {
-    // Navigate to standalone chat instead of trying to open the popup
-    window.location.href = '/standalone-chat';
-  };
-
   useEffect(() => {
     const fetchSearchQuery = async () => {
       try {
-        // First get the search query from the conversation
         const { data: messages } = await supabase
           .from("chat_messages")
           .select("content")
@@ -49,7 +42,6 @@ const SearchResults = () => {
         setSearchQuery(query);
         console.log("Search query:", query);
 
-        // Split the search query into words and remove common words
         const searchTerms = query
           .replace(/find|ai|tools|for/gi, '')
           .trim()
@@ -64,12 +56,10 @@ const SearchResults = () => {
           return;
         }
 
-        // Build the OR conditions for each search term
         const conditions = searchTerms.map(term => 
           `name.ilike.%${term}%,description.ilike.%${term}%,category.ilike.%${term}%`
         ).join(',');
 
-        // Then search for tools using direct text search
         const { data: tools, error } = await supabase
           .from("ai_tools")
           .select("id, name, description, category, logo_url")
@@ -118,52 +108,13 @@ const SearchResults = () => {
         </h2>
         <div className="space-y-6">
           {results.map((tool) => (
-            <Card key={tool.id} className="p-6 hover:shadow-lg transition-shadow">
-              <div className="flex gap-4">
-                <div className="w-16 h-16 flex-shrink-0">
-                  {tool.logo_url ? (
-                    <img
-                      src={tool.logo_url}
-                      alt={`${tool.name} logo`}
-                      className="w-full h-full object-contain rounded-lg"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-muted rounded-lg flex items-center justify-center">
-                      <Link2 className="w-6 h-6 text-muted-foreground" />
-                    </div>
-                  )}
-                </div>
-                <div className="flex-1">
-                  <Link 
-                    to={`/tool/${tool.name.toLowerCase().replace(/\s+/g, '-')}`}
-                    className="text-xl font-semibold hover:text-primary transition-colors"
-                  >
-                    {tool.name}
-                  </Link>
-                  <p className="text-muted-foreground mt-2">
-                    {tool.description}
-                    <Link 
-                      to={`/tool/${tool.name.toLowerCase().replace(/\s+/g, '-')}`}
-                      className="ml-2 text-primary hover:underline inline-flex items-center"
-                    >
-                      See more
-                    </Link>
-                  </p>
-                </div>
-              </div>
-            </Card>
+            <SearchResultCard key={tool.id} {...tool} />
           ))}
         </div>
         
         <div className="mt-12 text-center">
           <p className="text-lg mb-4">Still unsure? Ask our AI assistant for personalized recommendations!</p>
-          <Button 
-            onClick={handleChatNow}
-            className="bg-primary text-white px-6"
-          >
-            <MessageSquare className="mr-2 h-5 w-5" />
-            Chat Now
-          </Button>
+          <ChatNowButton />
         </div>
       </ScrollArea>
     </div>
