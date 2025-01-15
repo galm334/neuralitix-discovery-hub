@@ -107,12 +107,15 @@ const Auth = () => {
         childList: true,
         subtree: true
       });
+
+      return observer;
     };
 
-    setupPasswordListener();
+    const observer = setupPasswordListener();
 
     return () => {
       subscription.unsubscribe();
+      observer.disconnect();
     };
   }, [navigate]);
 
