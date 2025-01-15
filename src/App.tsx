@@ -10,8 +10,32 @@ import JustAdded from "@/pages/JustAdded";
 import ToolPage from "@/pages/ToolPage";
 import CategoryPage from "@/pages/CategoryPage";
 import Chat from "@/pages/Chat";
+import { useEffect } from "react";
 
 function App() {
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'OPEN_CHATBOT') {
+        const chatbotEmbed = document.querySelector('zapier-interfaces-chatbot-embed');
+        if (chatbotEmbed) {
+          try {
+            const event = new CustomEvent('zapier-interfaces-chatbot-open', {
+              bubbles: true,
+              composed: true,
+              cancelable: true
+            });
+            chatbotEmbed.dispatchEvent(event);
+          } catch (error) {
+            console.error('Error opening chatbot:', error);
+          }
+        }
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
+
   return (
     <BrowserRouter>
       <SidebarProvider>
