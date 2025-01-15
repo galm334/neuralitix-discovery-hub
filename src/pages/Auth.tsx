@@ -142,9 +142,9 @@ const Auth = () => {
         </div>
         
         <div className="relative">
-          <div className="grid grid-cols-5 gap-4">
+          <div className="grid grid-cols-5 gap-0">
             <div className="col-span-4">
-              <div className="w-[60%] mx-auto space-y-4">
+              <div className="w-[60%] mx-auto">
                 <div className="space-y-4">
                   <SupabaseAuth
                     supabaseClient={supabase}
