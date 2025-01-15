@@ -65,8 +65,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const profile = await fetchProfile(session.user.id);
       setProfile(profile);
 
-      if (!profile || !profile.terms_accepted) {
+      // Only redirect to onboarding if profile exists but terms not accepted
+      if (profile && !profile.terms_accepted) {
         navigate('/onboarding');
+      } else if (!profile) {
+        // If no profile exists yet, wait briefly for it to be created
+        setTimeout(async () => {
+          const retryProfile = await fetchProfile(session.user.id);
+          setProfile(retryProfile);
+          if (retryProfile && !retryProfile.terms_accepted) {
+            navigate('/onboarding');
+          }
+        }, 1000);
       }
     } catch (error) {
       console.error('Navigation error:', error);
@@ -83,7 +93,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
-    // Get initial session
     const initializeAuth = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
@@ -109,7 +118,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     initializeAuth();
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state changed:', event);
       
@@ -117,15 +125,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSession(session);
 
         try {
-          if (event === 'SIGNED_IN' && session) {
-            await handleNavigation(session);
+          if (session) {
+            if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+              await handleNavigation(session);
+            }
           } else if (event === 'SIGNED_OUT') {
             setProfile(null);
             navigate('/auth');
-          } else if (event === 'TOKEN_REFRESHED') {
-            console.log('Session token refreshed');
-          } else if (event === 'USER_UPDATED') {
-            if (session) await refreshProfile();
           }
         } catch (error) {
           if (error instanceof AuthError) {
