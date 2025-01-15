@@ -1,111 +1,30 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { Auth as SupabaseAuth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AuthError, AuthApiError } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Auth = () => {
+  const { session, isLoading } = useAuth();
   const navigate = useNavigate();
-  const [error, setError] = useState<string | null>(null);
-  const [isCheckingSession, setIsCheckingSession] = useState(true);
 
-  // Initial session check
   useEffect(() => {
-    const checkSession = async () => {
-      try {
-        console.log("[Auth] Checking initial session");
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) {
-          console.error("[Auth] Session check error:", sessionError);
-          throw sessionError;
-        }
-
-        if (session?.user) {
-          console.log("[Auth] Session found for user:", session.user.id);
-          await checkAndHandleProfile(session.user.id);
-        }
-      } catch (error) {
-        console.error("[Auth] Error in checkSession:", error);
-        setError(getErrorMessage(error as AuthError));
-      } finally {
-        setIsCheckingSession(false);
-      }
-    };
-
-    checkSession();
-  }, [navigate]);
-
-  // Auth state change listener
-  useEffect(() => {
-    console.log("[Auth] Setting up auth state change listener");
-    
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("[Auth] Auth event:", event);
-      
-      if (event === 'SIGNED_IN' && session?.user) {
-        console.log("[Auth] User signed in, checking profile");
-        await checkAndHandleProfile(session.user.id);
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [navigate]);
-
-  const checkAndHandleProfile = async (userId: string) => {
-    try {
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('id, terms_accepted')
-        .eq('id', userId)
-        .maybeSingle();
-
-      console.log("[Auth] Profile check result:", { profile, profileError });
-
-      if (profileError) {
-        console.error("[Auth] Profile check error:", profileError);
-        throw profileError;
-      }
-
-      if (!profile) {
-        console.log("[Auth] No profile found, redirecting to onboarding");
-        navigate("/onboarding", { replace: true });
-      } else {
-        console.log("[Auth] Profile found, redirecting to home");
-        navigate("/", { replace: true });
-      }
-    } catch (error) {
-      console.error("[Auth] Error in checkAndHandleProfile:", error);
-      setError(getErrorMessage(error as AuthError));
+    if (!isLoading && session) {
+      navigate("/", { replace: true });
     }
-  };
+  }, [session, isLoading, navigate]);
 
-  const getErrorMessage = (error: AuthError) => {
-    if (error instanceof AuthApiError) {
-      switch (error.code) {
-        case 'invalid_credentials':
-          return 'Invalid email or password. Please check your credentials and try again.';
-        case 'email_not_confirmed':
-          return 'Please verify your email address before signing in.';
-        case 'user_not_found':
-          return 'No user found with these credentials.';
-        case 'invalid_grant':
-          return 'Invalid login credentials.';
-        default:
-          return error.message;
-      }
-    }
-    return error.message;
-  };
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
 
-  if (isCheckingSession) {
-    return <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="animate-pulse">Loading...</div>
-    </div>;
+  if (session) {
+    return null;
   }
 
   return (
@@ -117,12 +36,6 @@ const Auth = () => {
             Sign in to access your AI tools collection
           </p>
         </div>
-
-        {error && (
-          <Alert variant="destructive">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
 
         <div className="bg-card p-6 rounded-lg shadow-lg border">
           <SupabaseAuth
