@@ -7,6 +7,8 @@ import { toast } from "sonner";
 import { X, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const Auth = () => {
   const [searchParams] = useSearchParams();
@@ -16,6 +18,7 @@ const Auth = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordValid, setPasswordValid] = useState(false);
   const [passwordsMatch, setPasswordsMatch] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Password validation criteria
   const hasMinLength = password.length >= 8;
@@ -35,6 +38,11 @@ const Auth = () => {
     // Check if passwords match
     setPasswordsMatch(password === confirmPassword && password.length > 0);
   }, [password, confirmPassword]);
+
+  useEffect(() => {
+    // Show confirm password field after 3 characters
+    setShowConfirmPassword(password.length >= 3);
+  }, [password]);
 
   useEffect(() => {
     // Check initial session
@@ -165,6 +173,30 @@ const Auth = () => {
                 </div>
               </AlertDescription>
             </Alert>
+
+            {showConfirmPassword && (
+              <div className="space-y-2">
+                <Label htmlFor="confirm-password">Confirm Password</Label>
+                <Input
+                  id="confirm-password"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className={`w-full ${passwordsMatch ? 'border-green-500' : 'border-input'}`}
+                />
+                {confirmPassword.length > 0 && (
+                  <p className={`text-sm ${passwordsMatch ? 'text-green-500' : 'text-destructive'} flex items-center gap-2`}>
+                    {passwordsMatch ? (
+                      <>
+                        <Check size={16} /> Passwords match
+                      </>
+                    ) : (
+                      'Passwords do not match'
+                    )}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
