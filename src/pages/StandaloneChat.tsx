@@ -15,7 +15,7 @@ const StandaloneChat = () => {
 
   return (
     <div className="w-full flex justify-center">
-      <div className="w-[400px] md:w-[800px] px-4 py-8">
+      <div className="w-[100px] md:w-[200px] px-4 py-8">
         <zapier-interfaces-chatbot-embed
           is-popup="false"
           chatbot-id="clqec2l2r00ca28qsdfz0m4my"
