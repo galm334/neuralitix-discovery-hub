@@ -5,7 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { AuthError, AuthApiError, Session } from "@supabase/supabase-js";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -18,9 +17,7 @@ const Auth = () => {
       async (event, session) => {
         console.log("Auth event:", event);
         
-        if (event === "SIGNED_IN") {
-          if (!session?.user?.id) return;
-          
+        if (event === "SIGNED_IN" && session?.user?.id) {
           try {
             // Wait briefly for the profile to be created by the database trigger
             await new Promise(resolve => setTimeout(resolve, 1000));
@@ -38,13 +35,11 @@ const Auth = () => {
               return;
             }
 
-            // For Google sign-ups or if terms not accepted, go to onboarding
             if (!profile?.terms_accepted) {
               navigate("/onboarding", { replace: true });
               return;
             }
 
-            // For cases where terms are accepted, go to home
             navigate("/", { replace: true });
           } catch (err) {
             console.error("Error checking profile:", err);
@@ -67,7 +62,6 @@ const Auth = () => {
         }
         
         if (session?.user?.id) {
-          // Check profile and redirect if necessary
           const { data: profile } = await supabase
             .from("profiles")
             .select("terms_accepted")
