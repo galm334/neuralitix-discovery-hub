@@ -2,7 +2,6 @@ import { useEffect } from "react";
 
 const StandaloneChat = () => {
   useEffect(() => {
-    // Load Zapier script dynamically
     const script = document.createElement('script');
     script.src = 'https://interfaces.zapier.com/assets/web-components/zapier-interfaces/zapier-interfaces.esm.js';
     script.type = 'module';
@@ -15,9 +14,8 @@ const StandaloneChat = () => {
   }, []);
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <h1 className="text-2xl font-semibold mb-6">Chat with AI Assistant</h1>
-      <div className="mx-auto max-w-[400px]">
+    <div className="pl-4 py-8">
+      <div>
         <zapier-interfaces-chatbot-embed
           is-popup="false"
           chatbot-id="clqec2l2r00ca28qsdfz0m4my"

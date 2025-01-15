@@ -12,15 +12,18 @@ import CategoryPage from "@/pages/CategoryPage";
 import Chat from "@/pages/Chat";
 import StandaloneChat from "@/pages/StandaloneChat";
 import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
 
 function App() {
+  const location = useLocation();
+  const isStandaloneChat = location.pathname === '/standalone-chat';
+
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       if (event.data?.type === 'OPEN_CHATBOT') {
         const chatbotEmbed = document.querySelector('#chatbot-embed');
         if (chatbotEmbed) {
           try {
-            // Create a click event
             const clickEvent = new MouseEvent('click', {
               bubbles: true,
               cancelable: true,
@@ -39,23 +42,23 @@ function App() {
   }, []);
 
   return (
-    <BrowserRouter>
-      <SidebarProvider>
-        <div className="flex min-h-screen bg-background">
-          <AppSidebar />
-          <main className="flex-1">
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/popular" element={<Popular />} />
-              <Route path="/trending" element={<Trending />} />
-              <Route path="/just-added" element={<JustAdded />} />
-              <Route path="/tool/:toolId" element={<ToolPage />} />
-              <Route path="/category/:category" element={<CategoryPage />} />
-              <Route path="/chat/:conversationId" element={<Chat />} />
-              <Route path="/standalone-chat" element={<StandaloneChat />} />
-            </Routes>
-          </main>
-          <Toaster />
+    <SidebarProvider>
+      <div className="flex min-h-screen bg-background">
+        <AppSidebar />
+        <main className="flex-1">
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/popular" element={<Popular />} />
+            <Route path="/trending" element={<Trending />} />
+            <Route path="/just-added" element={<JustAdded />} />
+            <Route path="/tool/:toolId" element={<ToolPage />} />
+            <Route path="/category/:category" element={<CategoryPage />} />
+            <Route path="/chat/:conversationId" element={<Chat />} />
+            <Route path="/standalone-chat" element={<StandaloneChat />} />
+          </Routes>
+        </main>
+        <Toaster />
+        {!isStandaloneChat && (
           <div className="fixed bottom-0 right-0 z-50">
             <zapier-interfaces-chatbot-embed 
               id="chatbot-embed"
@@ -63,9 +66,9 @@ function App() {
               chatbot-id='clqec2l2r00ca28qsdfz0m4my'
             />
           </div>
-        </div>
-      </SidebarProvider>
-    </BrowserRouter>
+        )}
+      </div>
+    </SidebarProvider>
   );
 }
 
