@@ -22,7 +22,7 @@ const Auth = () => {
           console.log("[Auth] Found existing session, checking profile...");
           const { data: profile, error: profileError } = await supabase
             .from("profiles")
-            .select("terms_accepted")
+            .select("*")
             .eq("id", session.user.id)
             .single();
 
@@ -32,9 +32,15 @@ const Auth = () => {
           }
 
           console.log("[Auth] Profile status:", profile);
-          if (!profile?.terms_accepted) {
+          // If no profile exists, redirect to onboarding
+          if (!profile) {
+            console.log("[Auth] No profile found, redirecting to onboarding...");
+            navigate("/onboarding", { replace: true });
+          } else if (!profile.terms_accepted) {
+            console.log("[Auth] Terms not accepted, redirecting to onboarding...");
             navigate("/onboarding", { replace: true });
           } else {
+            console.log("[Auth] Profile exists and terms accepted, redirecting to home...");
             navigate("/", { replace: true });
           }
         }
@@ -59,28 +65,29 @@ const Auth = () => {
         
         if (event === "SIGNED_IN" && session?.user?.id) {
           try {
-            console.log("[Auth] Signed in, waiting for profile creation...");
-            // Wait for database trigger to create profile
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            
-            console.log("[Auth] Checking profile status...");
+            console.log("[Auth] Signed in, checking for existing profile...");
             const { data: profile, error: profileError } = await supabase
               .from("profiles")
-              .select("terms_accepted")
+              .select("*")
               .eq("id", session.user.id)
               .single();
 
-            if (profileError) {
+            if (profileError && profileError.code !== 'PGRST116') {
               console.error("[Auth] Profile fetch error:", profileError);
               throw profileError;
             }
 
-            console.log("[Auth] Profile data:", profile);
-            if (!profile?.terms_accepted) {
-              console.log("[Auth] Redirecting to onboarding...");
+            console.log("[Auth] Profile check result:", profile);
+            
+            // If no profile exists or terms not accepted, redirect to onboarding
+            if (!profile) {
+              console.log("[Auth] No profile found, redirecting to onboarding...");
+              navigate("/onboarding", { replace: true });
+            } else if (!profile.terms_accepted) {
+              console.log("[Auth] Terms not accepted, redirecting to onboarding...");
               navigate("/onboarding", { replace: true });
             } else {
-              console.log("[Auth] Redirecting to home...");
+              console.log("[Auth] Profile exists and terms accepted, redirecting to home...");
               navigate("/", { replace: true });
             }
           } catch (error) {
