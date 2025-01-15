@@ -85,20 +85,28 @@ const Auth = () => {
       }
     });
 
-    // Setup password change listener
-    const setupPasswordListener = () => {
+    // Setup email and password input listeners
+    const setupInputListeners = () => {
       const observer = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
           if (mutation.addedNodes.length) {
+            const emailInput = document.querySelector('input[type="email"]');
             const passwordInput = document.querySelector('input[type="password"]');
-            if (passwordInput) {
-              passwordInput.addEventListener('focus', () => {
+            
+            if (emailInput) {
+              emailInput.addEventListener('input', () => {
                 setShowPasswordRequirements(true);
               });
+            }
+            
+            if (passwordInput) {
               passwordInput.addEventListener('input', (e) => {
                 const target = e.target as HTMLInputElement;
                 setPassword(target.value);
               });
+            }
+
+            if (emailInput && passwordInput) {
               observer.disconnect();
             }
           }
@@ -113,7 +121,7 @@ const Auth = () => {
       return observer;
     };
 
-    const observer = setupPasswordListener();
+    const observer = setupInputListeners();
 
     return () => {
       subscription.unsubscribe();
