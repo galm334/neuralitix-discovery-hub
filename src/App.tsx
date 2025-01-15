@@ -11,12 +11,15 @@ import ToolPage from "@/pages/ToolPage";
 import CategoryPage from "@/pages/CategoryPage";
 import Chat from "@/pages/Chat";
 import StandaloneChat from "@/pages/StandaloneChat";
+import Auth from "@/pages/Auth";
+import Onboarding from "@/pages/Onboarding";
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 
 function App() {
   const location = useLocation();
   const isStandaloneChat = location.pathname === '/standalone-chat';
+  const isAuthPage = location.pathname === '/auth' || location.pathname === '/onboarding';
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
@@ -37,7 +40,6 @@ function App() {
       }
     };
 
-    // Add styles to constrain the Zapier iframe with more specific selectors
     const style = document.createElement('style');
     style.textContent = `
       .zi-embed-chat,
@@ -67,10 +69,12 @@ function App() {
   return (
     <SidebarProvider>
       <div className="flex min-h-screen bg-background">
-        <AppSidebar />
-        <main className="flex-1">
+        {!isAuthPage && <AppSidebar />}
+        <main className={`flex-1 ${isAuthPage ? '' : 'ml-64'}`}>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/popular" element={<Popular />} />
             <Route path="/trending" element={<Trending />} />
             <Route path="/just-added" element={<JustAdded />} />
@@ -81,7 +85,7 @@ function App() {
           </Routes>
         </main>
         <Toaster />
-        {!isStandaloneChat && (
+        {!isStandaloneChat && !isAuthPage && (
           <div 
             className="fixed bottom-0 right-0 z-50" 
             style={{ 
