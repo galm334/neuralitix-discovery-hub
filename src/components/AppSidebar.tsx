@@ -1,4 +1,4 @@
-import { Home, Star, TrendingUp, Plus, Send, MessageSquare, Menu, Mail, LucideIcon } from "lucide-react";
+import { Home, Star, TrendingUp, Plus, Send, MessageSquare, Menu, Mail, LucideIcon, UserPlus, LogIn } from "lucide-react";
 import { Sidebar } from "./Sidebar";
 import { SidebarMenuItem } from "./SidebarMenuItem";
 import { useSidebar } from "@/contexts/SidebarContext";
@@ -102,6 +102,7 @@ export function AppSidebar() {
             <li className="mt-4 space-y-2">
               <AuthOption
                 title="Sign up"
+                icon={UserPlus}
                 onClick={() => handleAuthClick('signup')}
               />
               <AuthOption
@@ -111,6 +112,7 @@ export function AppSidebar() {
               />
               <AuthOption
                 title="Sign in with Google"
+                icon={LogIn}
                 onClick={() => handleAuthClick('signin')}
               />
             </li>
