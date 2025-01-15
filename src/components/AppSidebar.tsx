@@ -28,7 +28,7 @@ export function AppSidebar() {
         {/* Logo for desktop */}
         {!isMobile && (
           <div className="px-4 py-4">
-            <h1 className="text-2xl font-bold text-primary">Neuralitix</h1>
+            <h1 className="text-4xl font-bold text-primary">Neuralitix</h1>
           </div>
         )}
         <ul className="space-y-2 px-2">
