@@ -4,6 +4,8 @@ import { Auth as SupabaseAuth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const Auth = () => {
   const [searchParams] = useSearchParams();
@@ -64,7 +66,17 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md space-y-8">
+      <div className="w-full max-w-md space-y-8 relative">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute right-0 top-0 -mt-2 -mr-2"
+          onClick={() => navigate("/")}
+        >
+          <X className="h-6 w-6" />
+          <span className="sr-only">Close</span>
+        </Button>
+
         <div className="text-center">
           <h1 className="text-4xl font-bold text-primary">
             {authType === "signup" ? "Create an account" : "Welcome back"}
