@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { Auth as SupabaseAuth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
-import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 
@@ -24,15 +24,23 @@ const Auth = () => {
         }
 
         if (session?.user) {
-          console.log("[Auth] Session found, checking profile");
+          console.log("[Auth] Session found for user:", session.user.id);
           // Check if profile exists
           const { data: profile, error: profileError } = await supabase
             .from('profiles')
-            .select('*')
+            .select('id, terms_accepted')
             .eq('id', session.user.id)
             .single();
 
+          console.log("[Auth] Profile check result:", { profile, profileError });
+
           if (profileError) {
+            if (profileError.code === 'PGRST116') {
+              // No profile found - this is actually an expected case for new users
+              console.log("[Auth] No profile found, redirecting to onboarding");
+              navigate("/onboarding", { replace: true });
+              return;
+            }
             console.error("[Auth] Profile check error:", profileError);
             throw profileError;
           }
@@ -47,7 +55,7 @@ const Auth = () => {
         }
       } catch (error) {
         console.error("[Auth] Error in checkSession:", error);
-        setError("An error occurred while checking your session");
+        setError("An error occurred while checking your session. Please try signing in again.");
       } finally {
         setIsCheckingSession(false);
       }
@@ -69,12 +77,19 @@ const Auth = () => {
         try {
           const { data: profile, error: profileError } = await supabase
             .from('profiles')
-            .select('*')
+            .select('id, terms_accepted')
             .eq('id', session.user.id)
             .single();
 
+          console.log("[Auth] Profile check result:", { profile, profileError });
+
           if (profileError) {
-            console.error("[Auth] Profile check error:", profileError);
+            if (profileError.code === 'PGRST116') {
+              // No profile found - this is actually an expected case for new users
+              console.log("[Auth] No profile found, redirecting to onboarding");
+              navigate("/onboarding", { replace: true });
+              return;
+            }
             throw profileError;
           }
 
@@ -87,7 +102,7 @@ const Auth = () => {
           }
         } catch (error) {
           console.error("[Auth] Error in auth state change:", error);
-          setError("An error occurred while checking your profile");
+          setError("An error occurred while checking your profile. Please try signing in again.");
           toast.error("Authentication error. Please try again.");
         }
       }
