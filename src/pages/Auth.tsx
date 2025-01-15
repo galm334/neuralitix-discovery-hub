@@ -4,8 +4,9 @@ import { Auth as SupabaseAuth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { X, Check } from "lucide-react";
+import { X, Check, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 const Auth = () => {
   const [searchParams] = useSearchParams();
@@ -16,6 +17,7 @@ const Auth = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordValid, setPasswordValid] = useState(false);
   const [passwordsMatch, setPasswordsMatch] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Password validation criteria
   const hasMinLength = password.length >= 8;
@@ -28,7 +30,7 @@ const Auth = () => {
     setPasswordValid(
       hasMinLength && hasUpperCase && hasLowerCase && hasNumber && hasSpecialChar
     );
-  }, [password]);
+  }, [password, hasMinLength, hasUpperCase, hasLowerCase, hasNumber, hasSpecialChar]);
 
   useEffect(() => {
     setPasswordsMatch(password === confirmPassword && password.length > 0);
@@ -138,7 +140,7 @@ const Auth = () => {
                   },
                   ...(authType === "signup" && {
                     button: {
-                      display: passwordsMatch ? 'block' : 'none'
+                      display: passwordsMatch && passwordValid ? 'block' : 'none'
                     }
                   })
                 }
@@ -146,30 +148,53 @@ const Auth = () => {
               providers={[]}
               redirectTo={window.location.origin}
             />
+            
+            {authType === "signup" && (
+              <div className="mt-4 relative">
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Confirm Password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-2 top-1/2 -translate-y-1/2"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
+            )}
           </div>
 
-          <div className="w-72">
-            <div className="bg-background border rounded-lg p-4 shadow-sm">
-              <p className="font-medium mb-2">Password requirements:</p>
-              <ul className="space-y-1">
-                <li className={`flex items-center gap-2 ${hasMinLength ? 'text-green-500' : 'text-muted-foreground'}`}>
-                  {hasMinLength ? <Check size={16} /> : '•'} At least 8 characters
-                </li>
-                <li className={`flex items-center gap-2 ${hasUpperCase ? 'text-green-500' : 'text-muted-foreground'}`}>
-                  {hasUpperCase ? <Check size={16} /> : '•'} One uppercase letter
-                </li>
-                <li className={`flex items-center gap-2 ${hasLowerCase ? 'text-green-500' : 'text-muted-foreground'}`}>
-                  {hasLowerCase ? <Check size={16} /> : '•'} One lowercase letter
-                </li>
-                <li className={`flex items-center gap-2 ${hasNumber ? 'text-green-500' : 'text-muted-foreground'}`}>
-                  {hasNumber ? <Check size={16} /> : '•'} One number
-                </li>
-                <li className={`flex items-center gap-2 ${hasSpecialChar ? 'text-green-500' : 'text-muted-foreground'}`}>
-                  {hasSpecialChar ? <Check size={16} /> : '•'} One special character
-                </li>
-              </ul>
+          {authType === "signup" && (
+            <div className="w-72">
+              <div className="bg-background border rounded-lg p-4 shadow-sm">
+                <p className="font-medium mb-2">Password requirements:</p>
+                <ul className="space-y-1">
+                  <li className={`flex items-center gap-2 ${hasMinLength ? 'text-green-500' : 'text-muted-foreground'}`}>
+                    {hasMinLength ? <Check size={16} /> : '•'} At least 8 characters
+                  </li>
+                  <li className={`flex items-center gap-2 ${hasUpperCase ? 'text-green-500' : 'text-muted-foreground'}`}>
+                    {hasUpperCase ? <Check size={16} /> : '•'} One uppercase letter
+                  </li>
+                  <li className={`flex items-center gap-2 ${hasLowerCase ? 'text-green-500' : 'text-muted-foreground'}`}>
+                    {hasLowerCase ? <Check size={16} /> : '•'} One lowercase letter
+                  </li>
+                  <li className={`flex items-center gap-2 ${hasNumber ? 'text-green-500' : 'text-muted-foreground'}`}>
+                    {hasNumber ? <Check size={16} /> : '•'} One number
+                  </li>
+                  <li className={`flex items-center gap-2 ${hasSpecialChar ? 'text-green-500' : 'text-muted-foreground'}`}>
+                    {hasSpecialChar ? <Check size={16} /> : '•'} One special character
+                  </li>
+                </ul>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
