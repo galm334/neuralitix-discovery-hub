@@ -4,10 +4,27 @@ import { Auth as SupabaseAuth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 const Auth = () => {
   const { session, isLoading } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Listen for auth state changes specifically on the auth page
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
+      console.log('Auth state changed in Auth.tsx:', event);
+      
+      if (event === 'USER_ALREADY_EXISTS') {
+        toast.info("You already have an account. Signing you in...");
+        // The session will be handled by AuthContext
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [navigate]);
 
   useEffect(() => {
     if (!isLoading && session) {
