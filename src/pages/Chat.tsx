@@ -23,16 +23,26 @@ const SearchResults = () => {
   const { conversationId } = useParams();
 
   const handleChatNow = () => {
-    // Get the chatbot element
-    const chatbotEmbed = document.querySelector('zapier-interfaces-chatbot-embed');
+    // Get the chatbot element from the parent window
+    const chatbotEmbed = window.parent.document.querySelector('zapier-interfaces-chatbot-embed');
+    
     if (chatbotEmbed) {
-      // Dispatch a custom event to open the chatbot
-      const event = new CustomEvent('zapier-interfaces-chatbot-open', {
-        bubbles: true,
-        composed: true
-      });
-      chatbotEmbed.dispatchEvent(event);
+      try {
+        // Create and dispatch the custom event
+        const event = new CustomEvent('zapier-interfaces-chatbot-open', {
+          bubbles: true,
+          composed: true,
+          cancelable: true
+        });
+        
+        console.log('Dispatching event to chatbot embed:', chatbotEmbed);
+        chatbotEmbed.dispatchEvent(event);
+      } catch (error) {
+        console.error('Error dispatching event:', error);
+        toast.error("Failed to open chat");
+      }
     } else {
+      console.error('Chatbot embed element not found');
       toast.error("Chat is not available at the moment");
     }
   };
