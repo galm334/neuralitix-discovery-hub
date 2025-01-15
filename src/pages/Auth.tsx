@@ -1,16 +1,40 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Auth as SupabaseAuth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { X } from "lucide-react";
+import { X, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const Auth = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const authType = searchParams.get("type") || "signin";
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordValid, setPasswordValid] = useState(false);
+  const [passwordsMatch, setPasswordsMatch] = useState(false);
+
+  // Password validation criteria
+  const hasMinLength = password.length >= 8;
+  const hasUpperCase = /[A-Z]/.test(password);
+  const hasLowerCase = /[a-z]/.test(password);
+  const hasNumber = /\d/.test(password);
+  const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+  useEffect(() => {
+    // Check if all password criteria are met
+    setPasswordValid(
+      hasMinLength && hasUpperCase && hasLowerCase && hasNumber && hasSpecialChar
+    );
+  }, [password]);
+
+  useEffect(() => {
+    // Check if passwords match
+    setPasswordsMatch(password === confirmPassword && password.length > 0);
+  }, [password, confirmPassword]);
 
   useEffect(() => {
     // Check initial session
@@ -98,13 +122,51 @@ const Auth = () => {
                 colors: {
                   brand: 'rgb(var(--primary))',
                   brandAccent: 'rgb(var(--primary))',
+                  inputText: 'rgb(255, 255, 255)',
+                  inputBackground: 'rgb(var(--background))',
+                  inputBorder: 'rgb(var(--border))',
+                  inputLabelText: 'rgb(255, 255, 255)',
+                  inputPlaceholder: 'rgb(150, 150, 150)',
                 }
               }
+            },
+            className: {
+              input: 'text-foreground',
+              label: 'text-foreground',
             }
           }}
           providers={[]}
           redirectTo={window.location.origin}
         />
+
+        {authType === "signup" && (
+          <div className="space-y-4 mt-4">
+            <Alert>
+              <AlertDescription>
+                <div className="space-y-2">
+                  <p className="font-medium">Password requirements:</p>
+                  <ul className="space-y-1">
+                    <li className={`flex items-center gap-2 ${hasMinLength ? 'text-green-500' : 'text-muted-foreground'}`}>
+                      {hasMinLength ? <Check size={16} /> : '•'} At least 8 characters
+                    </li>
+                    <li className={`flex items-center gap-2 ${hasUpperCase ? 'text-green-500' : 'text-muted-foreground'}`}>
+                      {hasUpperCase ? <Check size={16} /> : '•'} One uppercase letter
+                    </li>
+                    <li className={`flex items-center gap-2 ${hasLowerCase ? 'text-green-500' : 'text-muted-foreground'}`}>
+                      {hasLowerCase ? <Check size={16} /> : '•'} One lowercase letter
+                    </li>
+                    <li className={`flex items-center gap-2 ${hasNumber ? 'text-green-500' : 'text-muted-foreground'}`}>
+                      {hasNumber ? <Check size={16} /> : '•'} One number
+                    </li>
+                    <li className={`flex items-center gap-2 ${hasSpecialChar ? 'text-green-500' : 'text-muted-foreground'}`}>
+                      {hasSpecialChar ? <Check size={16} /> : '•'} One special character
+                    </li>
+                  </ul>
+                </div>
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
       </div>
     </div>
   );
