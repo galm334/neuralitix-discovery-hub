@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
@@ -11,9 +11,59 @@ const Onboarding = () => {
   const [showTerms, setShowTerms] = useState(true);
   const [showWelcome, setShowWelcome] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
   useAuthRedirect();
+
+  // Initial check for session and profile
+  useEffect(() => {
+    const checkSessionAndProfile = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          navigate("/auth");
+          return;
+        }
+
+        // Wait for profile to be created (important for Google sign-in)
+        let retries = 0;
+        const maxRetries = 5;
+        
+        while (retries < maxRetries) {
+          const { data: profile, error } = await supabase
+            .from("profiles")
+            .select("terms_accepted")
+            .eq("id", session.user.id)
+            .maybeSingle();
+
+          if (error) {
+            console.error("Error fetching profile:", error);
+            break;
+          }
+
+          if (profile) {
+            if (profile.terms_accepted) {
+              navigate("/", { replace: true });
+            }
+            break;
+          }
+
+          // Wait before next retry
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          retries++;
+        }
+
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error in checkSessionAndProfile:", error);
+        toast.error("Something went wrong. Please try again.");
+        setIsLoading(false);
+      }
+    };
+
+    checkSessionAndProfile();
+  }, [navigate]);
 
   const handleAccept = async () => {
     try {
@@ -48,13 +98,7 @@ const Onboarding = () => {
     setIsCompleting(true);
 
     try {
-      // First, close the welcome dialog
       setShowWelcome(false);
-      
-      // Small delay to ensure state updates are processed
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Navigate to home and replace the current history entry
       navigate("/", { replace: true });
     } catch (error) {
       console.error("Error in handleComplete:", error);
@@ -63,25 +107,9 @@ const Onboarding = () => {
     }
   };
 
-  // Prevent going back to onboarding if terms are accepted
-  useEffect(() => {
-    const checkTermsAccepted = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("terms_accepted")
-        .eq("id", session.user.id)
-        .single();
-
-      if (profile?.terms_accepted) {
-        navigate("/", { replace: true });
-      }
-    };
-
-    checkTermsAccepted();
-  }, [navigate]);
+  if (isLoading) {
+    return <div className="min-h-screen bg-background" />;
+  }
 
   return (
     <div className="min-h-screen bg-background">
