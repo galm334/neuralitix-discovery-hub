@@ -142,9 +142,9 @@ const Auth = () => {
         </div>
         
         <div className="relative">
-          <div className="grid grid-cols-4 gap-8">
+          <div className="grid grid-cols-4 gap-4">
             <div className="col-span-3">
-              <div className="w-[60%] mx-auto">
+              <div className="w-[60%] mx-auto space-y-4">
                 <SupabaseAuth
                   supabaseClient={supabase}
                   view={authType === "signup" ? "sign_up" : "sign_in"}
@@ -201,7 +201,7 @@ const Auth = () => {
             </div>
 
             <div className="col-span-1">
-              <div className="bg-background border rounded-lg p-4 shadow-sm h-full">
+              <div className="bg-background border rounded-lg p-4 shadow-sm">
                 <p className="font-medium mb-2">Password requirements:</p>
                 <ul className="space-y-1">
                   <li className={`flex items-center gap-2 ${hasMinLength ? 'text-green-500' : 'text-muted-foreground'}`}>
