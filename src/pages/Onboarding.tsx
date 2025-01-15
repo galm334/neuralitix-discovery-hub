@@ -30,6 +30,17 @@ const Onboarding = () => {
       setIsGoogle(session.user.app_metadata.provider === "google");
     };
     checkAuth();
+
+    // Subscribe to auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
+        navigate("/auth");
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [navigate]);
 
   const handleAccept = async () => {
@@ -53,7 +64,7 @@ const Onboarding = () => {
     setShowWelcome(true);
   };
 
-  const handleComplete = async () => {
+  const handleComplete = () => {
     setShowWelcome(false);
     navigate("/");
   };
