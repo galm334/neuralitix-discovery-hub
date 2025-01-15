@@ -119,7 +119,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
           if (event === 'SIGNED_IN' && session) {
             await handleNavigation(session);
-          } else if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+          } else if (event === 'SIGNED_OUT') {
             setProfile(null);
             navigate('/auth');
           } else if (event === 'TOKEN_REFRESHED') {
