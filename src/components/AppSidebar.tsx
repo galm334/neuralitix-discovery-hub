@@ -22,7 +22,7 @@ export function AppSidebar() {
           <img 
             src="/lovable-uploads/11d612dd-c7d5-4688-bf88-915265d5219b.png" 
             alt="Neuralitix Logo" 
-            className="w-18 h-18"
+            className="w-8 h-8"
           />
           <span className="font-bold text-3xl text-primary">Neuralitix</span>
         </div>
