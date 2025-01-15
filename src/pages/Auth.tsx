@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { AuthError } from "@supabase/supabase-js";
+import { AuthError, AuthChangeEvent } from "@supabase/supabase-js";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -14,7 +14,7 @@ const Auth = () => {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      async (event: AuthChangeEvent, session) => {
         console.log("Auth event:", event);
         if (event === "SIGNED_IN") {
           // Check if terms are accepted
@@ -41,8 +41,8 @@ const Auth = () => {
           console.log("User signed out");
         }
 
-        // Log any auth errors
-        if (event === "USER_DELETED" || event === "TOKEN_REFRESHED" || event === "PASSWORD_RECOVERY") {
+        // Log specific auth events
+        if (["USER_DELETED", "TOKEN_REFRESHED", "PASSWORD_RECOVERY"].includes(event)) {
           console.log(`Auth event ${event} occurred`);
         }
       }
@@ -107,7 +107,6 @@ const Auth = () => {
             }}
             providers={["google"]}
             redirectTo={`${window.location.origin}/auth/callback`}
-            onError={handleAuthError}
           />
         </div>
       </div>
