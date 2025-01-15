@@ -11,96 +11,31 @@ const Auth = () => {
   const [error, setError] = useState<string | null>(null);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
 
-  // Initial session check
+  // Simple session check on mount
   useEffect(() => {
     const checkSession = async () => {
-      try {
-        console.log("[Auth] Checking initial session...");
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (session?.user?.id) {
-          console.log("[Auth] Found existing session, checking profile...");
-          const { data: profile, error: profileError } = await supabase
-            .from("profiles")
-            .select("*")
-            .eq("id", session.user.id)
-            .single();
-
-          if (profileError && profileError.code !== 'PGRST116') {
-            console.error("[Auth] Profile fetch error:", profileError);
-            throw profileError;
-          }
-
-          console.log("[Auth] Profile status:", profile);
-          // If no profile exists, redirect to onboarding
-          if (!profile) {
-            console.log("[Auth] No profile found, redirecting to onboarding...");
-            navigate("/onboarding", { replace: true });
-          } else if (!profile.terms_accepted) {
-            console.log("[Auth] Terms not accepted, redirecting to onboarding...");
-            navigate("/onboarding", { replace: true });
-          } else {
-            console.log("[Auth] Profile exists and terms accepted, redirecting to home...");
-            navigate("/", { replace: true });
-          }
-        }
-      } catch (error) {
-        console.error("[Auth] Session check error:", error);
-        toast.error("Failed to check session");
-      } finally {
-        setIsCheckingSession(false);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        navigate("/onboarding", { replace: true });
       }
+      setIsCheckingSession(false);
     };
 
     checkSession();
   }, [navigate]);
 
-  // Auth state change listener
+  // Simplified auth state change handler
   useEffect(() => {
-    console.log("[Auth] Setting up auth state listener");
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log("[Auth] Event:", event);
-        console.log("[Auth] Session:", session);
-        
-        if (event === "SIGNED_IN" && session?.user?.id) {
-          try {
-            console.log("[Auth] Signed in, checking for existing profile...");
-            const { data: profile, error: profileError } = await supabase
-              .from("profiles")
-              .select("*")
-              .eq("id", session.user.id)
-              .single();
-
-            if (profileError && profileError.code !== 'PGRST116') {
-              console.error("[Auth] Profile fetch error:", profileError);
-              throw profileError;
-            }
-
-            console.log("[Auth] Profile check result:", profile);
-            
-            // If no profile exists or terms not accepted, redirect to onboarding
-            if (!profile) {
-              console.log("[Auth] No profile found, redirecting to onboarding...");
-              navigate("/onboarding", { replace: true });
-            } else if (!profile.terms_accepted) {
-              console.log("[Auth] Terms not accepted, redirecting to onboarding...");
-              navigate("/onboarding", { replace: true });
-            } else {
-              console.log("[Auth] Profile exists and terms accepted, redirecting to home...");
-              navigate("/", { replace: true });
-            }
-          } catch (error) {
-            console.error("[Auth] Error in auth flow:", error);
-            setError("Failed to check user profile");
-            toast.error("Authentication error occurred");
-          }
-        }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("[Auth] Auth event:", event);
+      
+      if (event === 'SIGNED_IN' && session?.user) {
+        console.log("[Auth] User signed in, redirecting to onboarding");
+        navigate("/onboarding", { replace: true });
       }
-    );
+    });
 
     return () => {
-      console.log("[Auth] Cleaning up auth listener");
       subscription.unsubscribe();
     };
   }, [navigate]);
