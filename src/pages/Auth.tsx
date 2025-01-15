@@ -39,10 +39,6 @@ const Auth = () => {
   }, [password, confirmPassword]);
 
   useEffect(() => {
-    setShowPasswordRequirements(password.length >= 3 && !passwordValid);
-  }, [password, passwordValid]);
-
-  useEffect(() => {
     // Check initial session
     const checkSession = async () => {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -90,21 +86,33 @@ const Auth = () => {
     });
 
     // Setup password change listener
-    const passwordInput = document.querySelector('input[type="password"]');
-    if (passwordInput) {
-      passwordInput.addEventListener('input', (e) => {
-        const target = e.target as HTMLInputElement;
-        setPassword(target.value);
-        setShowPasswordRequirements(target.value.length >= 3);
+    const setupPasswordListener = () => {
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          if (mutation.addedNodes.length) {
+            const passwordInput = document.querySelector('input[type="password"]');
+            if (passwordInput) {
+              passwordInput.addEventListener('input', (e) => {
+                const target = e.target as HTMLInputElement;
+                setPassword(target.value);
+                setShowPasswordRequirements(target.value.length >= 3);
+              });
+              observer.disconnect();
+            }
+          }
+        });
       });
-    }
+
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true
+      });
+    };
+
+    setupPasswordListener();
 
     return () => {
       subscription.unsubscribe();
-      // Cleanup password listener
-      if (passwordInput) {
-        passwordInput.removeEventListener('input', () => {});
-      }
     };
   }, [navigate]);
 
