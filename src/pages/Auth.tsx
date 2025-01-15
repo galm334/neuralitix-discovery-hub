@@ -6,7 +6,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { X, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -46,7 +45,6 @@ const Auth = () => {
         return;
       }
       if (session) {
-        console.log('Existing session found:', session);
         navigate("/");
       }
     };
@@ -54,7 +52,6 @@ const Auth = () => {
     checkSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Auth state changed:', event, 'Session:', session);
       if (event === 'SIGNED_IN' && session) {
         navigate("/");
       }
@@ -88,11 +85,11 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-4xl space-y-8 relative">
+      <div className="w-full max-w-4xl relative">
         <Button
           variant="ghost"
           size="icon"
-          className="absolute right-0 top-0 -mt-2 -mr-2"
+          className="absolute right-0 top-0"
           onClick={() => navigate("/")}
         >
           <X className="h-6 w-6" />
@@ -110,65 +107,63 @@ const Auth = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-5 gap-0">
-          <div className="col-span-4 pr-8">
-            <div className="w-[60%] mx-auto space-y-6">
-              <SupabaseAuth
-                supabaseClient={supabase}
-                view={authType === "signup" ? "sign_up" : "sign_in"}
-                appearance={{
-                  theme: ThemeSupa,
-                  variables: {
-                    default: {
-                      colors: {
-                        brand: 'rgb(var(--primary))',
-                        brandAccent: 'rgb(var(--primary))',
-                        inputText: 'rgb(0, 0, 0)',
-                        inputBackground: 'rgb(255, 255, 255)',
-                        inputBorder: 'rgb(var(--border))',
-                        inputLabelText: 'rgb(255, 255, 255)',
-                        inputPlaceholder: 'rgb(150, 150, 150)',
-                      }
+        <div className="flex gap-8">
+          <div className="flex-1 max-w-xl mx-auto">
+            <SupabaseAuth
+              supabaseClient={supabase}
+              view={authType === "signup" ? "sign_up" : "sign_in"}
+              appearance={{
+                theme: ThemeSupa,
+                variables: {
+                  default: {
+                    colors: {
+                      brand: 'rgb(var(--primary))',
+                      brandAccent: 'rgb(var(--primary))',
+                      inputText: 'rgb(0, 0, 0)',
+                      inputBackground: 'rgb(255, 255, 255)',
+                      inputBorder: 'rgb(var(--border))',
+                      inputLabelText: 'rgb(255, 255, 255)',
+                      inputPlaceholder: 'rgb(150, 150, 150)',
                     }
-                  },
-                  className: {
-                    input: 'h-12 w-full text-black bg-white',
-                    label: 'text-foreground',
-                    container: 'w-full space-y-4',
-                    button: 'w-full',
                   }
-                }}
-                providers={[]}
-                redirectTo={window.location.origin}
-              />
+                },
+                className: {
+                  input: 'h-12 w-full text-black bg-white',
+                  label: 'text-foreground',
+                  container: 'w-full space-y-4',
+                  button: 'w-full',
+                }
+              }}
+              providers={[]}
+              redirectTo={window.location.origin}
+            />
 
-              {authType === "signup" && (
-                <div className="mt-4">
-                  <Label htmlFor="confirm-password">Confirm Password</Label>
-                  <Input
-                    id="confirm-password"
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className={`h-12 w-full bg-white text-black ${passwordsMatch ? 'border-green-500' : 'border-input'}`}
-                  />
-                  {confirmPassword.length > 0 && (
-                    <p className={`text-sm ${passwordsMatch ? 'text-green-500' : 'text-destructive'} flex items-center gap-2 mt-1`}>
-                      {passwordsMatch ? (
-                        <>
-                          <Check size={16} /> Passwords match
-                        </>
-                      ) : (
-                        'Passwords do not match'
-                      )}
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
+            {authType === "signup" && (
+              <div className="mt-4">
+                <Label htmlFor="confirm-password">Confirm Password</Label>
+                <Input
+                  id="confirm-password"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className={`h-12 w-full bg-white text-black ${passwordsMatch ? 'border-green-500' : 'border-input'}`}
+                />
+                {confirmPassword.length > 0 && (
+                  <p className={`text-sm ${passwordsMatch ? 'text-green-500' : 'text-destructive'} flex items-center gap-2 mt-1`}>
+                    {passwordsMatch ? (
+                      <>
+                        <Check size={16} /> Passwords match
+                      </>
+                    ) : (
+                      'Passwords do not match'
+                    )}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
-          <div className="col-span-1">
+          <div className="w-72">
             <div className="bg-background border rounded-lg p-4 shadow-sm">
               <p className="font-medium mb-2">Password requirements:</p>
               <ul className="space-y-1">
