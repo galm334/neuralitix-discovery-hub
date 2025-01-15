@@ -30,13 +30,12 @@ export function AppSidebar() {
         onClick={() => handleAuthClick('signin')}
         className="text-white hover:text-white hover:bg-primary/80"
       >
-        <LogIn className="h-4 w-4 mr-2" />
         Sign in
       </Button>
       <Button 
         size="sm" 
         onClick={() => handleAuthClick('signup')}
-        className="bg-primary text-white hover:bg-primary/80"
+        className="bg-blue-500 text-white hover:bg-blue-600"
       >
         Sign up
       </Button>
@@ -56,9 +55,9 @@ export function AppSidebar() {
       <Sidebar>
         {/* Logo and auth buttons for desktop */}
         {!isMobile && (
-          <div className="px-4 py-4 flex items-center justify-between">
+          <div className="px-4 py-4 relative w-full">
             <h1 className="text-4xl font-bold text-primary">Neuralitix</h1>
-            <div className="absolute top-4 right-4">
+            <div className="absolute top-4 right-4 z-50">
               <AuthButtons />
             </div>
           </div>
@@ -80,11 +79,10 @@ export function AppSidebar() {
                 className="w-full justify-start text-white hover:text-white hover:bg-primary/80"
                 onClick={() => handleAuthClick('signin')}
               >
-                <LogIn className="h-4 w-4 mr-2" />
                 Sign in
               </Button>
               <Button 
-                className="w-full justify-start bg-primary text-white hover:bg-primary/80"
+                className="w-full justify-start bg-blue-500 text-white hover:bg-blue-600"
                 onClick={() => handleAuthClick('signup')}
               >
                 Sign up
