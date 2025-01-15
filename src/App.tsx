@@ -37,8 +37,25 @@ function App() {
       }
     };
 
+    // Add styles to constrain the Zapier iframe
+    const style = document.createElement('style');
+    style.textContent = `
+      .zi-embed-chat {
+        max-width: 100px !important;
+        width: 100px !important;
+      }
+      .zi-embed-chat iframe {
+        max-width: 100px !important;
+        width: 100px !important;
+      }
+    `;
+    document.head.appendChild(style);
+
     window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
+    return () => {
+      window.removeEventListener('message', handleMessage);
+      document.head.removeChild(style);
+    };
   }, []);
 
   return (
@@ -72,8 +89,8 @@ function App() {
               is-popup='true' 
               chatbot-id='clqec2l2r00ca28qsdfz0m4my'
               style={{ 
-                width: '100%',
-                maxWidth: '100%'
+                width: '100px',
+                maxWidth: '100px'
               }}
             />
           </div>
