@@ -16,15 +16,16 @@ function App() {
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       if (event.data?.type === 'OPEN_CHATBOT') {
-        const chatbotEmbed = document.querySelector('zapier-interfaces-chatbot-embed');
+        const chatbotEmbed = document.querySelector('#chatbot-embed');
         if (chatbotEmbed) {
           try {
-            const event = new CustomEvent('zapier-interfaces-chatbot-open', {
+            // Create a click event
+            const clickEvent = new MouseEvent('click', {
               bubbles: true,
-              composed: true,
-              cancelable: true
+              cancelable: true,
+              view: window
             });
-            chatbotEmbed.dispatchEvent(event);
+            chatbotEmbed.dispatchEvent(clickEvent);
           } catch (error) {
             console.error('Error opening chatbot:', error);
           }
@@ -55,6 +56,7 @@ function App() {
           <Toaster />
           <div className="fixed bottom-0 right-0 z-50">
             <zapier-interfaces-chatbot-embed 
+              id="chatbot-embed"
               is-popup='true' 
               chatbot-id='clqec2l2r00ca28qsdfz0m4my'
             />

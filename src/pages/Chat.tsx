@@ -24,17 +24,22 @@ const SearchResults = () => {
 
   const handleChatNow = () => {
     try {
-      // Create a custom event that will be caught by the parent window
-      const message = {
-        type: 'OPEN_CHATBOT',
-        chatbotId: 'clqec2l2r00ca28qsdfz0m4my'
-      };
-      
-      // Post the message to all parent windows
-      window.top?.postMessage(message, '*');
-      console.log('Posted message to parent:', message);
+      const chatbotEmbed = document.querySelector('#chatbot-embed');
+      if (chatbotEmbed) {
+        // Create a click event
+        const clickEvent = new MouseEvent('click', {
+          bubbles: true,
+          cancelable: true,
+          view: window
+        });
+        chatbotEmbed.dispatchEvent(clickEvent);
+        console.log('Clicked chatbot embed');
+      } else {
+        console.error('Chatbot embed not found');
+        toast.error("Chat is not available at the moment");
+      }
     } catch (error) {
-      console.error('Error posting message:', error);
+      console.error('Error opening chatbot:', error);
       toast.error("Failed to open chat");
     }
   };
