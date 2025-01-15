@@ -146,6 +146,11 @@ const Auth = () => {
             }}
             providers={[]}
             redirectTo={window.location.origin}
+            onPasswordChange={(e) => {
+              const value = e.target.value;
+              setPassword(value);
+              setShowPasswordRequirements(value.length >= 3);
+            }}
           />
 
           {authType === "signup" && password.length >= 3 && (
