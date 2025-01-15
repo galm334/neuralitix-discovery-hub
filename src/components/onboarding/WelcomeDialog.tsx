@@ -11,11 +11,10 @@ export const WelcomeDialog = ({ isOpen, onComplete }: WelcomeDialogProps) => {
   const navigate = useNavigate();
 
   const handleComplete = () => {
+    // First close the dialog
     onComplete();
-    // Force the navigation to happen in the next tick of the event loop
-    setTimeout(() => {
-      navigate("/");
-    }, 0);
+    // Then navigate to home
+    navigate("/", { replace: true });
   };
 
   return (
