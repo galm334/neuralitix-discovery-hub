@@ -89,8 +89,22 @@ const Auth = () => {
       }
     });
 
+    // Setup password change listener
+    const passwordInput = document.querySelector('input[type="password"]');
+    if (passwordInput) {
+      passwordInput.addEventListener('input', (e) => {
+        const target = e.target as HTMLInputElement;
+        setPassword(target.value);
+        setShowPasswordRequirements(target.value.length >= 3);
+      });
+    }
+
     return () => {
       subscription.unsubscribe();
+      // Cleanup password listener
+      if (passwordInput) {
+        passwordInput.removeEventListener('input', () => {});
+      }
     };
   }, [navigate]);
 
@@ -146,11 +160,6 @@ const Auth = () => {
             }}
             providers={[]}
             redirectTo={window.location.origin}
-            onPasswordChange={(e) => {
-              const value = e.target.value;
-              setPassword(value);
-              setShowPasswordRequirements(value.length >= 3);
-            }}
           />
 
           {authType === "signup" && password.length >= 3 && (
