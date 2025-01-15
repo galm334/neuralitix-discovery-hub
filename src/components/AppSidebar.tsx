@@ -18,9 +18,30 @@ export function AppSidebar() {
   const { isMobile } = useSidebar();
   const navigate = useNavigate();
 
-  const handleAuthClick = () => {
-    navigate('/auth');
+  const handleAuthClick = (type: 'signin' | 'signup') => {
+    navigate(`/auth?type=${type}`);
   };
+
+  const AuthButtons = () => (
+    <div className="flex gap-2">
+      <Button 
+        variant="ghost" 
+        size="sm" 
+        onClick={() => handleAuthClick('signin')}
+        className="text-white hover:text-white hover:bg-primary/80"
+      >
+        <LogIn className="h-4 w-4 mr-2" />
+        Sign in
+      </Button>
+      <Button 
+        size="sm" 
+        onClick={() => handleAuthClick('signup')}
+        className="bg-primary text-white hover:bg-primary/80"
+      >
+        Sign up
+      </Button>
+    </div>
+  );
 
   return (
     <>
@@ -28,22 +49,18 @@ export function AppSidebar() {
       {isMobile && (
         <div className="fixed top-0 left-0 right-0 h-14 bg-background border-b border-border flex items-center justify-between z-50 px-4">
           <h1 className="text-2xl font-bold text-primary">Neuralitix</h1>
-          <Button variant="ghost" size="sm" onClick={handleAuthClick}>
-            <LogIn className="h-4 w-4 mr-2" />
-            Sign In
-          </Button>
+          <AuthButtons />
         </div>
       )}
       
       <Sidebar>
-        {/* Logo and auth button for desktop */}
+        {/* Logo and auth buttons for desktop */}
         {!isMobile && (
           <div className="px-4 py-4 flex items-center justify-between">
             <h1 className="text-4xl font-bold text-primary">Neuralitix</h1>
-            <Button variant="ghost" size="sm" onClick={handleAuthClick}>
-              <LogIn className="h-4 w-4 mr-2" />
-              Sign In
-            </Button>
+            <div className="absolute top-4 right-4">
+              <AuthButtons />
+            </div>
           </div>
         )}
         <ul className="space-y-2 px-2">
@@ -55,16 +72,22 @@ export function AppSidebar() {
               icon={item.icon}
             />
           ))}
-          {/* Auth button in mobile menu */}
+          {/* Auth buttons in mobile menu */}
           {isMobile && (
-            <li className="mt-4">
+            <li className="mt-4 flex flex-col gap-2">
               <Button 
-                variant="outline" 
-                className="w-full justify-start"
-                onClick={handleAuthClick}
+                variant="ghost" 
+                className="w-full justify-start text-white hover:text-white hover:bg-primary/80"
+                onClick={() => handleAuthClick('signin')}
               >
                 <LogIn className="h-4 w-4 mr-2" />
-                Sign In
+                Sign in
+              </Button>
+              <Button 
+                className="w-full justify-start bg-primary text-white hover:bg-primary/80"
+                onClick={() => handleAuthClick('signup')}
+              >
+                Sign up
               </Button>
             </li>
           )}
