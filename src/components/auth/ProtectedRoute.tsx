@@ -13,8 +13,7 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   useEffect(() => {
     if (!isLoading && !session) {
-      toast.error("Please sign in to access this page");
-      navigate("/auth");
+      navigate("/auth", { replace: true });
     }
   }, [session, isLoading, navigate]);
 
