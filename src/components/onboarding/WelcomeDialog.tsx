@@ -46,6 +46,14 @@ export const WelcomeDialog = ({ isOpen, onComplete }: WelcomeDialogProps) => {
       setProgress(100);
       toast.success("Profile created successfully!");
       
+      // Verify session is still valid before redirecting
+      const { data: currentSession } = await supabase.auth.getSession();
+      if (!currentSession.session) {
+        // If session is lost, redirect to auth
+        navigate("/auth", { replace: true });
+        return;
+      }
+
       // Small delay to show completion
       setTimeout(() => {
         onComplete();
@@ -56,6 +64,8 @@ export const WelcomeDialog = ({ isOpen, onComplete }: WelcomeDialogProps) => {
       console.error("Error creating profile:", error);
       toast.error("Failed to create profile. Please try again.");
       setIsCreatingProfile(false);
+      // If there's an error, redirect to auth
+      navigate("/auth", { replace: true });
     }
   };
 
