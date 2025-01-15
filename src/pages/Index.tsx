@@ -4,7 +4,7 @@ import { Stats } from "@/components/stats/Stats";
 const Index = () => {
   return (
     <div className="min-h-[calc(100vh-3.5rem)] bg-background">
-      <div className="container mx-auto px-4 py-8 md:py-16">
+      <div className="container mx-auto px-4 py-8 md:py-16 mt-16 md:mt-0">
         <div className="max-w-3xl mx-auto text-center">
           <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-primary via-secondary to-accent">
             Compare and Find the Best GenAI Tools for You
