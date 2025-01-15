@@ -1,14 +1,14 @@
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { Auth as SupabaseAuth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 const Auth = () => {
-  const { session, isLoading } = useAuth();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const authType = searchParams.get("type") || "signin";
 
   useEffect(() => {
     // Listen for auth state changes specifically on the auth page
@@ -20,6 +20,7 @@ const Auth = () => {
         if (error?.message?.includes('User already registered')) {
           toast.info("You already have an account. Signing you in...");
         }
+        navigate("/");
       }
     });
 
@@ -28,52 +29,36 @@ const Auth = () => {
     };
   }, [navigate]);
 
-  useEffect(() => {
-    if (!isLoading && session) {
-      navigate("/", { replace: true });
-    }
-  }, [session, isLoading, navigate]);
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
-    );
-  }
-
-  if (session) {
-    return null;
-  }
-
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <h1 className="text-4xl font-bold tracking-tight">Welcome to Neuralitix</h1>
-          <p className="mt-2 text-lg text-muted-foreground">
-            Sign in to access your AI tools collection
+          <h1 className="text-4xl font-bold text-primary">
+            {authType === "signup" ? "Create an account" : "Welcome back"}
+          </h1>
+          <p className="mt-2 text-muted-foreground">
+            {authType === "signup" 
+              ? "Sign up to get started with Neuralitix" 
+              : "Sign in to continue to Neuralitix"}
           </p>
         </div>
-
-        <div className="bg-card p-6 rounded-lg shadow-lg border">
-          <SupabaseAuth
-            supabaseClient={supabase}
-            appearance={{
-              theme: ThemeSupa,
-              variables: {
-                default: {
-                  colors: {
-                    brand: '#6366F1',
-                    brandAccent: '#4F46E5',
-                  },
-                },
-              },
-            }}
-            providers={["google"]}
-            redirectTo={`${window.location.origin}/auth`}
-          />
-        </div>
+        
+        <SupabaseAuth
+          supabaseClient={supabase}
+          view={authType === "signup" ? "sign_up" : "sign_in"}
+          appearance={{
+            theme: ThemeSupa,
+            variables: {
+              default: {
+                colors: {
+                  brand: 'rgb(var(--primary))',
+                  brandAccent: 'rgb(var(--primary))',
+                }
+              }
+            }
+          }}
+          providers={["google"]}
+        />
       </div>
     </div>
   );
