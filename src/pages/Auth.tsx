@@ -170,7 +170,7 @@ const Auth = () => {
             redirectTo={window.location.origin}
           />
 
-          {authType === "signup" && password.length >= 3 && (
+          {authType === "signup" && showPasswordRequirements && (
             <div className="mt-4 w-full">
               <Label htmlFor="confirm-password">Confirm Password</Label>
               <Input
