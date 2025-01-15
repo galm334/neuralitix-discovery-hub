@@ -7,9 +7,8 @@ const Privacy = () => {
       <ScrollArea className="h-[600px] rounded-md border p-6">
         <div className="space-y-4">
           <section>
-            <h2 className="text-xl font-semibold mb-2">Introduction</h2>
-            <p>Updated on 23 November 2024</p>
-            <p>This Privacy Policy outlines how Neuralitix (hereafter referred to as "we" or "us") collects, uses, and protects your personal data when you interact with our services. We are committed to safeguarding your privacy and ensuring that your personal data is protected. Please read this policy carefully to understand our practices regarding your personal data. If you have any questions, feel free to contact us using the details provided at the end of this document.</p>
+            <p>Updated on 16 November 2024</p>
+            <p>Welcome to Neuralitix (the "Site"), a platform designed to connect users with real estate agents and related services. This Privacy Policy outlines how we collect, use, and protect your personal data when you interact with our services. We are committed to safeguarding your privacy and ensuring that your personal data is protected. Please read this policy carefully to understand our practices regarding your personal data.</p>
           </section>
           <section>
             <h2 className="text-xl font-semibold mb-2">Information We Collect</h2>
@@ -48,12 +47,8 @@ const Privacy = () => {
             <p>We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page. You are advised to review this Privacy Policy periodically for any changes. Changes to this Privacy Policy are effective when they are posted on this page.</p>
           </section>
           <section>
-            <h2 className="text-xl font-semibold mb-2">Contact Us</h2>
-            <p>If you have any questions about this Privacy Policy, please contact us:</p>
-            <ul className="list-disc pl-6">
-              <li>Email: support@neuralitix.com</li>
-              <li>Website: www.neuralitix.com</li>
-            </ul>
+            <p>* Email: hi@Neuralitix.com</p>
+            <p>By using our services, you consent to the collection and use of your personal data as described in this Privacy Policy.</p>
           </section>
         </div>
       </ScrollArea>
