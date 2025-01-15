@@ -1,5 +1,4 @@
 import { Toaster } from "@/components/ui/sonner";
-import { BrowserRouter } from "react-router-dom";
 import { SidebarProvider } from "@/contexts/SidebarContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { AppSidebar } from "@/components/AppSidebar";
