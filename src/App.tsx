@@ -37,14 +37,20 @@ function App() {
       }
     };
 
-    // Add styles to constrain the Zapier iframe
+    // Add styles to constrain the Zapier iframe with more specific selectors
     const style = document.createElement('style');
     style.textContent = `
-      .zi-embed-chat {
+      .zi-embed-chat,
+      .zi-embed-chat *,
+      .zi-embed-chat div,
+      .zi-embed-chat iframe {
         max-width: 100px !important;
         width: 100px !important;
       }
-      .zi-embed-chat iframe {
+      .zi-embed-chat-popup-wrapper,
+      .zi-embed-chat-popup-wrapper *,
+      .zi-embed-chat-popup-wrapper div,
+      .zi-embed-chat-popup-wrapper iframe {
         max-width: 100px !important;
         width: 100px !important;
       }
