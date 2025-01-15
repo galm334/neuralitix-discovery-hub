@@ -9,7 +9,7 @@ export function Sidebar({ children }: { children: React.ReactNode }) {
       <Sheet open={openMobile} onOpenChange={setOpenMobile}>
         <SheetContent 
           side="left" 
-          className="w-[280px] p-0 bg-background border-r border-border"
+          className="w-[280px] p-0 bg-background border-r border-border mt-14"
         >
           <nav className="h-full flex flex-col bg-background">
             {children}
@@ -21,7 +21,7 @@ export function Sidebar({ children }: { children: React.ReactNode }) {
 
   return (
     <div className={`${isOpen ? 'w-44' : 'w-0'} transition-all duration-300 hidden md:block`}>
-      <nav className={`fixed top-0 left-0 h-full w-44 bg-background border-r border-border pt-14`}>
+      <nav className={`fixed top-0 left-0 h-full w-44 bg-background border-r border-border`}>
         {children}
       </nav>
     </div>
