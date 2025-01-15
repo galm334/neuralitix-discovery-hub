@@ -45,7 +45,7 @@ const GDPR = () => {
           <section>
             <h2 className="text-xl font-semibold mb-2">Contact Us</h2>
             <p>If you have any questions about this GDPR Information Notice or our privacy practices, please contact us at:</p>
-            <p>Email: support@neuralitix.com</p>
+            <p>Email: hi@neuralitix.com</p>
             <p>Address: Neuralitix, 123 AI Lane, Tech City, TC 12345</p>
           </section>
         </div>

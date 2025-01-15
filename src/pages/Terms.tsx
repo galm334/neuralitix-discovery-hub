@@ -8,7 +8,7 @@ const Terms = () => {
         <div className="space-y-4">
           <section>
             <h2 className="text-xl font-semibold mb-2">INTRODUCTION AND ACCEPTANCE OF TERMS</h2>
-            <p>Updated on 16 November 2024</p>
+            <p>Updated on 23 November 2024</p>
             <p>Welcome to Neuralitix (the "Site"), a platform designed to connect users with real estate agents and related services. These Terms of Use (the "Terms") govern your access to and use of the Site and its services. By accessing or using the Site, you agree to be bound by these Terms, including any additional terms and policies referenced herein or available by hyperlink. If you do not agree to these Terms, you must not access or use the Site.</p>
             <p>Neuralitix is committed to providing a seamless, user-friendly experience to help users find the best real estate professionals.</p>
           </section>
