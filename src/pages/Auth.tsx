@@ -30,11 +30,7 @@ const Auth = () => {
             .from('profiles')
             .select('id, terms_accepted')
             .eq('id', session.user.id)
-            .headers({
-              'Accept': 'application/json',
-              'Content-Type': 'application/json',
-              'Prefer': 'return=representation'
-            });
+            .single();
 
           console.log("[Auth] Profile check result:", { profiles, profileError });
 
@@ -43,7 +39,7 @@ const Auth = () => {
             throw profileError;
           }
 
-          if (!profiles || profiles.length === 0) {
+          if (!profiles) {
             console.log("[Auth] No profile found, redirecting to onboarding");
             navigate("/onboarding", { replace: true });
           } else {
@@ -77,11 +73,7 @@ const Auth = () => {
             .from('profiles')
             .select('id, terms_accepted')
             .eq('id', session.user.id)
-            .headers({
-              'Accept': 'application/json',
-              'Content-Type': 'application/json',
-              'Prefer': 'return=representation'
-            });
+            .single();
 
           console.log("[Auth] Profile check result:", { profiles, profileError });
 
@@ -89,7 +81,7 @@ const Auth = () => {
             throw profileError;
           }
 
-          if (!profiles || profiles.length === 0) {
+          if (!profiles) {
             console.log("[Auth] No profile found, redirecting to onboarding");
             navigate("/onboarding", { replace: true });
           } else {
