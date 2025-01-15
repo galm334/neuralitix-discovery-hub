@@ -1,6 +1,7 @@
 import { Home, Star, TrendingUp, Plus, Send, MessageSquare } from "lucide-react";
 import { Sidebar } from "./Sidebar";
 import { SidebarMenuItem } from "./SidebarMenuItem";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const navigationItems = [
   { title: "Home", url: "/", icon: Home },
@@ -12,8 +13,20 @@ const navigationItems = [
 ];
 
 export function AppSidebar() {
+  const isMobile = useIsMobile();
+
   return (
     <Sidebar>
+      <div className={`${isMobile ? 'flex justify-center' : ''} px-4 py-4`}>
+        <div className="flex items-center gap-2">
+          <img 
+            src="/lovable-uploads/11d612dd-c7d5-4688-bf88-915265d5219b.png" 
+            alt="Neuralitix Logo" 
+            className="w-6 h-6"
+          />
+          <span className="font-bold text-lg text-primary">Neuralitix</span>
+        </div>
+      </div>
       <ul className="space-y-2 px-2">
         {navigationItems.map((item) => (
           <SidebarMenuItem
