@@ -26,26 +26,19 @@ const Auth = () => {
         if (session?.user) {
           console.log("[Auth] Session found for user:", session.user.id);
           // Check if profile exists
-          const { data: profile, error: profileError } = await supabase
+          const { data: profiles, error: profileError } = await supabase
             .from('profiles')
             .select('id, terms_accepted')
-            .eq('id', session.user.id)
-            .single();
+            .eq('id', session.user.id);
 
-          console.log("[Auth] Profile check result:", { profile, profileError });
+          console.log("[Auth] Profile check result:", { profiles, profileError });
 
           if (profileError) {
-            if (profileError.code === 'PGRST116') {
-              // No profile found - this is actually an expected case for new users
-              console.log("[Auth] No profile found, redirecting to onboarding");
-              navigate("/onboarding", { replace: true });
-              return;
-            }
             console.error("[Auth] Profile check error:", profileError);
             throw profileError;
           }
 
-          if (!profile) {
+          if (!profiles || profiles.length === 0) {
             console.log("[Auth] No profile found, redirecting to onboarding");
             navigate("/onboarding", { replace: true });
           } else {
@@ -75,25 +68,18 @@ const Auth = () => {
         console.log("[Auth] User signed in, checking profile");
         
         try {
-          const { data: profile, error: profileError } = await supabase
+          const { data: profiles, error: profileError } = await supabase
             .from('profiles')
             .select('id, terms_accepted')
-            .eq('id', session.user.id)
-            .single();
+            .eq('id', session.user.id);
 
-          console.log("[Auth] Profile check result:", { profile, profileError });
+          console.log("[Auth] Profile check result:", { profiles, profileError });
 
           if (profileError) {
-            if (profileError.code === 'PGRST116') {
-              // No profile found - this is actually an expected case for new users
-              console.log("[Auth] No profile found, redirecting to onboarding");
-              navigate("/onboarding", { replace: true });
-              return;
-            }
             throw profileError;
           }
 
-          if (!profile) {
+          if (!profiles || profiles.length === 0) {
             console.log("[Auth] No profile found, redirecting to onboarding");
             navigate("/onboarding", { replace: true });
           } else {
