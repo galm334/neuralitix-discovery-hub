@@ -26,7 +26,7 @@ const Auth = () => {
             .eq("id", session.user.id)
             .single();
 
-          if (profileError) {
+          if (profileError && profileError.code !== 'PGRST116') {
             console.error("[Auth] Profile fetch error:", profileError);
             throw profileError;
           }
