@@ -118,82 +118,82 @@ const Auth = () => {
           </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="md:col-span-1 relative">
-            <SupabaseAuth
-              supabaseClient={supabase}
-              view={authType === "signup" ? "sign_up" : "sign_in"}
-              appearance={{
-                theme: ThemeSupa,
-                variables: {
-                  default: {
-                    colors: {
-                      brand: 'rgb(var(--primary))',
-                      brandAccent: 'rgb(var(--primary))',
-                      inputText: 'rgb(0, 0, 0)',
-                      inputBackground: 'rgb(255, 255, 255)',
-                      inputBorder: 'rgb(var(--border))',
-                      inputLabelText: 'rgb(255, 255, 255)',
-                      inputPlaceholder: 'rgb(150, 150, 150)',
-                    }
+        <div className="relative">
+          <SupabaseAuth
+            supabaseClient={supabase}
+            view={authType === "signup" ? "sign_up" : "sign_in"}
+            appearance={{
+              theme: ThemeSupa,
+              variables: {
+                default: {
+                  colors: {
+                    brand: 'rgb(var(--primary))',
+                    brandAccent: 'rgb(var(--primary))',
+                    inputText: 'rgb(0, 0, 0)',
+                    inputBackground: 'rgb(255, 255, 255)',
+                    inputBorder: 'rgb(var(--border))',
+                    inputLabelText: 'rgb(255, 255, 255)',
+                    inputPlaceholder: 'rgb(150, 150, 150)',
                   }
-                },
-                className: {
-                  input: 'h-12 text-black bg-white',
-                  label: 'text-foreground',
                 }
-              }}
-              providers={[]}
-              redirectTo={window.location.origin}
-            />
+              },
+              className: {
+                input: 'h-12 w-full text-black bg-white',
+                label: 'text-foreground',
+                container: 'w-full',
+                button: 'w-full',
+              }
+            }}
+            providers={[]}
+            redirectTo={window.location.origin}
+          />
 
-            {authType === "signup" && password.length >= 3 && (
-              <div className="mt-4">
-                <Label htmlFor="confirm-password">Confirm Password</Label>
-                <Input
-                  id="confirm-password"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className={`h-12 bg-white text-black ${passwordsMatch ? 'border-green-500' : 'border-input'}`}
-                />
-                {confirmPassword.length > 0 && (
-                  <p className={`text-sm ${passwordsMatch ? 'text-green-500' : 'text-destructive'} flex items-center gap-2 mt-1`}>
-                    {passwordsMatch ? (
-                      <>
-                        <Check size={16} /> Passwords match
-                      </>
-                    ) : (
-                      'Passwords do not match'
-                    )}
-                  </p>
-                )}
-              </div>
-            )}
+          {authType === "signup" && password.length >= 3 && (
+            <div className="mt-4 w-full">
+              <Label htmlFor="confirm-password">Confirm Password</Label>
+              <Input
+                id="confirm-password"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className={`h-12 w-full bg-white text-black ${passwordsMatch ? 'border-green-500' : 'border-input'}`}
+              />
+              {confirmPassword.length > 0 && (
+                <p className={`text-sm ${passwordsMatch ? 'text-green-500' : 'text-destructive'} flex items-center gap-2 mt-1`}>
+                  {passwordsMatch ? (
+                    <>
+                      <Check size={16} /> Passwords match
+                    </>
+                  ) : (
+                    'Passwords do not match'
+                  )}
+                </p>
+              )}
+            </div>
+          )}
 
-            {showPasswordRequirements && (
-              <div className="absolute left-full ml-4 top-0 w-64 bg-background border rounded-lg p-4 shadow-lg">
-                <p className="font-medium mb-2">Password requirements:</p>
-                <ul className="space-y-1">
-                  <li className={`flex items-center gap-2 ${hasMinLength ? 'text-green-500' : 'text-muted-foreground'}`}>
-                    {hasMinLength ? <Check size={16} /> : '•'} At least 8 characters
-                  </li>
-                  <li className={`flex items-center gap-2 ${hasUpperCase ? 'text-green-500' : 'text-muted-foreground'}`}>
-                    {hasUpperCase ? <Check size={16} /> : '•'} One uppercase letter
-                  </li>
-                  <li className={`flex items-center gap-2 ${hasLowerCase ? 'text-green-500' : 'text-muted-foreground'}`}>
-                    {hasLowerCase ? <Check size={16} /> : '•'} One lowercase letter
-                  </li>
-                  <li className={`flex items-center gap-2 ${hasNumber ? 'text-green-500' : 'text-muted-foreground'}`}>
-                    {hasNumber ? <Check size={16} /> : '•'} One number
-                  </li>
-                  <li className={`flex items-center gap-2 ${hasSpecialChar ? 'text-green-500' : 'text-muted-foreground'}`}>
-                    {hasSpecialChar ? <Check size={16} /> : '•'} One special character
-                  </li>
-                </ul>
-              </div>
-            )}
-          </div>
+          {showPasswordRequirements && (
+            <div className="absolute left-full ml-4 top-0 w-64 bg-background border rounded-lg p-4 shadow-lg">
+              <p className="font-medium mb-2">Password requirements:</p>
+              <ul className="space-y-1">
+                <li className={`flex items-center gap-2 ${hasMinLength ? 'text-green-500' : 'text-muted-foreground'}`}>
+                  {hasMinLength ? <Check size={16} /> : '•'} At least 8 characters
+                </li>
+                <li className={`flex items-center gap-2 ${hasUpperCase ? 'text-green-500' : 'text-muted-foreground'}`}>
+                  {hasUpperCase ? <Check size={16} /> : '•'} One uppercase letter
+                </li>
+                <li className={`flex items-center gap-2 ${hasLowerCase ? 'text-green-500' : 'text-muted-foreground'}`}>
+                  {hasLowerCase ? <Check size={16} /> : '•'} One lowercase letter
+                </li>
+                <li className={`flex items-center gap-2 ${hasNumber ? 'text-green-500' : 'text-muted-foreground'}`}>
+                  {hasNumber ? <Check size={16} /> : '•'} One number
+                </li>
+                <li className={`flex items-center gap-2 ${hasSpecialChar ? 'text-green-500' : 'text-muted-foreground'}`}>
+                  {hasSpecialChar ? <Check size={16} /> : '•'} One special character
+                </li>
+              </ul>
+            </div>
+          )}
         </div>
       </div>
     </div>
