@@ -17,7 +17,7 @@ export const TermsDialog = ({ isOpen, onAccept, termsContent }: TermsDialogProps
     <Dialog open={isOpen} onOpenChange={() => {}}>
       <DialogContent className="sm:max-w-[600px] h-[80vh]">
         <DialogHeader>
-          <DialogTitle>Terms of Service</DialogTitle>
+          <DialogTitle>One last step</DialogTitle>
         </DialogHeader>
         <ScrollArea className="h-full pr-4">
           <div className="prose prose-sm" dangerouslySetInnerHTML={{ __html: termsContent }} />
@@ -36,7 +36,7 @@ export const TermsDialog = ({ isOpen, onAccept, termsContent }: TermsDialogProps
               I accept the terms and conditions
             </label>
           </div>
-          <Button onClick={onAccept} disabled={!accepted}>Continue</Button>
+          <Button onClick={onAccept} disabled={!accepted}>Next</Button>
         </div>
       </DialogContent>
     </Dialog>
