@@ -11,35 +11,51 @@ const Auth = () => {
   const authType = searchParams.get("type") || "signin";
 
   useEffect(() => {
-    // Listen for auth state changes specifically on the auth page
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed in Auth.tsx:', event);
-      
-      if (event === 'SIGNED_IN') {
-        const { error } = await supabase.auth.getUser();
-        if (error) {
-          if (error.message.includes('User already registered')) {
-            toast.info("You already have an account. Signing you in...");
-          } else {
-            toast.error("Authentication error. Please try again.");
-          }
-        }
-        // Only navigate after we confirm the user is properly authenticated
-        if (session) {
-          navigate("/");
-        }
-      }
-    });
-
-    // Check if user is already authenticated
+    // Check initial session
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        console.error('Session check error:', sessionError);
+        toast.error("Error checking authentication status");
+        return;
+      }
       if (session) {
+        console.log('Existing session found:', session);
         navigate("/");
       }
     };
 
     checkSession();
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event, 'Session:', session);
+
+      switch (event) {
+        case 'SIGNED_IN':
+          if (session) {
+            console.log('User signed in successfully');
+            navigate("/");
+          } else {
+            console.error('SIGNED_IN event but no session');
+            toast.error("Sign in failed. Please try again.");
+          }
+          break;
+
+        case 'USER_UPDATED':
+          console.log('User updated');
+          if (session) navigate("/");
+          break;
+
+        case 'SIGNED_OUT':
+          console.log('User signed out');
+          navigate("/auth");
+          break;
+
+        default:
+          console.log('Unhandled auth event:', event);
+      }
+    });
 
     return () => {
       subscription.unsubscribe();
@@ -75,6 +91,7 @@ const Auth = () => {
             }
           }}
           providers={["google"]}
+          redirectTo={window.location.origin}
         />
       </div>
     </div>
