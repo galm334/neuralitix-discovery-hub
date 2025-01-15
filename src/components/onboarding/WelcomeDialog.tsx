@@ -28,6 +28,7 @@ export const WelcomeDialog = ({ isOpen, onComplete }: WelcomeDialogProps) => {
 
       setProgress(50);
 
+      // Create the profile
       const { error: profileError } = await supabase
         .from('profiles')
         .insert([
@@ -45,14 +46,17 @@ export const WelcomeDialog = ({ isOpen, onComplete }: WelcomeDialogProps) => {
 
       setProgress(100);
       toast.success("Profile created successfully!");
-      
-      // Verify session is still valid before redirecting
-      const { data: currentSession } = await supabase.auth.getSession();
-      if (!currentSession.session) {
-        // If session is lost, redirect to auth
-        navigate("/auth", { replace: true });
-        return;
+
+      // Refresh the session to ensure it's still valid
+      const { data: refreshedSession, error: refreshError } = await supabase.auth.refreshSession();
+      if (refreshError) throw refreshError;
+
+      if (!refreshedSession.session) {
+        throw new Error("Session expired");
       }
+
+      // Store the refreshed session
+      localStorage.setItem('supabase.auth.token', refreshedSession.session.access_token);
 
       // Small delay to show completion
       setTimeout(() => {
@@ -64,7 +68,6 @@ export const WelcomeDialog = ({ isOpen, onComplete }: WelcomeDialogProps) => {
       console.error("Error creating profile:", error);
       toast.error("Failed to create profile. Please try again.");
       setIsCreatingProfile(false);
-      // If there's an error, redirect to auth
       navigate("/auth", { replace: true });
     }
   };
