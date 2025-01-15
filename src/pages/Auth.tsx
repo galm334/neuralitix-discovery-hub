@@ -4,13 +4,40 @@ import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 const Auth = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [error, setError] = useState<string | null>(null);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
+
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user?.id) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("terms_accepted")
+            .eq("id", session.user.id)
+            .single();
+
+          if (!profile?.terms_accepted) {
+            navigate("/onboarding", { replace: true });
+          } else {
+            navigate("/", { replace: true });
+          }
+        }
+      } catch (error) {
+        console.error("Session check error:", error);
+        toast.error("Failed to check session");
+      } finally {
+        setIsCheckingSession(false);
+      }
+    };
+
+    checkSession();
+  }, [navigate]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -22,68 +49,30 @@ const Auth = () => {
             // Wait briefly for the profile to be created by the database trigger
             await new Promise(resolve => setTimeout(resolve, 1000));
             
-            // Check if profile exists and terms are accepted
             const { data: profile, error: profileError } = await supabase
               .from("profiles")
               .select("terms_accepted")
               .eq("id", session.user.id)
-              .maybeSingle();
+              .single();
 
             if (profileError) {
               console.error("Profile fetch error:", profileError);
-              setError(profileError.message);
-              return;
+              throw profileError;
             }
 
             if (!profile?.terms_accepted) {
               navigate("/onboarding", { replace: true });
-              return;
+            } else {
+              navigate("/", { replace: true });
             }
-
-            navigate("/", { replace: true });
-          } catch (err) {
-            console.error("Error checking profile:", err);
-            setError(err instanceof Error ? err.message : "An error occurred");
+          } catch (error) {
+            console.error("Error checking profile:", error);
+            setError("Failed to check user profile");
+            toast.error("Authentication error occurred");
           }
         }
       }
     );
-
-    // Handle initial session
-    const checkSession = async () => {
-      try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) {
-          console.error("Session error:", sessionError);
-          setError(sessionError.message);
-          setIsCheckingSession(false);
-          return;
-        }
-        
-        if (session?.user?.id) {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("terms_accepted")
-            .eq("id", session.user.id)
-            .maybeSingle();
-
-          if (!profile?.terms_accepted) {
-            navigate("/onboarding", { replace: true });
-          } else {
-            navigate("/", { replace: true });
-          }
-        }
-        
-        setIsCheckingSession(false);
-      } catch (err) {
-        console.error("Error checking session:", err);
-        setError(err instanceof Error ? err.message : "An error occurred");
-        setIsCheckingSession(false);
-      }
-    };
-
-    checkSession();
 
     return () => subscription.unsubscribe();
   }, [navigate]);
