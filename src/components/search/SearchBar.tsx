@@ -36,7 +36,7 @@ export const SearchBar = () => {
 
   useEffect(() => {
     const fetchSuggestions = async () => {
-      if (debouncedQuery.length >= 3) {
+      if (debouncedQuery.length >= 2) { // Changed from 3 to 2 characters
         try {
           console.log('Fetching suggestions for query:', debouncedQuery);
           const { data, error } = await supabase.functions.invoke('get-autocomplete', {
@@ -127,7 +127,7 @@ export const SearchBar = () => {
         </Button>
       </div>
 
-      {debouncedQuery.length >= 3 && suggestions.length > 0 && (
+      {debouncedQuery.length >= 2 && suggestions.length > 0 && (
         <Card ref={suggestionsRef} className="absolute w-full mt-2 p-2 shadow-lg z-50 max-h-[400px] overflow-y-auto">
           {suggestions.map((suggestion, index) => (
             <button

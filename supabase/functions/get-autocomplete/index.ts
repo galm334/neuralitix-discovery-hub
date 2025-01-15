@@ -15,7 +15,7 @@ serve(async (req) => {
   try {
     const { query } = await req.json();
     
-    if (!query || typeof query !== 'string' || query.length < 3) {
+    if (!query || typeof query !== 'string' || query.length < 2) { // Changed from 3 to 2 characters
       return new Response(
         JSON.stringify({ suggestions: [], tools: [] }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
@@ -65,7 +65,7 @@ serve(async (req) => {
       );
     }
 
-    // For other queries, use prefix matching
+    // For other queries, use prefix matching with a shorter minimum length
     const searchTerm = `${query.toLowerCase()}:*`;
     console.log('Formatted search term:', searchTerm);
 
