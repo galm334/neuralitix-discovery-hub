@@ -1,4 +1,4 @@
-import { Home, Star, TrendingUp, Plus, Send, MessageSquare, LogIn } from "lucide-react";
+import { Home, Star, TrendingUp, Plus, Send, MessageSquare } from "lucide-react";
 import { Sidebar } from "./Sidebar";
 import { SidebarMenuItem } from "./SidebarMenuItem";
 import { useSidebar } from "@/contexts/SidebarContext";
@@ -55,12 +55,12 @@ export function AppSidebar() {
       <Sidebar>
         {/* Logo and auth buttons for desktop */}
         {!isMobile && (
-          <div className="px-4 py-4 relative w-full">
-            <h1 className="text-4xl font-bold text-primary">Neuralitix</h1>
-            <div className="absolute top-4 right-4 z-50">
+          <>
+            <h1 className="px-4 py-4 text-4xl font-bold text-primary">Neuralitix</h1>
+            <div className="fixed top-4 right-8 z-50">
               <AuthButtons />
             </div>
-          </div>
+          </>
         )}
         <ul className="space-y-2 px-2">
           {navigationItems.map((item) => (
