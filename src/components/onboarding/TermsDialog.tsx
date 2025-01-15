@@ -2,7 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Shield } from "lucide-react";
 import { useState } from "react";
 
 interface TermsDialogProps {
@@ -18,7 +18,13 @@ export const TermsDialog = ({ isOpen, onAccept, termsContent }: TermsDialogProps
     <Dialog open={isOpen} onOpenChange={() => {}}>
       <DialogContent className="sm:max-w-[600px] h-[80vh]">
         <DialogHeader>
-          <DialogTitle className="text-3xl font-bold text-center mb-4">One last step</DialogTitle>
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <Shield className="h-8 w-8 text-primary" />
+            <DialogTitle className="text-3xl font-bold">Terms of Service</DialogTitle>
+          </div>
+          <p className="text-muted-foreground text-center">
+            Please review and accept our terms to continue
+          </p>
         </DialogHeader>
         <ScrollArea className="h-full pr-4 border rounded-md">
           <div className="prose prose-sm p-4" dangerouslySetInnerHTML={{ __html: termsContent }} />
@@ -64,7 +70,13 @@ export const TermsDialog = ({ isOpen, onAccept, termsContent }: TermsDialogProps
               </a>
             </label>
           </div>
-          <Button onClick={onAccept} disabled={!accepted}>Next</Button>
+          <Button 
+            onClick={onAccept} 
+            disabled={!accepted}
+            className="w-full"
+          >
+            Accept and Continue
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

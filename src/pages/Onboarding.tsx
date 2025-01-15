@@ -6,13 +6,14 @@ import { WelcomeDialog } from "@/components/onboarding/WelcomeDialog";
 import { TermsDialog } from "@/components/onboarding/TermsDialog";
 import { terms } from "@/data/terms";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Onboarding = () => {
   const [showTerms, setShowTerms] = useState(true);
   const [showWelcome, setShowWelcome] = useState(false);
-  const [isCompleting, setIsCompleting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  const { refreshProfile } = useAuth();
 
   useAuthRedirect();
 
@@ -65,7 +66,7 @@ const Onboarding = () => {
     checkSessionAndProfile();
   }, [navigate]);
 
-  const handleAccept = async () => {
+  const handleAcceptTerms = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
@@ -81,30 +82,22 @@ const Onboarding = () => {
 
       if (error) {
         console.error("Error updating profile:", error);
-        toast.error("Something went wrong. Please try again.");
+        toast.error("Failed to accept terms. Please try again.");
         return;
       }
 
+      await refreshProfile();
       setShowTerms(false);
       setShowWelcome(true);
     } catch (error) {
-      console.error("Error in handleAccept:", error);
+      console.error("Error in handleAcceptTerms:", error);
       toast.error("Something went wrong. Please try again.");
     }
   };
 
   const handleComplete = async () => {
-    if (isCompleting) return;
-    setIsCompleting(true);
-
-    try {
-      setShowWelcome(false);
-      navigate("/", { replace: true });
-    } catch (error) {
-      console.error("Error in handleComplete:", error);
-      setIsCompleting(false);
-      toast.error("Navigation failed. Please try again.");
-    }
+    setShowWelcome(false);
+    navigate("/", { replace: true });
   };
 
   if (isLoading) {
@@ -115,7 +108,7 @@ const Onboarding = () => {
     <div className="min-h-screen bg-background">
       <TermsDialog 
         isOpen={showTerms} 
-        onAccept={handleAccept}
+        onAccept={handleAcceptTerms}
         termsContent={terms}
       />
       <WelcomeDialog 

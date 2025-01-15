@@ -5,6 +5,8 @@ import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { User } from "lucide-react";
 
 interface WelcomeDialogProps {
   isOpen: boolean;
@@ -15,6 +17,7 @@ export const WelcomeDialog = ({ isOpen, onComplete }: WelcomeDialogProps) => {
   const [isCreatingProfile, setIsCreatingProfile] = useState(false);
   const [progress, setProgress] = useState(0);
   const navigate = useNavigate();
+  const { refreshProfile } = useAuth();
 
   const createProfile = async () => {
     if (isCreatingProfile) return;
@@ -22,7 +25,6 @@ export const WelcomeDialog = ({ isOpen, onComplete }: WelcomeDialogProps) => {
     setProgress(25);
 
     try {
-      // Get current session and verify it exists
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       if (sessionError) throw sessionError;
       if (!session?.user?.id) {
@@ -31,7 +33,6 @@ export const WelcomeDialog = ({ isOpen, onComplete }: WelcomeDialogProps) => {
 
       setProgress(50);
 
-      // Create the profile
       const { error: profileError } = await supabase
         .from('profiles')
         .insert([
@@ -49,28 +50,20 @@ export const WelcomeDialog = ({ isOpen, onComplete }: WelcomeDialogProps) => {
 
       setProgress(75);
 
-      // Final session verification
-      const { data: { session: finalSession }, error: finalSessionError } = await supabase.auth.getSession();
-      if (finalSessionError) throw finalSessionError;
-      if (!finalSession) {
-        throw new Error("Session lost during profile creation");
-      }
-
+      await refreshProfile();
       setProgress(100);
       
       // Small delay to show completion
       setTimeout(() => {
         onComplete();
-        // Redirect to home page
         navigate("/", { replace: true });
-        toast.success("Profile created successfully!");
+        toast.success("Welcome to Neuralitix! Your profile has been created.");
       }, 500);
 
     } catch (error) {
       console.error("Error in profile creation:", error);
       toast.error("Failed to create profile. Please try again.");
       setIsCreatingProfile(false);
-      // On error, redirect to auth page
       navigate("/auth", { replace: true });
     }
   };
@@ -79,12 +72,15 @@ export const WelcomeDialog = ({ isOpen, onComplete }: WelcomeDialogProps) => {
     <Dialog open={isOpen} onOpenChange={() => {}}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="text-2xl">Welcome to Neuralitix! 🎉</DialogTitle>
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <User className="h-8 w-8 text-primary" />
+            <DialogTitle className="text-2xl">Welcome to Neuralitix! 🎉</DialogTitle>
+          </div>
         </DialogHeader>
         {!isCreatingProfile ? (
           <>
             <div className="grid gap-4 py-4">
-              <p className="text-muted-foreground">
+              <p className="text-muted-foreground text-center">
                 Your journey to discovering the best GenAI tools starts now.
               </p>
               <div className="space-y-4">
@@ -97,12 +93,12 @@ export const WelcomeDialog = ({ isOpen, onComplete }: WelcomeDialogProps) => {
               </div>
             </div>
             <div className="flex justify-end">
-              <Button onClick={createProfile}>Let's Go ➡️</Button>
+              <Button onClick={createProfile} className="w-full">Let's Get Started</Button>
             </div>
           </>
         ) : (
           <div className="space-y-4 py-4">
-            <p className="text-center text-muted-foreground">Creating your profile...</p>
+            <p className="text-center text-muted-foreground">Setting up your profile...</p>
             <Progress value={progress} className="w-full" />
           </div>
         )}
