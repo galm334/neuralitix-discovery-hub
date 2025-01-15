@@ -26,20 +26,20 @@ const Auth = () => {
         if (session?.user) {
           console.log("[Auth] Session found for user:", session.user.id);
           // Check if profile exists
-          const { data: profiles, error: profileError } = await supabase
+          const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('id, terms_accepted')
             .eq('id', session.user.id)
-            .single();
+            .maybeSingle();
 
-          console.log("[Auth] Profile check result:", { profiles, profileError });
+          console.log("[Auth] Profile check result:", { profile, profileError });
 
           if (profileError) {
             console.error("[Auth] Profile check error:", profileError);
             throw profileError;
           }
 
-          if (!profiles) {
+          if (!profile) {
             console.log("[Auth] No profile found, redirecting to onboarding");
             navigate("/onboarding", { replace: true });
           } else {
@@ -69,19 +69,19 @@ const Auth = () => {
         console.log("[Auth] User signed in, checking profile");
         
         try {
-          const { data: profiles, error: profileError } = await supabase
+          const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('id, terms_accepted')
             .eq('id', session.user.id)
-            .single();
+            .maybeSingle();
 
-          console.log("[Auth] Profile check result:", { profiles, profileError });
+          console.log("[Auth] Profile check result:", { profile, profileError });
 
           if (profileError) {
             throw profileError;
           }
 
-          if (!profiles) {
+          if (!profile) {
             console.log("[Auth] No profile found, redirecting to onboarding");
             navigate("/onboarding", { replace: true });
           } else {
