@@ -92,6 +92,141 @@ export type Database = {
           },
         ]
       }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          discord: string | null
+          id: string
+          instagram: string | null
+          joined_at: string
+          linkedin: string | null
+          name: string | null
+          nickname: string | null
+          role: Database["public"]["Enums"]["user_role"] | null
+          terms_accepted: boolean | null
+          tiktok: string | null
+          website: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          discord?: string | null
+          id: string
+          instagram?: string | null
+          joined_at?: string
+          linkedin?: string | null
+          name?: string | null
+          nickname?: string | null
+          role?: Database["public"]["Enums"]["user_role"] | null
+          terms_accepted?: boolean | null
+          tiktok?: string | null
+          website?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          discord?: string | null
+          id?: string
+          instagram?: string | null
+          joined_at?: string
+          linkedin?: string | null
+          name?: string | null
+          nickname?: string | null
+          role?: Database["public"]["Enums"]["user_role"] | null
+          terms_accepted?: boolean | null
+          tiktok?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
+      saved_tools: {
+        Row: {
+          profile_id: string
+          saved_at: string | null
+          tool_id: string
+        }
+        Insert: {
+          profile_id: string
+          saved_at?: string | null
+          tool_id: string
+        }
+        Update: {
+          profile_id?: string
+          saved_at?: string | null
+          tool_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_tools_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saved_tools_tool_id_fkey"
+            columns: ["tool_id"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tools: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          category: string
+          created_at: string | null
+          created_by: string | null
+          description: string
+          id: string
+          is_approved: boolean | null
+          is_public: boolean | null
+          logo_url: string | null
+          name: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          category: string
+          created_at?: string | null
+          created_by?: string | null
+          description: string
+          id?: string
+          is_approved?: boolean | null
+          is_public?: boolean | null
+          logo_url?: string | null
+          name: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          category?: string
+          created_at?: string | null
+          created_by?: string | null
+          description?: string
+          id?: string
+          is_approved?: boolean | null
+          is_public?: boolean | null
+          logo_url?: string | null
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tools_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tools_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -285,7 +420,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      user_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
