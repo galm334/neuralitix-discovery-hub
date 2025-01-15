@@ -6,8 +6,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { X, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 const Auth = () => {
   const [searchParams] = useSearchParams();
@@ -57,29 +55,8 @@ const Auth = () => {
       }
     });
 
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (mutation.addedNodes.length) {
-          const passwordInput = document.querySelector('input[type="password"]');
-          if (passwordInput) {
-            passwordInput.addEventListener('input', (e) => {
-              const target = e.target as HTMLInputElement;
-              setPassword(target.value);
-            });
-            observer.disconnect();
-          }
-        }
-      });
-    });
-
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true
-    });
-
     return () => {
       subscription.unsubscribe();
-      observer.disconnect();
     };
   }, [navigate]);
 
@@ -108,7 +85,7 @@ const Auth = () => {
         </div>
 
         <div className="flex gap-8">
-          <div className="flex-1 max-w-xl mx-auto">
+          <div className="flex-1">
             <SupabaseAuth
               supabaseClient={supabase}
               view={authType === "signup" ? "sign_up" : "sign_in"}
@@ -132,35 +109,25 @@ const Auth = () => {
                   label: 'text-foreground',
                   container: 'w-full space-y-4',
                   button: 'w-full',
+                },
+                style: {
+                  input: {
+                    borderColor: 'rgb(var(--border))',
+                  },
+                  ...(authType === "signup" && {
+                    button: {
+                      display: passwordsMatch ? 'block' : 'none'
+                    }
+                  })
                 }
               }}
               providers={[]}
               redirectTo={window.location.origin}
+              onPasswordInput={(e) => {
+                const target = e.target as HTMLInputElement;
+                setPassword(target.value);
+              }}
             />
-
-            {authType === "signup" && (
-              <div className="mt-4">
-                <Label htmlFor="confirm-password">Confirm Password</Label>
-                <Input
-                  id="confirm-password"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className={`h-12 w-full bg-white text-black ${passwordsMatch ? 'border-green-500' : 'border-input'}`}
-                />
-                {confirmPassword.length > 0 && (
-                  <p className={`text-sm ${passwordsMatch ? 'text-green-500' : 'text-destructive'} flex items-center gap-2 mt-1`}>
-                    {passwordsMatch ? (
-                      <>
-                        <Check size={16} /> Passwords match
-                      </>
-                    ) : (
-                      'Passwords do not match'
-                    )}
-                  </p>
-                )}
-              </div>
-            )}
           </div>
 
           <div className="w-72">
