@@ -12,7 +12,10 @@ export const WelcomeDialog = ({ isOpen, onComplete }: WelcomeDialogProps) => {
 
   const handleComplete = () => {
     onComplete();
-    navigate("/");
+    // Force the navigation to happen in the next tick of the event loop
+    setTimeout(() => {
+      navigate("/");
+    }, 0);
   };
 
   return (
