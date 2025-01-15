@@ -15,23 +15,39 @@ const Auth = () => {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        console.log("[Auth] Checking initial session");
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error("[Auth] Session check error:", sessionError);
+          throw sessionError;
+        }
+
         if (session?.user) {
+          console.log("[Auth] Session found, checking profile");
           // Check if profile exists
-          const { data: profile } = await supabase
+          const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', session.user.id)
             .single();
 
+          if (profileError) {
+            console.error("[Auth] Profile check error:", profileError);
+            throw profileError;
+          }
+
           if (!profile) {
+            console.log("[Auth] No profile found, redirecting to onboarding");
             navigate("/onboarding", { replace: true });
           } else {
+            console.log("[Auth] Profile found, redirecting to home");
             navigate("/", { replace: true });
           }
         }
       } catch (error) {
-        console.error("Session check error:", error);
+        console.error("[Auth] Error in checkSession:", error);
+        setError("An error occurred while checking your session");
       } finally {
         setIsCheckingSession(false);
       }
@@ -42,6 +58,8 @@ const Auth = () => {
 
   // Auth state change handler
   useEffect(() => {
+    console.log("[Auth] Setting up auth state change listener");
+    
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("[Auth] Auth event:", event);
       
@@ -49,11 +67,16 @@ const Auth = () => {
         console.log("[Auth] User signed in, checking profile");
         
         try {
-          const { data: profile } = await supabase
+          const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', session.user.id)
             .single();
+
+          if (profileError) {
+            console.error("[Auth] Profile check error:", profileError);
+            throw profileError;
+          }
 
           if (!profile) {
             console.log("[Auth] No profile found, redirecting to onboarding");
@@ -63,8 +86,9 @@ const Auth = () => {
             navigate("/", { replace: true });
           }
         } catch (error) {
-          console.error("Profile check error:", error);
+          console.error("[Auth] Error in auth state change:", error);
           setError("An error occurred while checking your profile");
+          toast.error("Authentication error. Please try again.");
         }
       }
     });
