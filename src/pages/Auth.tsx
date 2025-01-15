@@ -18,7 +18,7 @@ const Auth = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordValid, setPasswordValid] = useState(false);
   const [passwordsMatch, setPasswordsMatch] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showPasswordRequirements, setShowPasswordRequirements] = useState(false);
 
   // Password validation criteria
   const hasMinLength = password.length >= 8;
@@ -40,8 +40,8 @@ const Auth = () => {
   }, [password, confirmPassword]);
 
   useEffect(() => {
-    // Show confirm password field after 3 characters
-    setShowConfirmPassword(password.length >= 3);
+    // Show password requirements and confirm field after 3 characters
+    setShowPasswordRequirements(password.length >= 3);
   }, [password]);
 
   useEffect(() => {
@@ -150,34 +150,34 @@ const Auth = () => {
             />
           </div>
 
-          {authType === "signup" && (
+          {authType === "signup" && showPasswordRequirements && (
             <div className="md:col-span-1 space-y-4">
-              <Alert>
-                <AlertDescription>
-                  <div className="space-y-2">
-                    <p className="font-medium">Password requirements:</p>
-                    <ul className="space-y-1">
-                      <li className={`flex items-center gap-2 ${hasMinLength ? 'text-green-500' : 'text-muted-foreground'}`}>
-                        {hasMinLength ? <Check size={16} /> : '•'} At least 8 characters
-                      </li>
-                      <li className={`flex items-center gap-2 ${hasUpperCase ? 'text-green-500' : 'text-muted-foreground'}`}>
-                        {hasUpperCase ? <Check size={16} /> : '•'} One uppercase letter
-                      </li>
-                      <li className={`flex items-center gap-2 ${hasLowerCase ? 'text-green-500' : 'text-muted-foreground'}`}>
-                        {hasLowerCase ? <Check size={16} /> : '•'} One lowercase letter
-                      </li>
-                      <li className={`flex items-center gap-2 ${hasNumber ? 'text-green-500' : 'text-muted-foreground'}`}>
-                        {hasNumber ? <Check size={16} /> : '•'} One number
-                      </li>
-                      <li className={`flex items-center gap-2 ${hasSpecialChar ? 'text-green-500' : 'text-muted-foreground'}`}>
-                        {hasSpecialChar ? <Check size={16} /> : '•'} One special character
-                      </li>
-                    </ul>
-                  </div>
-                </AlertDescription>
-              </Alert>
+              <div className="space-y-4">
+                <Alert>
+                  <AlertDescription>
+                    <div className="space-y-2">
+                      <p className="font-medium">Password requirements:</p>
+                      <ul className="space-y-1">
+                        <li className={`flex items-center gap-2 ${hasMinLength ? 'text-green-500' : 'text-muted-foreground'}`}>
+                          {hasMinLength ? <Check size={16} /> : '•'} At least 8 characters
+                        </li>
+                        <li className={`flex items-center gap-2 ${hasUpperCase ? 'text-green-500' : 'text-muted-foreground'}`}>
+                          {hasUpperCase ? <Check size={16} /> : '•'} One uppercase letter
+                        </li>
+                        <li className={`flex items-center gap-2 ${hasLowerCase ? 'text-green-500' : 'text-muted-foreground'}`}>
+                          {hasLowerCase ? <Check size={16} /> : '•'} One lowercase letter
+                        </li>
+                        <li className={`flex items-center gap-2 ${hasNumber ? 'text-green-500' : 'text-muted-foreground'}`}>
+                          {hasNumber ? <Check size={16} /> : '•'} One number
+                        </li>
+                        <li className={`flex items-center gap-2 ${hasSpecialChar ? 'text-green-500' : 'text-muted-foreground'}`}>
+                          {hasSpecialChar ? <Check size={16} /> : '•'} One special character
+                        </li>
+                      </ul>
+                    </div>
+                  </AlertDescription>
+                </Alert>
 
-              {showConfirmPassword && (
                 <div className="space-y-2">
                   <Label htmlFor="confirm-password">Confirm Password</Label>
                   <Input
@@ -199,7 +199,7 @@ const Auth = () => {
                     </p>
                   )}
                 </div>
-              )}
+              </div>
             </div>
           )}
         </div>
