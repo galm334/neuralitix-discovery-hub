@@ -12,10 +12,10 @@ const Auth = () => {
 
   useEffect(() => {
     // Listen for auth state changes specifically on the auth page
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event) => {
       console.log('Auth state changed in Auth.tsx:', event);
       
-      if (event === 'SIGNED_UP') {
+      if (event === "SIGNED_IN") {
         const { error } = await supabase.auth.getUser();
         if (error?.message?.includes('User already registered')) {
           toast.info("You already have an account. Signing you in...");
