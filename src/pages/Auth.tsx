@@ -119,7 +119,7 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md space-y-8 relative">
+      <div className="w-full max-w-5xl space-y-8 relative">
         <Button
           variant="ghost"
           size="icon"
@@ -142,8 +142,8 @@ const Auth = () => {
         </div>
         
         <div className="relative">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-1">
+          <div className="grid grid-cols-4 gap-8">
+            <div className="col-span-3">
               <SupabaseAuth
                 supabaseClient={supabase}
                 view={authType === "signup" ? "sign_up" : "sign_in"}
