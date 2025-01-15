@@ -64,23 +64,26 @@ const Auth = () => {
         if (mutation.addedNodes.length) {
           const passwordInputs = document.querySelectorAll('input[type="password"]');
           passwordInputs.forEach((input) => {
-            const parentDiv = input.closest('.supabase-auth-ui_ui-container');
+            // Explicitly type the input as HTMLInputElement
+            const inputElement = input as HTMLInputElement;
+            const parentDiv = inputElement.closest('.supabase-auth-ui_ui-container');
+            
             if (parentDiv && !parentDiv.querySelector('.password-toggle')) {
               const button = document.createElement('button');
               button.className = 'password-toggle absolute right-2 top-1/2 -translate-y-1/2';
               button.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
               button.onclick = (e) => {
                 e.preventDefault();
-                input.type = input.type === 'password' ? 'text' : 'password';
+                inputElement.type = inputElement.type === 'password' ? 'text' : 'password';
               };
-              input.parentElement?.appendChild(button);
+              inputElement.parentElement?.appendChild(button);
               
-              if (!input.dataset.hasListener) {
-                input.addEventListener('input', (e) => {
+              if (!inputElement.dataset.hasListener) {
+                inputElement.addEventListener('input', (e) => {
                   const target = e.target as HTMLInputElement;
                   setPassword(target.value);
                 });
-                input.dataset.hasListener = 'true';
+                inputElement.dataset.hasListener = 'true';
               }
             }
           });
