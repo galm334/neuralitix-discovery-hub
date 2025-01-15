@@ -2,6 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { BrowserRouter } from "react-router-dom";
 import { SidebarProvider } from "@/contexts/SidebarContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 import { AppSidebar } from "@/components/AppSidebar";
 import Index from "@/pages/Index";
 import Popular from "@/pages/Popular";
@@ -71,49 +72,51 @@ function App() {
   }, []);
 
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen bg-background">
-        {!isAuthPage && !isLegalPage && <AppSidebar />}
-        <main className="flex-1">
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/onboarding" element={<Onboarding />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route path="/privacy" element={<Privacy />} />
-            <Route path="/gdpr" element={<GDPR />} />
-            <Route path="/popular" element={<Popular />} />
-            <Route path="/trending" element={<Trending />} />
-            <Route path="/just-added" element={<JustAdded />} />
-            <Route path="/tool/:toolId" element={<ToolPage />} />
-            <Route path="/category/:category" element={<CategoryPage />} />
-            <Route path="/chat/:conversationId" element={<Chat />} />
-            <Route path="/standalone-chat" element={<StandaloneChat />} />
-          </Routes>
-        </main>
-        <Toaster />
-        {!isStandaloneChat && !isAuthPage && !isLegalPage && (
-          <div 
-            className="fixed bottom-0 right-0 z-50" 
-            style={{ 
-              width: '100px',
-              maxWidth: '100px',
-              overflow: 'hidden'
-            }}
-          >
-            <zapier-interfaces-chatbot-embed 
-              id="chatbot-embed"
-              is-popup='true' 
-              chatbot-id='clqec2l2r00ca28qsdfz0m4my'
+    <AuthProvider>
+      <SidebarProvider>
+        <div className="flex min-h-screen bg-background">
+          {!isAuthPage && !isLegalPage && <AppSidebar />}
+          <main className="flex-1">
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/onboarding" element={<Onboarding />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/gdpr" element={<GDPR />} />
+              <Route path="/popular" element={<Popular />} />
+              <Route path="/trending" element={<Trending />} />
+              <Route path="/just-added" element={<JustAdded />} />
+              <Route path="/tool/:toolId" element={<ToolPage />} />
+              <Route path="/category/:category" element={<CategoryPage />} />
+              <Route path="/chat/:conversationId" element={<Chat />} />
+              <Route path="/standalone-chat" element={<StandaloneChat />} />
+            </Routes>
+          </main>
+          <Toaster />
+          {!isStandaloneChat && !isAuthPage && !isLegalPage && (
+            <div 
+              className="fixed bottom-0 right-0 z-50" 
               style={{ 
                 width: '100px',
-                maxWidth: '100px'
+                maxWidth: '100px',
+                overflow: 'hidden'
               }}
-            />
-          </div>
-        )}
-      </div>
-    </SidebarProvider>
+            >
+              <zapier-interfaces-chatbot-embed 
+                id="chatbot-embed"
+                is-popup='true' 
+                chatbot-id='clqec2l2r00ca28qsdfz0m4my'
+                style={{ 
+                  width: '100px',
+                  maxWidth: '100px'
+                }}
+              />
+            </div>
+          )}
+        </div>
+      </SidebarProvider>
+    </AuthProvider>
   );
 }
 
