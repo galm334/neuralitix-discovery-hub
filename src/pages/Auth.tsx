@@ -142,61 +142,63 @@ const Auth = () => {
         </div>
         
         <div className="relative">
-          <div className="grid grid-cols-4 gap-4">
-            <div className="col-span-3">
+          <div className="grid grid-cols-5 gap-4">
+            <div className="col-span-4">
               <div className="w-[60%] mx-auto space-y-4">
-                <SupabaseAuth
-                  supabaseClient={supabase}
-                  view={authType === "signup" ? "sign_up" : "sign_in"}
-                  appearance={{
-                    theme: ThemeSupa,
-                    variables: {
-                      default: {
-                        colors: {
-                          brand: 'rgb(var(--primary))',
-                          brandAccent: 'rgb(var(--primary))',
-                          inputText: 'rgb(0, 0, 0)',
-                          inputBackground: 'rgb(255, 255, 255)',
-                          inputBorder: 'rgb(var(--border))',
-                          inputLabelText: 'rgb(255, 255, 255)',
-                          inputPlaceholder: 'rgb(150, 150, 150)',
+                <div className="space-y-4">
+                  <SupabaseAuth
+                    supabaseClient={supabase}
+                    view={authType === "signup" ? "sign_up" : "sign_in"}
+                    appearance={{
+                      theme: ThemeSupa,
+                      variables: {
+                        default: {
+                          colors: {
+                            brand: 'rgb(var(--primary))',
+                            brandAccent: 'rgb(var(--primary))',
+                            inputText: 'rgb(0, 0, 0)',
+                            inputBackground: 'rgb(255, 255, 255)',
+                            inputBorder: 'rgb(var(--border))',
+                            inputLabelText: 'rgb(255, 255, 255)',
+                            inputPlaceholder: 'rgb(150, 150, 150)',
+                          }
                         }
+                      },
+                      className: {
+                        input: 'h-12 w-full text-black bg-white',
+                        label: 'text-foreground',
+                        container: 'w-full',
+                        button: 'w-full',
                       }
-                    },
-                    className: {
-                      input: 'h-12 w-full text-black bg-white',
-                      label: 'text-foreground',
-                      container: 'w-full',
-                      button: 'w-full',
-                    }
-                  }}
-                  providers={[]}
-                  redirectTo={window.location.origin}
-                />
+                    }}
+                    providers={[]}
+                    redirectTo={window.location.origin}
+                  />
 
-                {authType === "signup" && (
-                  <div className="mt-4">
-                    <Label htmlFor="confirm-password">Confirm Password</Label>
-                    <Input
-                      id="confirm-password"
-                      type="password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className={`h-12 w-full bg-white text-black ${passwordsMatch ? 'border-green-500' : 'border-input'}`}
-                    />
-                    {confirmPassword.length > 0 && (
-                      <p className={`text-sm ${passwordsMatch ? 'text-green-500' : 'text-destructive'} flex items-center gap-2 mt-1`}>
-                        {passwordsMatch ? (
-                          <>
-                            <Check size={16} /> Passwords match
-                          </>
-                        ) : (
-                          'Passwords do not match'
-                        )}
-                      </p>
-                    )}
-                  </div>
-                )}
+                  {authType === "signup" && (
+                    <div>
+                      <Label htmlFor="confirm-password">Confirm Password</Label>
+                      <Input
+                        id="confirm-password"
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className={`h-12 w-full bg-white text-black ${passwordsMatch ? 'border-green-500' : 'border-input'}`}
+                      />
+                      {confirmPassword.length > 0 && (
+                        <p className={`text-sm ${passwordsMatch ? 'text-green-500' : 'text-destructive'} flex items-center gap-2 mt-1`}>
+                          {passwordsMatch ? (
+                            <>
+                              <Check size={16} /> Passwords match
+                            </>
+                          ) : (
+                            'Passwords do not match'
+                          )}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
