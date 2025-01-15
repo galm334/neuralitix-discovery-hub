@@ -23,25 +23,8 @@ const SearchResults = () => {
   const { conversationId } = useParams();
 
   const handleChatNow = () => {
-    try {
-      const chatbotEmbed = document.querySelector('#chatbot-embed');
-      if (chatbotEmbed) {
-        // Create a click event
-        const clickEvent = new MouseEvent('click', {
-          bubbles: true,
-          cancelable: true,
-          view: window
-        });
-        chatbotEmbed.dispatchEvent(clickEvent);
-        console.log('Clicked chatbot embed');
-      } else {
-        console.error('Chatbot embed not found');
-        toast.error("Chat is not available at the moment");
-      }
-    } catch (error) {
-      console.error('Error opening chatbot:', error);
-      toast.error("Failed to open chat");
-    }
+    // Navigate to standalone chat instead of trying to open the popup
+    window.location.href = '/standalone-chat';
   };
 
   useEffect(() => {

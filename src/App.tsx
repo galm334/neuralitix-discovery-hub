@@ -10,6 +10,7 @@ import JustAdded from "@/pages/JustAdded";
 import ToolPage from "@/pages/ToolPage";
 import CategoryPage from "@/pages/CategoryPage";
 import Chat from "@/pages/Chat";
+import StandaloneChat from "@/pages/StandaloneChat";
 import { useEffect } from "react";
 
 function App() {
@@ -51,6 +52,7 @@ function App() {
               <Route path="/tool/:toolId" element={<ToolPage />} />
               <Route path="/category/:category" element={<CategoryPage />} />
               <Route path="/chat/:conversationId" element={<Chat />} />
+              <Route path="/standalone-chat" element={<StandaloneChat />} />
             </Routes>
           </main>
           <Toaster />
