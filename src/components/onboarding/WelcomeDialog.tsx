@@ -21,10 +21,14 @@ export const WelcomeDialog = ({ isOpen, onComplete }: WelcomeDialogProps) => {
     setProgress(25);
 
     try {
+      // Get current session
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user?.id) {
         throw new Error("No user session found");
       }
+
+      // Store current session
+      localStorage.setItem('supabase.auth.token', session.access_token);
 
       setProgress(50);
 
@@ -44,19 +48,21 @@ export const WelcomeDialog = ({ isOpen, onComplete }: WelcomeDialogProps) => {
         throw profileError;
       }
 
-      setProgress(100);
-      toast.success("Profile created successfully!");
+      setProgress(75);
 
-      // Refresh the session to ensure it's still valid
-      const { data: refreshedSession, error: refreshError } = await supabase.auth.refreshSession();
+      // Refresh session to ensure it's still valid
+      const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession();
       if (refreshError) throw refreshError;
 
-      if (!refreshedSession.session) {
+      if (!refreshedSession) {
         throw new Error("Session expired");
       }
 
-      // Store the refreshed session
-      localStorage.setItem('supabase.auth.token', refreshedSession.session.access_token);
+      // Store refreshed session
+      localStorage.setItem('supabase.auth.token', refreshedSession.access_token);
+
+      setProgress(100);
+      toast.success("Profile created successfully!");
 
       // Small delay to show completion
       setTimeout(() => {
@@ -68,7 +74,13 @@ export const WelcomeDialog = ({ isOpen, onComplete }: WelcomeDialogProps) => {
       console.error("Error creating profile:", error);
       toast.error("Failed to create profile. Please try again.");
       setIsCreatingProfile(false);
-      navigate("/auth", { replace: true });
+      
+      // Try to get a new session
+      const { error: refreshError } = await supabase.auth.refreshSession();
+      if (refreshError) {
+        console.error("Failed to refresh session:", refreshError);
+        navigate("/auth", { replace: true });
+      }
     }
   };
 

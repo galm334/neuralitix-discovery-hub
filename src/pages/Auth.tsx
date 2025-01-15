@@ -11,7 +11,7 @@ const Auth = () => {
   const [error, setError] = useState<string | null>(null);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
 
-  // Simple session check on mount
+  // Initial session check
   useEffect(() => {
     const checkSession = async () => {
       try {
@@ -19,6 +19,9 @@ const Auth = () => {
         if (error) throw error;
         
         if (session?.user) {
+          // Store session
+          localStorage.setItem('supabase.auth.token', session.access_token);
+          
           // Check if profile exists
           const { data: profile } = await supabase
             .from('profiles')
@@ -42,7 +45,7 @@ const Auth = () => {
     checkSession();
   }, [navigate]);
 
-  // Enhanced auth state change handler with persistent session
+  // Auth state change handler
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("[Auth] Auth event:", event);
@@ -51,7 +54,7 @@ const Auth = () => {
         console.log("[Auth] User signed in, checking profile");
         
         try {
-          // Store session in localStorage for persistence
+          // Store session
           localStorage.setItem('supabase.auth.token', session.access_token);
           
           const { data: profile } = await supabase
