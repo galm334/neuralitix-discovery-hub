@@ -4,7 +4,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ExternalLink } from "lucide-react";
 import { useState } from "react";
-import { Link } from "react-router-dom";
 
 interface TermsDialogProps {
   isOpen: boolean;
