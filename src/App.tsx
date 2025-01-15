@@ -70,7 +70,7 @@ function App() {
     <SidebarProvider>
       <div className="flex min-h-screen bg-background">
         {!isAuthPage && <AppSidebar />}
-        <main className={`flex-1 ${isAuthPage ? '' : 'ml-64'}`}>
+        <main className={`flex-1 ${isAuthPage ? '' : 'md:ml-44'}`}>
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
