@@ -92,8 +92,13 @@ const Auth = () => {
       setIsLoading(true);
       setAuthError(null);
 
-      const redirectTo = `${window.location.origin}/auth?verification=success`;
-      console.log('Redirect URL:', redirectTo); // Debug log
+      // Get the current origin, falling back to production URL if needed
+      const siteUrl = window.location.origin === 'http://localhost:3000' 
+        ? 'https://neuralitix.com' 
+        : window.location.origin;
+      
+      const redirectTo = `${siteUrl}/auth?verification=success`;
+      console.log('Using redirect URL:', redirectTo);
 
       const { error } = authType === "signup" 
         ? await supabase.auth.signUp({
