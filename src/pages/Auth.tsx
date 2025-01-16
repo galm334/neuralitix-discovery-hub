@@ -153,7 +153,7 @@ const Auth = () => {
         </div>
 
         {authError && (
-          <div className="bg-destructive/15 text-destructive px-4 py-2 rounded-md">
+          <div className="bg-destructive/15 text-white px-4 py-2 rounded-md">
             {authError}
           </div>
         )}
