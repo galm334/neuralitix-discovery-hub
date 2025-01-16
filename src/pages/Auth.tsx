@@ -16,6 +16,7 @@ import {
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { AuthError } from "@supabase/supabase-js";
 
 const formSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -63,44 +64,25 @@ const Auth = () => {
       }
     };
 
-    // Check if this is a verification callback
     const isVerificationCallback = searchParams.get("verification") === "success";
     if (isVerificationCallback) {
-      // Remove the verification parameter from the URL without navigating
       const newParams = new URLSearchParams(searchParams);
       newParams.delete("verification");
       window.history.replaceState({}, '', `${window.location.pathname}?${newParams}`);
-      
-      // Show success message
       toast.success("Email verified successfully! Please sign in to continue.");
     }
 
     checkSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === "SIGNED_IN" && session) {
-          // After sign in, check if terms are accepted
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('terms_accepted')
-            .eq('id', session.user.id)
-            .maybeSingle();
-
-          // Redirect to onboarding if terms haven't been accepted
-          if (!profile?.terms_accepted) {
-            navigate("/onboarding");
-          } else {
-            navigate("/");
-          }
-        }
-      }
-    );
-
-    return () => {
-      subscription.unsubscribe();
-    };
   }, [navigate, searchParams]);
+
+  const handleAuthError = (error: AuthError) => {
+    console.error('Auth error:', error);
+    const errorMessage = error.message === 'Invalid login credentials'
+      ? 'Invalid email or password'
+      : error.message;
+    setAuthError(errorMessage);
+    toast.error(errorMessage);
+  };
 
   const onSubmit = async (values: FormValues) => {
     try {
@@ -129,11 +111,10 @@ const Auth = () => {
 
         if (error) throw error;
         toast.success("Successfully signed in!");
+        navigate("/");
       }
     } catch (error: any) {
-      console.error('Auth error:', error);
-      setAuthError(error.message);
-      toast.error(error.message);
+      handleAuthError(error);
     } finally {
       setIsLoading(false);
     }
@@ -163,7 +144,7 @@ const Auth = () => {
         </div>
 
         {authError && (
-          <div className="bg-destructive/15 text-white px-4 py-2 rounded-md">
+          <div className="bg-destructive/15 text-destructive px-4 py-2 rounded-md">
             {authError}
           </div>
         )}
@@ -175,7 +156,7 @@ const Auth = () => {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-white">Email</FormLabel>
+                  <FormLabel>Email</FormLabel>
                   <FormControl>
                     <Input
                       type="email"
@@ -183,7 +164,7 @@ const Auth = () => {
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage className="text-white" />
+                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -193,7 +174,7 @@ const Auth = () => {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-white">Password</FormLabel>
+                  <FormLabel>Password</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Input
@@ -216,7 +197,7 @@ const Auth = () => {
                       </Button>
                     </div>
                   </FormControl>
-                  <FormMessage className="text-white" />
+                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -227,7 +208,7 @@ const Auth = () => {
                 name="confirmPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-white">Confirm Password</FormLabel>
+                    <FormLabel>Confirm Password</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Input
@@ -250,7 +231,7 @@ const Auth = () => {
                         </Button>
                       </div>
                     </FormControl>
-                    <FormMessage className="text-white" />
+                    <FormMessage />
                   </FormItem>
                 )}
               />
