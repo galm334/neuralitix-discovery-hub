@@ -16,14 +16,6 @@ import {
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle,
-  DialogDescription,
-  DialogFooter
-} from "@/components/ui/dialog";
 
 const formSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -51,7 +43,6 @@ const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [showVerifiedDialog, setShowVerifiedDialog] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const authType = searchParams.get("type") || "signin";
 
@@ -65,22 +56,6 @@ const Auth = () => {
   });
 
   useEffect(() => {
-    const handleEmailVerification = async () => {
-      // Check if this is a verification callback
-      const isVerificationCallback = searchParams.get("verification") === "success";
-      if (isVerificationCallback) {
-        setShowVerifiedDialog(true);
-        // Remove the verification parameter from the URL without navigating
-        const newParams = new URLSearchParams(searchParams);
-        newParams.delete("verification");
-        window.history.replaceState({}, '', `${window.location.pathname}?${newParams}`);
-      }
-    };
-
-    handleEmailVerification();
-  }, [searchParams]);
-
-  useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
@@ -88,21 +63,32 @@ const Auth = () => {
       }
     };
 
+    // Check if this is a verification callback
+    const isVerificationCallback = searchParams.get("verification") === "success";
+    if (isVerificationCallback) {
+      // Remove the verification parameter from the URL without navigating
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete("verification");
+      window.history.replaceState({}, '', `${window.location.pathname}?${newParams}`);
+      
+      // Show success message
+      toast.success("Email verified successfully! Please sign in to continue.");
+    }
+
+    checkSession();
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event, session);
         if (event === "SIGNED_IN" && session) {
           navigate("/");
         }
       }
     );
 
-    checkSession();
-
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [navigate, searchParams]);
 
   const onSubmit = async (values: FormValues) => {
     try {
@@ -146,11 +132,6 @@ const Auth = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleContinue = () => {
-    setShowVerifiedDialog(false);
-    navigate("/onboarding");
   };
 
   return (
@@ -302,22 +283,6 @@ const Auth = () => {
           )}
         </p>
       </div>
-
-      <Dialog open={showVerifiedDialog} onOpenChange={setShowVerifiedDialog}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle className="text-2xl text-center">Email Verified Successfully! 🎉</DialogTitle>
-            <DialogDescription className="text-center">
-              Your email has been verified. Let's set up your account.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button onClick={handleContinue} className="w-full">
-              Continue to Setup
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
