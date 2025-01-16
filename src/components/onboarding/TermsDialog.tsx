@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -22,9 +22,9 @@ export const TermsDialog = ({ isOpen, onAccept, termsContent }: TermsDialogProps
             <Shield className="h-8 w-8 text-primary" />
             <DialogTitle className="text-3xl font-bold">Terms of Service</DialogTitle>
           </div>
-          <p className="text-muted-foreground text-center">
+          <DialogDescription className="text-muted-foreground text-center">
             Please review and accept our terms to continue
-          </p>
+          </DialogDescription>
         </DialogHeader>
         <ScrollArea className="h-full pr-4 border rounded-md">
           <div className="prose prose-sm p-4" dangerouslySetInnerHTML={{ __html: termsContent }} />
