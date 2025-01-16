@@ -65,20 +65,28 @@ const Auth = () => {
   });
 
   useEffect(() => {
+    const handleEmailVerification = async () => {
+      // Check if this is a verification callback
+      const isVerificationCallback = searchParams.get("verification") === "success";
+      if (isVerificationCallback) {
+        setShowVerifiedDialog(true);
+        // Remove the verification parameter from the URL without navigating
+        const newParams = new URLSearchParams(searchParams);
+        newParams.delete("verification");
+        window.history.replaceState({}, '', `${window.location.pathname}?${newParams}`);
+      }
+    };
+
+    handleEmailVerification();
+  }, [searchParams]);
+
+  useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         navigate("/");
       }
     };
-
-    // Check if this is a verification callback
-    const isVerificationCallback = searchParams.get("verification") === "success";
-    if (isVerificationCallback) {
-      setShowVerifiedDialog(true);
-    }
-
-    checkSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
@@ -89,10 +97,12 @@ const Auth = () => {
       }
     );
 
+    checkSession();
+
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate, searchParams]);
+  }, [navigate]);
 
   const onSubmit = async (values: FormValues) => {
     try {
@@ -296,26 +306,16 @@ const Auth = () => {
       <Dialog open={showVerifiedDialog} onOpenChange={setShowVerifiedDialog}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle className="text-2xl text-center">Welcome to Neuralitix! 🎉</DialogTitle>
+            <DialogTitle className="text-2xl text-center">Email Verified Successfully! 🎉</DialogTitle>
             <DialogDescription className="text-center">
-              Your email has been successfully verified! You're now ready to explore the #1 AI data aggregator
+              Your email has been verified. Let's set up your account.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-4">
-              <p className="font-bold">Pro Tips for Your Journey:</p>
-              <ul className="list-none space-y-2">
-                <li>👉 Use the search bar and the AI assistant to quickly find tools by category or purpose.</li>
-                <li>👉 Save your favorites to build a custom toolkit.</li>
-                <li>👉 Share insights or submit tools to grow our community.</li>
-              </ul>
-            </div>
-            <DialogFooter>
-              <Button onClick={handleContinue} className="w-full">
-                Next ➡️
-              </Button>
-            </DialogFooter>
-          </div>
+          <DialogFooter>
+            <Button onClick={handleContinue} className="w-full">
+              Continue to Setup
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
