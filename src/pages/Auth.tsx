@@ -75,7 +75,7 @@ const Auth = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event);
+        console.log('Auth state changed:', event, session);
         if (event === "SIGNED_IN" && session) {
           navigate("/");
         }
@@ -99,7 +99,7 @@ const Auth = () => {
             options: {
               emailRedirectTo: `${window.location.origin}/auth?verification=success`,
               data: {
-                full_name: values.email.split('@')[0], // Use email username as initial name
+                full_name: values.email.split('@')[0],
               }
             }
           })
@@ -114,6 +114,9 @@ const Auth = () => {
         toast.error(error.message);
       } else if (authType === "signup") {
         toast.success("Check your email to confirm your account");
+      } else {
+        // Add success feedback for sign in
+        toast.success("Successfully signed in!");
       }
     } catch (error: any) {
       console.error('Unexpected error:', error);
