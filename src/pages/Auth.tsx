@@ -98,6 +98,9 @@ const Auth = () => {
             password: values.password,
             options: {
               emailRedirectTo: `${window.location.origin}/auth?verification=success`,
+              data: {
+                full_name: values.email.split('@')[0], // Use email username as initial name
+              }
             }
           })
         : await supabase.auth.signInWithPassword({
@@ -142,7 +145,7 @@ const Auth = () => {
           <h1 className="text-4xl font-bold text-white">
             {authType === "signup" ? "Create an account" : "Welcome back"}
           </h1>
-          <p className="mt-2 text-muted-foreground">
+          <p className="mt-2 text-white">
             {authType === "signup"
               ? "Sign up to get started"
               : "Sign in to continue"}
