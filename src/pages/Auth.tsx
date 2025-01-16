@@ -294,20 +294,25 @@ const Auth = () => {
       </div>
 
       <Dialog open={showVerifiedDialog} onOpenChange={setShowVerifiedDialog}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle className="text-2xl text-center">Email Verified! 🎉</DialogTitle>
+            <DialogTitle className="text-2xl text-center">Welcome to Neuralitix! 🎉</DialogTitle>
             <DialogDescription className="text-center">
-              Your email has been successfully verified. Let's set up your account.
+              Your email has been successfully verified! You're now ready to explore the #1 AI data aggregator
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <p className="text-center text-muted-foreground">
-              We'll guide you through a few quick steps to get you started.
-            </p>
+            <div className="space-y-4">
+              <p className="font-bold">Pro Tips for Your Journey:</p>
+              <ul className="list-none space-y-2">
+                <li>👉 Use the search bar and the AI assistant to quickly find tools by category or purpose.</li>
+                <li>👉 Save your favorites to build a custom toolkit.</li>
+                <li>👉 Share insights or submit tools to grow our community.</li>
+              </ul>
+            </div>
             <DialogFooter>
               <Button onClick={handleContinue} className="w-full">
-                Continue to Setup
+                Next ➡️
               </Button>
             </DialogFooter>
           </div>
