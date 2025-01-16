@@ -45,6 +45,7 @@ const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showVerifiedDialog, setShowVerifiedDialog] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
   const authType = searchParams.get("type") || "signin";
 
   const form = useForm<FormValues>({
@@ -73,7 +74,8 @@ const Auth = () => {
     checkSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
+        console.log('Auth state changed:', event);
         if (event === "SIGNED_IN" && session) {
           navigate("/");
         }
@@ -88,6 +90,8 @@ const Auth = () => {
   const onSubmit = async (values: FormValues) => {
     try {
       setIsLoading(true);
+      setAuthError(null);
+
       const { error } = authType === "signup" 
         ? await supabase.auth.signUp({
             email: values.email,
@@ -101,12 +105,16 @@ const Auth = () => {
             password: values.password,
           });
 
-      if (error) throw error;
-
-      if (authType === "signup") {
+      if (error) {
+        console.error('Auth error:', error);
+        setAuthError(error.message);
+        toast.error(error.message);
+      } else if (authType === "signup") {
         toast.success("Check your email to confirm your account");
       }
     } catch (error: any) {
+      console.error('Unexpected error:', error);
+      setAuthError(error.message);
       toast.error(error.message);
     } finally {
       setIsLoading(false);
@@ -131,7 +139,7 @@ const Auth = () => {
         </Button>
 
         <div className="text-center">
-          <h1 className="text-4xl font-bold">
+          <h1 className="text-4xl font-bold text-white">
             {authType === "signup" ? "Create an account" : "Welcome back"}
           </h1>
           <p className="mt-2 text-muted-foreground">
@@ -141,6 +149,12 @@ const Auth = () => {
           </p>
         </div>
 
+        {authError && (
+          <div className="bg-destructive/15 text-destructive px-4 py-2 rounded-md">
+            {authError}
+          </div>
+        )}
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -148,7 +162,7 @@ const Auth = () => {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel className="text-white">Email</FormLabel>
                   <FormControl>
                     <Input
                       type="email"
@@ -156,7 +170,7 @@ const Auth = () => {
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-white" />
                 </FormItem>
               )}
             />
@@ -166,7 +180,7 @@ const Auth = () => {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Password</FormLabel>
+                  <FormLabel className="text-white">Password</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Input
@@ -189,7 +203,7 @@ const Auth = () => {
                       </Button>
                     </div>
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-white" />
                 </FormItem>
               )}
             />
@@ -200,7 +214,7 @@ const Auth = () => {
                 name="confirmPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Confirm Password</FormLabel>
+                    <FormLabel className="text-white">Confirm Password</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Input
@@ -223,7 +237,7 @@ const Auth = () => {
                         </Button>
                       </div>
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="text-white" />
                   </FormItem>
                 )}
               />
@@ -235,13 +249,13 @@ const Auth = () => {
           </form>
         </Form>
 
-        <p className="text-center text-sm">
+        <p className="text-center text-sm text-white">
           {authType === "signup" ? (
             <>
               Already have an account?{" "}
               <Button
                 variant="link"
-                className="p-0 h-auto"
+                className="p-0 h-auto text-primary"
                 onClick={() => navigate("/auth?type=signin")}
               >
                 Sign in
@@ -252,7 +266,7 @@ const Auth = () => {
               Don't have an account?{" "}
               <Button
                 variant="link"
-                className="p-0 h-auto"
+                className="p-0 h-auto text-primary"
                 onClick={() => navigate("/auth?type=signup")}
               >
                 Sign up
