@@ -16,6 +16,7 @@ import {
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const formSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -43,6 +44,7 @@ const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showVerifiedDialog, setShowVerifiedDialog] = useState(false);
   const authType = searchParams.get("type") || "signin";
 
   const form = useForm<FormValues>({
@@ -62,6 +64,12 @@ const Auth = () => {
       }
     };
 
+    // Check if this is a verification callback
+    const isVerificationCallback = searchParams.get("verification") === "success";
+    if (isVerificationCallback) {
+      setShowVerifiedDialog(true);
+    }
+
     checkSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -75,7 +83,7 @@ const Auth = () => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [navigate, searchParams]);
 
   const onSubmit = async (values: FormValues) => {
     try {
@@ -84,6 +92,9 @@ const Auth = () => {
         ? await supabase.auth.signUp({
             email: values.email,
             password: values.password,
+            options: {
+              emailRedirectTo: `${window.location.origin}/onboarding`,
+            }
           })
         : await supabase.auth.signInWithPassword({
             email: values.email,
@@ -100,6 +111,11 @@ const Auth = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleLoginClick = () => {
+    setShowVerifiedDialog(false);
+    navigate("/auth?type=signin");
   };
 
   return (
@@ -245,6 +261,30 @@ const Auth = () => {
           )}
         </p>
       </div>
+
+      <Dialog open={showVerifiedDialog} onOpenChange={setShowVerifiedDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="text-2xl text-center">Welcome to Neuralitix! 🎉</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-center">
+              Your email has been successfully verified! You're now ready to explore the #1 AI data aggregator
+            </p>
+            <div className="space-y-4">
+              <p className="font-bold">Pro Tips for Your Journey:</p>
+              <ul className="list-none space-y-2">
+                <li>👉 Use the search bar and the AI assistant to quickly find tools by category or purpose.</li>
+                <li>👉 Save your favorites to build a custom toolkit.</li>
+                <li>👉 Share insights or submit tools to grow our community.</li>
+              </ul>
+            </div>
+            <Button onClick={handleLoginClick} className="w-full">
+              Log in ➡️
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
