@@ -93,7 +93,7 @@ const Auth = () => {
             email: values.email,
             password: values.password,
             options: {
-              emailRedirectTo: `${window.location.origin}/onboarding`,
+              emailRedirectTo: `${window.location.origin}/auth?verification=success`,
             }
           })
         : await supabase.auth.signInWithPassword({
