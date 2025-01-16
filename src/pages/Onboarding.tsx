@@ -27,32 +27,16 @@ const Onboarding = () => {
           return;
         }
 
-        // Wait for profile to be created (important for Google sign-in)
-        let retries = 0;
-        const maxRetries = 5;
-        
-        while (retries < maxRetries) {
-          const { data: profile, error } = await supabase
-            .from("profiles")
-            .select("terms_accepted")
-            .eq("id", session.user.id)
-            .maybeSingle();
+        // Check if profile exists and terms are accepted
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("terms_accepted")
+          .eq("id", session.user.id)
+          .maybeSingle();
 
-          if (error) {
-            console.error("Error fetching profile:", error);
-            break;
-          }
-
-          if (profile) {
-            if (profile.terms_accepted) {
-              navigate("/", { replace: true });
-            }
-            break;
-          }
-
-          // Wait before next retry
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          retries++;
+        if (profile?.terms_accepted) {
+          navigate("/", { replace: true });
+          return;
         }
 
         setIsLoading(false);
