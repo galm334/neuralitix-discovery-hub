@@ -85,7 +85,7 @@ const Auth = () => {
             .from('profiles')
             .select('terms_accepted')
             .eq('id', session.user.id)
-            .single();
+            .maybeSingle();
 
           // Redirect to onboarding if terms haven't been accepted
           if (!profile?.terms_accepted) {
