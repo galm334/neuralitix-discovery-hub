@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
-import { WelcomeDialog } from "@/components/onboarding/WelcomeDialog";
 import { TermsDialog } from "@/components/onboarding/TermsDialog";
 import { terms } from "@/data/terms";
 import { toast } from "sonner";
@@ -10,7 +9,6 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const Onboarding = () => {
   const [showTerms, setShowTerms] = useState(true);
-  const [showWelcome, setShowWelcome] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { refreshProfile } = useAuth();
@@ -72,16 +70,12 @@ const Onboarding = () => {
 
       await refreshProfile();
       setShowTerms(false);
-      setShowWelcome(true);
+      // Redirect to auth page for login
+      navigate("/auth", { replace: true });
     } catch (error) {
       console.error("Error in handleAcceptTerms:", error);
       toast.error("Something went wrong. Please try again.");
     }
-  };
-
-  const handleComplete = async () => {
-    setShowWelcome(false);
-    navigate("/", { replace: true });
   };
 
   if (isLoading) {
@@ -94,10 +88,6 @@ const Onboarding = () => {
         isOpen={showTerms} 
         onAccept={handleAcceptTerms}
         termsContent={terms}
-      />
-      <WelcomeDialog 
-        isOpen={showWelcome} 
-        onComplete={handleComplete}
       />
     </div>
   );
