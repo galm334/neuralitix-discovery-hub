@@ -80,7 +80,19 @@ const Auth = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === "SIGNED_IN" && session) {
-          navigate("/");
+          // After sign in, check if terms are accepted
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('terms_accepted')
+            .eq('id', session.user.id)
+            .single();
+
+          // Redirect to onboarding if terms haven't been accepted
+          if (!profile?.terms_accepted) {
+            navigate("/onboarding");
+          } else {
+            navigate("/");
+          }
         }
       }
     );
@@ -95,19 +107,12 @@ const Auth = () => {
       setIsLoading(true);
       setAuthError(null);
 
-      const siteUrl = window.location.origin === 'http://localhost:3000' 
-        ? 'https://neuralitix.com' 
-        : window.location.origin;
-      
-      const redirectTo = `${siteUrl}/auth?verification=success`;
-      console.log('Using redirect URL:', redirectTo);
-
       if (authType === "signup") {
         const { error } = await supabase.auth.signUp({
           email: values.email,
           password: values.password,
           options: {
-            emailRedirectTo: redirectTo,
+            emailRedirectTo: `${window.location.origin}/auth?verification=success`,
             data: {
               full_name: values.email.split('@')[0],
             }
