@@ -92,12 +92,15 @@ const Auth = () => {
       setIsLoading(true);
       setAuthError(null);
 
+      const redirectTo = `${window.location.origin}/auth?verification=success`;
+      console.log('Redirect URL:', redirectTo); // Debug log
+
       const { error } = authType === "signup" 
         ? await supabase.auth.signUp({
             email: values.email,
             password: values.password,
             options: {
-              emailRedirectTo: `${window.location.origin}/auth?verification=success`,
+              emailRedirectTo: redirectTo,
               data: {
                 full_name: values.email.split('@')[0],
               }
@@ -115,7 +118,6 @@ const Auth = () => {
       } else if (authType === "signup") {
         toast.success("Check your email to confirm your account");
       } else {
-        // Add success feedback for sign in
         toast.success("Successfully signed in!");
       }
     } catch (error: any) {
