@@ -16,7 +16,14 @@ import {
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle,
+  DialogDescription,
+  DialogFooter
+} from "@/components/ui/dialog";
 
 const formSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -92,7 +99,6 @@ const Auth = () => {
       setIsLoading(true);
       setAuthError(null);
 
-      // Get the current origin, falling back to production URL if needed
       const siteUrl = window.location.origin === 'http://localhost:3000' 
         ? 'https://neuralitix.com' 
         : window.location.origin;
@@ -100,33 +106,31 @@ const Auth = () => {
       const redirectTo = `${siteUrl}/auth?verification=success`;
       console.log('Using redirect URL:', redirectTo);
 
-      const { error } = authType === "signup" 
-        ? await supabase.auth.signUp({
-            email: values.email,
-            password: values.password,
-            options: {
-              emailRedirectTo: redirectTo,
-              data: {
-                full_name: values.email.split('@')[0],
-              }
+      if (authType === "signup") {
+        const { error } = await supabase.auth.signUp({
+          email: values.email,
+          password: values.password,
+          options: {
+            emailRedirectTo: redirectTo,
+            data: {
+              full_name: values.email.split('@')[0],
             }
-          })
-        : await supabase.auth.signInWithPassword({
-            email: values.email,
-            password: values.password,
-          });
+          }
+        });
 
-      if (error) {
-        console.error('Auth error:', error);
-        setAuthError(error.message);
-        toast.error(error.message);
-      } else if (authType === "signup") {
-        toast.success("Check your email to confirm your account");
+        if (error) throw error;
+        toast.success("Please check your email to verify your account");
       } else {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: values.email,
+          password: values.password,
+        });
+
+        if (error) throw error;
         toast.success("Successfully signed in!");
       }
     } catch (error: any) {
-      console.error('Unexpected error:', error);
+      console.error('Auth error:', error);
       setAuthError(error.message);
       toast.error(error.message);
     } finally {
@@ -134,9 +138,9 @@ const Auth = () => {
     }
   };
 
-  const handleLoginClick = () => {
+  const handleContinue = () => {
     setShowVerifiedDialog(false);
-    navigate("/auth?type=signin");
+    navigate("/onboarding");
   };
 
   return (
@@ -290,25 +294,22 @@ const Auth = () => {
       </div>
 
       <Dialog open={showVerifiedDialog} onOpenChange={setShowVerifiedDialog}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-2xl text-center">Welcome to Neuralitix! 🎉</DialogTitle>
+            <DialogTitle className="text-2xl text-center">Email Verified! 🎉</DialogTitle>
+            <DialogDescription className="text-center">
+              Your email has been successfully verified. Let's set up your account.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <p className="text-center">
-              Your email has been successfully verified! You're now ready to explore the #1 AI data aggregator
+            <p className="text-center text-muted-foreground">
+              We'll guide you through a few quick steps to get you started.
             </p>
-            <div className="space-y-4">
-              <p className="font-bold">Pro Tips for Your Journey:</p>
-              <ul className="list-none space-y-2">
-                <li>👉 Use the search bar and the AI assistant to quickly find tools by category or purpose.</li>
-                <li>👉 Save your favorites to build a custom toolkit.</li>
-                <li>👉 Share insights or submit tools to grow our community.</li>
-              </ul>
-            </div>
-            <Button onClick={handleLoginClick} className="w-full">
-              Log in ➡️
-            </Button>
+            <DialogFooter>
+              <Button onClick={handleContinue} className="w-full">
+                Continue to Setup
+              </Button>
+            </DialogFooter>
           </div>
         </DialogContent>
       </Dialog>
