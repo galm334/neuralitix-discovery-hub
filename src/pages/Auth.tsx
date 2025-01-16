@@ -1,10 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
-import { X, Eye, EyeOff } from "lucide-react";
 import {
   Form,
   FormControl,
@@ -13,6 +11,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Eye, EyeOff } from "lucide-react";
+import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -20,32 +20,28 @@ import { AuthError } from "@supabase/supabase-js";
 
 const formSchema = z.object({
   email: z.string().email("Invalid email address"),
-  password: z
-    .string()
-    .min(8, "Password must be at least 8 characters")
-    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-    .regex(/[a-z]/, "Password must contain at least one lowercase letter")
-    .regex(/[0-9]/, "Password must contain at least one number")
-    .regex(
-      /[^A-Za-z0-9]/,
-      "Password must contain at least one special character"
-    ),
-  confirmPassword: z.string()
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  confirmPassword: z.string().optional(),
+}).refine((data) => {
+  if (data.confirmPassword !== undefined) {
+    return data.password === data.confirmPassword;
+  }
+  return true;
+}, {
+  message: "Passwords do not match",
   path: ["confirmPassword"],
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
 const Auth = () => {
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(false);
+  const [searchParams] = useSearchParams();
+  const [isSignUp, setIsSignUp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
-  const authType = searchParams.get("type") || "signin";
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -85,24 +81,21 @@ const Auth = () => {
   };
 
   const onSubmit = async (values: FormValues) => {
-    try {
-      setIsLoading(true);
-      setAuthError(null);
+    setIsLoading(true);
+    setAuthError(null);
 
-      if (authType === "signup") {
+    try {
+      if (isSignUp) {
         const { error } = await supabase.auth.signUp({
           email: values.email,
           password: values.password,
           options: {
             emailRedirectTo: `${window.location.origin}/auth?verification=success`,
-            data: {
-              full_name: values.email.split('@')[0],
-            }
-          }
+          },
         });
 
         if (error) throw error;
-        toast.success("Please check your email to verify your account");
+        toast.success("Check your email to verify your account!");
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email: values.email,
@@ -121,25 +114,27 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md space-y-8 relative">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute right-0 top-0"
-          onClick={() => navigate("/")}
-        >
-          <X className="h-4 w-4" />
-        </Button>
-
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="w-full max-w-md p-8 space-y-6 bg-card rounded-lg shadow-lg">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-white">
-            {authType === "signup" ? "Create an account" : "Welcome back"}
+          <h1 className="text-2xl font-bold">
+            {isSignUp ? "Create an account" : "Sign in to your account"}
           </h1>
-          <p className="mt-2 text-white">
-            {authType === "signup"
-              ? "Sign up to get started"
-              : "Sign in to continue"}
+          <p className="text-muted-foreground mt-2">
+            {isSignUp
+              ? "Already have an account?"
+              : "Don't have an account?"}{" "}
+            <Button
+              variant="link"
+              className="p-0 h-auto font-semibold"
+              onClick={() => {
+                setIsSignUp(!isSignUp);
+                setAuthError(null);
+                form.reset();
+              }}
+            >
+              {isSignUp ? "Sign in" : "Sign up"}
+            </Button>
           </p>
         </div>
 
@@ -185,7 +180,7 @@ const Auth = () => {
                       <Button
                         type="button"
                         variant="ghost"
-                        size="icon"
+                        size="sm"
                         className="absolute right-0 top-0 h-full px-3"
                         onClick={() => setShowPassword(!showPassword)}
                       >
@@ -202,7 +197,7 @@ const Auth = () => {
               )}
             />
 
-            {authType === "signup" && (
+            {isSignUp && (
               <FormField
                 control={form.control}
                 name="confirmPassword"
@@ -219,7 +214,7 @@ const Auth = () => {
                         <Button
                           type="button"
                           variant="ghost"
-                          size="icon"
+                          size="sm"
                           className="absolute right-0 top-0 h-full px-3"
                           onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                         >
@@ -237,37 +232,22 @@ const Auth = () => {
               />
             )}
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Loading..." : authType === "signup" ? "Sign up" : "Sign in"}
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <div className="flex items-center gap-2">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  {isSignUp ? "Creating account..." : "Signing in..."}
+                </div>
+              ) : (
+                isSignUp ? "Create account" : "Sign in"
+              )}
             </Button>
           </form>
         </Form>
-
-        <p className="text-center text-sm text-white">
-          {authType === "signup" ? (
-            <>
-              Already have an account?{" "}
-              <Button
-                variant="link"
-                className="p-0 h-auto text-primary"
-                onClick={() => navigate("/auth?type=signin")}
-              >
-                Sign in
-              </Button>
-            </>
-          ) : (
-            <>
-              Don't have an account?{" "}
-              <Button
-                variant="link"
-                className="p-0 h-auto text-primary"
-                onClick={() => navigate("/auth?type=signup")}
-              >
-                Sign up
-              </Button>
-            </>
-          )}
-        </p>
       </div>
     </div>
   );
