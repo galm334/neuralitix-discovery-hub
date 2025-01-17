@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Auth as SupabaseAuth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { toast } from "sonner";
-import { Eye, EyeOff } from "lucide-react";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -39,10 +38,10 @@ const Auth = () => {
     };
   }, [navigate, searchParams]);
 
-  // Add custom styles for the password input
+  // Add custom styles for the auth UI
   const customStyles = {
     container: {
-      position: 'relative',
+      position: 'relative' as const, // Type assertion to fix the position property
     },
     input: {
       backgroundColor: 'white',
