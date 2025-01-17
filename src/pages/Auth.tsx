@@ -1,13 +1,23 @@
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Auth as SupabaseAuth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
+import { toast } from "sonner";
 
 const Auth = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
+    // Check if user came from email verification
+    const type = searchParams.get('type');
+    if (type === 'signup' && searchParams.get('error_description') === 'Email already confirmed') {
+      setShowSuccess(true);
+      toast.success("Email verified successfully! Please sign in.");
+    }
+
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
@@ -26,7 +36,7 @@ const Auth = () => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [navigate, searchParams]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -34,6 +44,11 @@ const Auth = () => {
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-2">Welcome to Neuralitix</h1>
           <p className="text-muted-foreground">Sign in or create an account to continue</p>
+          {showSuccess && (
+            <div className="mt-4 p-4 bg-green-50 text-green-700 rounded-md">
+              Email verified successfully! Please sign in with your credentials.
+            </div>
+          )}
         </div>
 
         <SupabaseAuth 
