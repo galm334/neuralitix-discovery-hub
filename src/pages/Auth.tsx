@@ -28,10 +28,12 @@ const Auth = () => {
         console.log("Active session found:", {
           user: session.user.email,
           lastSignIn: session.user.last_sign_in_at,
-          sessionExpiresAt: session.expires_at
+          sessionExpiresAt: session.expires_at,
+          accessToken: session.access_token ? "present" : "missing",
+          refreshToken: session.refresh_token ? "present" : "missing"
         });
         toast.success("Successfully signed in!");
-        navigate("/", { replace: true });
+        navigate("/onboarding", { replace: true });
         return;
       }
 
@@ -52,7 +54,8 @@ const Auth = () => {
         errorDescription,
         hasAccessToken: !!accessToken,
         hasRefreshToken: !!refreshToken,
-        fullUrl: window.location.href
+        fullUrl: window.location.href,
+        siteUrl: window.SUPABASE_SITE_URL || 'not set'
       });
 
       // If this is a magic link callback with tokens
@@ -73,10 +76,12 @@ const Auth = () => {
           if (session) {
             console.log("Successfully established session:", {
               user: session.user.email,
-              expiresAt: session.expires_at
+              expiresAt: session.expires_at,
+              accessToken: "present",
+              refreshToken: "present"
             });
             toast.success("Successfully signed in!");
-            navigate("/", { replace: true });
+            navigate("/onboarding", { replace: true });
           } else {
             console.error("No session established after setting tokens");
             setErrorMessage("Failed to establish session");
@@ -100,13 +105,15 @@ const Auth = () => {
       console.log("Auth state changed:", { 
         event, 
         sessionExists: !!session,
-        userEmail: session?.user?.email
+        userEmail: session?.user?.email,
+        hasAccessToken: session?.access_token ? "present" : "missing",
+        hasRefreshToken: session?.refresh_token ? "present" : "missing"
       });
       
       if (event === 'SIGNED_IN' && session) {
-        console.log("Sign in detected, navigating to home");
+        console.log("Sign in detected, navigating to onboarding");
         toast.success("Successfully signed in!");
-        navigate("/", { replace: true });
+        navigate("/onboarding", { replace: true });
       }
     });
 
