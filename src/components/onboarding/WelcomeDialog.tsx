@@ -46,6 +46,21 @@ export const WelcomeDialog = ({ isOpen, onComplete }: WelcomeDialogProps) => {
       console.log("✅ Session found for user:", session.user.email);
       setProgress(50);
 
+      // First check if profile already exists
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', session.user.id)
+        .single();
+
+      if (existingProfile) {
+        console.log("✅ Profile already exists, proceeding to home");
+        setProgress(100);
+        onComplete();
+        navigate("/", { replace: true });
+        return;
+      }
+
       console.log("📝 Creating profile record");
       const { error: profileError } = await supabase
         .from('profiles')
@@ -68,34 +83,31 @@ export const WelcomeDialog = ({ isOpen, onComplete }: WelcomeDialogProps) => {
 
       console.log("🔄 Refreshing profile data");
       await refreshProfile();
+      
       console.log("✅ Profile refresh complete");
       setProgress(100);
-      
-      // Increased timeout and added state check
-      console.log("⏳ Waiting for state updates to complete");
-      setTimeout(async () => {
-        try {
-          const { data: { session: finalSession } } = await supabase.auth.getSession();
-          if (!finalSession) {
-            console.error("❌ No session after state update");
-            throw new Error("Session validation failed");
-          }
-          
-          console.log("✅ Session validated, completing onboarding");
-          onComplete();
-          navigate("/", { replace: true });
-          toast.success("Welcome to Neuralitix! Your profile has been created.");
-        } catch (error) {
-          console.error("❌ Final session validation error:", error);
-          toast.error("Error completing profile setup. Please try again.");
-          setIsCreatingProfile(false);
-        }
-      }, 6000);
+
+      // Verify profile was created before navigating
+      const { data: verifyProfile, error: verifyError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', session.user.id)
+        .single();
+
+      if (verifyError || !verifyProfile) {
+        throw new Error("Profile verification failed");
+      }
+
+      console.log("✅ Profile verified, completing onboarding");
+      onComplete();
+      navigate("/", { replace: true });
+      toast.success("Welcome to Neuralitix! Your profile has been created.");
 
     } catch (error) {
       console.error("❌ Error in profile creation:", error);
       toast.error("Failed to create profile. Please try again.");
       setIsCreatingProfile(false);
+      setProgress(0);
       navigate("/auth", { replace: true });
     }
   };
