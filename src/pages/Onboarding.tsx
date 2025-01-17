@@ -39,14 +39,10 @@ const Onboarding = () => {
           return;
         }
 
-        // Set email from session
         setEmail(session.user.email || "");
-        
-        // Generate default nickname
         const defaultNickname = generateNickname();
         setNickname(defaultNickname);
 
-        // Set name from metadata if available
         const metadataName = session.user.user_metadata.full_name;
         if (metadataName) {
           setFullName(metadataName);
@@ -82,6 +78,31 @@ const Onboarding = () => {
     setPreviewUrl(objectUrl);
   };
 
+  const uploadProfilePicture = async (userId: string, file: File): Promise<string | null> => {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${userId}-${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('profile-pictures')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        console.error("Upload error:", uploadError);
+        throw new Error("Failed to upload profile picture");
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('profile-pictures')
+        .getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (error) {
+      console.error("Error uploading profile picture:", error);
+      throw new Error("Failed to upload profile picture");
+    }
+  };
+
   const handleSubmit = async () => {
     console.log("🚀 Starting profile creation...");
     try {
@@ -97,20 +118,7 @@ const Onboarding = () => {
       let profilePicUrl = null;
       if (profilePic) {
         console.log("📤 Uploading profile picture...");
-        const fileExt = profilePic.name.split('.').pop();
-        const filePath = `${session.user.id}-${Date.now()}.${fileExt}`;
-        
-        const { error: uploadError, data } = await supabase.storage
-          .from('profile-pictures')
-          .upload(filePath, profilePic);
-
-        if (uploadError) {
-          console.error("❌ Error uploading profile picture:", uploadError);
-          toast.error("Failed to upload profile picture");
-          return;
-        }
-
-        profilePicUrl = data.path;
+        profilePicUrl = await uploadProfilePicture(session.user.id, profilePic);
       }
 
       console.log("👤 Creating profile...");
@@ -121,7 +129,7 @@ const Onboarding = () => {
           name: fullName,
           nickname: nickname,
           email: email,
-          profile_pic_url: profilePicUrl,
+          avatar_url: profilePicUrl,
           terms_accepted: true
         });
 
