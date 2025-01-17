@@ -26,10 +26,11 @@ const Auth = () => {
       console.log('Auth state changed:', event, session);
       
       if (event === 'SIGNED_IN') {
-        toast.success("Successfully signed in!");
-        navigate("/");
-      } else if (event === 'SIGNED_UP') {
-        toast.success("Account created successfully! You are now signed in.");
+        if (session?.user?.user_metadata?.signup) {
+          toast.success("Account created successfully! You are now signed in.");
+        } else {
+          toast.success("Successfully signed in!");
+        }
         navigate("/");
       } else if (event === 'SIGNED_OUT') {
         navigate("/auth");
