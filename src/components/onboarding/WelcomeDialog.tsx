@@ -20,19 +20,33 @@ export const WelcomeDialog = ({ isOpen, onComplete }: WelcomeDialogProps) => {
   const { refreshProfile } = useAuth();
 
   const createProfile = async () => {
-    if (isCreatingProfile) return;
+    console.log("🚀 Starting profile creation process");
+    if (isCreatingProfile) {
+      console.log("⚠️ Profile creation already in progress");
+      return;
+    }
+    
     setIsCreatingProfile(true);
     setProgress(25);
 
     try {
+      console.log("🔍 Fetching current session");
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError) throw sessionError;
+      
+      if (sessionError) {
+        console.error("❌ Session error:", sessionError);
+        throw sessionError;
+      }
+      
       if (!session?.user?.id) {
+        console.error("❌ No user session found");
         throw new Error("No user session found");
       }
 
+      console.log("✅ Session found for user:", session.user.email);
       setProgress(50);
 
+      console.log("📝 Creating profile record");
       const { error: profileError } = await supabase
         .from('profiles')
         .insert([
@@ -45,23 +59,41 @@ export const WelcomeDialog = ({ isOpen, onComplete }: WelcomeDialogProps) => {
         ]);
 
       if (profileError) {
+        console.error("❌ Profile creation error:", profileError);
         throw profileError;
       }
 
+      console.log("✅ Profile created successfully");
       setProgress(75);
 
+      console.log("🔄 Refreshing profile data");
       await refreshProfile();
+      console.log("✅ Profile refresh complete");
       setProgress(100);
       
-      // Small delay to show completion
-      setTimeout(() => {
-        onComplete();
-        navigate("/", { replace: true });
-        toast.success("Welcome to Neuralitix! Your profile has been created.");
-      }, 500);
+      // Increased timeout and added state check
+      console.log("⏳ Waiting for state updates to complete");
+      setTimeout(async () => {
+        try {
+          const { data: { session: finalSession } } = await supabase.auth.getSession();
+          if (!finalSession) {
+            console.error("❌ No session after state update");
+            throw new Error("Session validation failed");
+          }
+          
+          console.log("✅ Session validated, completing onboarding");
+          onComplete();
+          navigate("/", { replace: true });
+          toast.success("Welcome to Neuralitix! Your profile has been created.");
+        } catch (error) {
+          console.error("❌ Final session validation error:", error);
+          toast.error("Error completing profile setup. Please try again.");
+          setIsCreatingProfile(false);
+        }
+      }, 6000);
 
     } catch (error) {
-      console.error("Error in profile creation:", error);
+      console.error("❌ Error in profile creation:", error);
       toast.error("Failed to create profile. Please try again.");
       setIsCreatingProfile(false);
       navigate("/auth", { replace: true });
@@ -74,7 +106,9 @@ export const WelcomeDialog = ({ isOpen, onComplete }: WelcomeDialogProps) => {
         <DialogHeader>
           <div className="flex items-center justify-center gap-2 mb-4">
             <User className="h-8 w-8 text-primary" />
-            <DialogTitle className="text-2xl">Welcome to Neuralitix! 🎉</DialogTitle>
+            <DialogTitle className="text-2xl">
+              {isCreatingProfile ? "Creating Your Profile..." : "Welcome to Neuralitix! 🎉"}
+            </DialogTitle>
           </div>
         </DialogHeader>
         {!isCreatingProfile ? (
@@ -98,8 +132,13 @@ export const WelcomeDialog = ({ isOpen, onComplete }: WelcomeDialogProps) => {
           </>
         ) : (
           <div className="space-y-4 py-4">
-            <p className="text-center text-muted-foreground">Setting up your profile...</p>
+            <p className="text-center text-muted-foreground">
+              {progress < 100 ? "Setting up your profile..." : "Almost there..."}
+            </p>
             <Progress value={progress} className="w-full" />
+            <p className="text-sm text-center text-muted-foreground">
+              Please wait while we complete your setup...
+            </p>
           </div>
         )}
       </DialogContent>
