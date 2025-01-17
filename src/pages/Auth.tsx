@@ -58,11 +58,11 @@ const Auth = () => {
         return;
       }
 
-      // Check if we're returning from a magic link
-      if (type === 'recovery' && accessToken && refreshToken) {
-        console.log("Processing magic link return...");
+      // Handle both signup and recovery flows
+      if ((type === 'recovery' || type === 'signup') && accessToken && refreshToken) {
+        console.log(`Processing ${type} magic link return...`);
         try {
-          const { error } = await supabase.auth.setSession({
+          const { data: { session }, error } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken
           });
@@ -73,9 +73,14 @@ const Auth = () => {
             return;
           }
 
-          console.log("Successfully set session from magic link");
-          toast.success("Successfully signed in!");
-          navigate("/onboarding");
+          if (session) {
+            console.log("Successfully set session from magic link");
+            toast.success("Successfully signed in!");
+            navigate("/onboarding");
+          } else {
+            console.error("No session after setting tokens");
+            setErrorMessage("Failed to establish session");
+          }
         } catch (error) {
           console.error("Unexpected error during magic link processing:", error);
           setErrorMessage("An unexpected error occurred");
