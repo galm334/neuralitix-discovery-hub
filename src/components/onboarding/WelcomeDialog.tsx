@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { User } from "lucide-react";
+import { User, RefreshCw } from "lucide-react";
 
 interface WelcomeDialogProps {
   isOpen: boolean;
@@ -16,8 +16,20 @@ interface WelcomeDialogProps {
 export const WelcomeDialog = ({ isOpen, onComplete }: WelcomeDialogProps) => {
   const [isCreatingProfile, setIsCreatingProfile] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [retryCount, setRetryCount] = useState(0);
   const navigate = useNavigate();
   const { refreshProfile } = useAuth();
+
+  const verifyProfile = async (userId: string) => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', userId)
+      .single();
+      
+    if (error || !data) throw new Error("Profile verification failed");
+    return data;
+  };
 
   const createProfile = async () => {
     console.log("🚀 Starting profile creation process");
@@ -61,6 +73,10 @@ export const WelcomeDialog = ({ isOpen, onComplete }: WelcomeDialogProps) => {
         return;
       }
 
+      // Get user metadata with fallbacks
+      const fullName = session.user.user_metadata?.full_name || 'User';
+      const avatarUrl = session.user.user_metadata?.avatar_url || null;
+
       console.log("📝 Creating profile record");
       const { error: profileError } = await supabase
         .from('profiles')
@@ -68,8 +84,8 @@ export const WelcomeDialog = ({ isOpen, onComplete }: WelcomeDialogProps) => {
           { 
             id: session.user.id,
             terms_accepted: true,
-            name: session.user.user_metadata.full_name,
-            avatar_url: session.user.user_metadata.avatar_url
+            name: fullName,
+            avatar_url: avatarUrl
           }
         ]);
 
@@ -85,30 +101,33 @@ export const WelcomeDialog = ({ isOpen, onComplete }: WelcomeDialogProps) => {
       await refreshProfile();
       
       console.log("✅ Profile refresh complete");
-      setProgress(100);
+      setProgress(90);
 
-      // Verify profile was created before navigating
-      const { data: verifyProfile, error: verifyError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', session.user.id)
-        .single();
-
-      if (verifyError || !verifyProfile) {
-        throw new Error("Profile verification failed");
-      }
+      // Verify profile creation
+      await verifyProfile(session.user.id);
 
       console.log("✅ Profile verified, completing onboarding");
+      setProgress(100);
       onComplete();
       navigate("/", { replace: true });
       toast.success("Welcome to Neuralitix! Your profile has been created.");
 
     } catch (error) {
       console.error("❌ Error in profile creation:", error);
-      toast.error("Failed to create profile. Please try again.");
-      setIsCreatingProfile(false);
-      setProgress(0);
-      navigate("/auth", { replace: true });
+      
+      if (retryCount < 3) {
+        toast.error("Profile creation failed. Retrying...");
+        setRetryCount(prev => prev + 1);
+        setProgress(0);
+        setIsCreatingProfile(false);
+        // Retry after a short delay
+        setTimeout(createProfile, 1000);
+      } else {
+        toast.error("Failed to create profile. Please try again later.");
+        setIsCreatingProfile(false);
+        setProgress(0);
+        navigate("/auth", { replace: true });
+      }
     }
   };
 
@@ -149,8 +168,14 @@ export const WelcomeDialog = ({ isOpen, onComplete }: WelcomeDialogProps) => {
             </p>
             <Progress value={progress} className="w-full" />
             <p className="text-sm text-center text-muted-foreground">
-              Please wait while we complete your setup...
+              {retryCount > 0 ? `Retry attempt ${retryCount}/3...` : "Please wait while we complete your setup..."}
             </p>
+            {retryCount > 0 && (
+              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                <RefreshCw className="h-4 w-4 animate-spin" />
+                <span>Retrying...</span>
+              </div>
+            )}
           </div>
         )}
       </DialogContent>
