@@ -70,7 +70,20 @@ const Auth = () => {
 
           if (session) {
             console.log("Successfully established session");
-            // Navigation will be handled by AuthContext
+            // Check if user has a profile
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', session.user.id)
+              .single();
+
+            if (!profile || !profile.terms_accepted) {
+              console.log("No profile found or terms not accepted, redirecting to onboarding");
+              navigate("/onboarding", { replace: true });
+            } else {
+              console.log("Profile exists and terms accepted, redirecting to home");
+              navigate("/", { replace: true });
+            }
             setIsLoading(false);
             return;
           }
