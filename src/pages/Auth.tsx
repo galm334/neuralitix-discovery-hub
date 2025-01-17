@@ -34,11 +34,10 @@ const Auth = () => {
 
         const accessToken = allParams.access_token;
         const refreshToken = allParams.refresh_token;
-        const hasError = allParams.error;
-        const errorDescription = allParams.error_description;
+        const type = allParams.type;
 
-        // If this is a magic link callback with tokens
-        if (accessToken && refreshToken) {
+        // If this is a magic link callback
+        if (type === 'recovery' || type === 'magiclink') {
           console.log("Processing magic link authentication...");
           const { data: { session }, error } = await supabase.auth.setSession({
             access_token: accessToken,
@@ -58,9 +57,6 @@ const Auth = () => {
             setIsLoading(false);
             return;
           }
-        } else if (hasError) {
-          console.error("Auth error:", errorDescription);
-          setErrorMessage(errorDescription || 'An error occurred during authentication');
         }
       } catch (error) {
         console.error("Unexpected error during auth:", error);
