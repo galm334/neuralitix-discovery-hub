@@ -3,6 +3,12 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Eye, EyeOff, X } from "lucide-react";
+import { toast } from "sonner";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { AuthError } from "@supabase/supabase-js";
 import {
   Form,
   FormControl,
@@ -11,12 +17,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Eye, EyeOff, X } from "lucide-react";
-import { toast } from "sonner";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { AuthError } from "@supabase/supabase-js";
 
 const formSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -58,49 +58,51 @@ const Auth = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         navigate("/");
+        return;
+      }
+
+      // Handle verification success
+      const isVerificationSuccess = searchParams.get("verification") === "success";
+      if (isVerificationSuccess) {
+        // Remove verification parameter from URL
+        const newParams = new URLSearchParams(searchParams);
+        newParams.delete("verification");
+        setSearchParams(newParams);
+        
+        toast(
+          <div className="flex flex-col gap-4 max-w-md">
+            <div className="text-xl font-bold">Welcome to Neuralitix! 🎉</div>
+            <p className="text-base">Your email has been successfully verified!</p>
+            <div className="space-y-2">
+              <div className="font-bold text-lg">Pro Tips for Your Journey:</div>
+              <ul className="space-y-2">
+                <li className="flex items-start gap-2">
+                  <span>👉</span>
+                  <span>Use the search bar and the AI assistant to quickly find tools by category or purpose.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span>👉</span>
+                  <span>Save your favorites to build a custom toolkit.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span>👉</span>
+                  <span>Share insights or submit tools to grow our community.</span>
+                </li>
+              </ul>
+            </div>
+          </div>,
+          {
+            duration: 10000,
+            action: {
+              label: "Log in ➡️",
+              onClick: () => {
+                emailInputRef.current?.focus();
+              },
+            },
+          }
+        );
       }
     };
-
-    const isVerificationCallback = searchParams.get("verification") === "success";
-    if (isVerificationCallback) {
-      // Remove verification parameter from URL
-      const newParams = new URLSearchParams(searchParams);
-      newParams.delete("verification");
-      setSearchParams(newParams);
-      
-      toast(
-        <div className="flex flex-col gap-4 max-w-md">
-          <div className="text-xl font-bold">Welcome to Neuralitix! 🎉</div>
-          <p className="text-base">Your email has been successfully verified! You're now ready to explore the #1 AI data aggregator</p>
-          <div className="space-y-2">
-            <div className="font-bold text-lg">Pro Tips for Your Journey:</div>
-            <ul className="space-y-2">
-              <li className="flex items-start gap-2">
-                <span>👉</span>
-                <span>Use the search bar and the AI assistant to quickly find tools by category or purpose.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span>👉</span>
-                <span>Save your favorites to build a custom toolkit.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span>👉</span>
-                <span>Share insights or submit tools to grow our community.</span>
-              </li>
-            </ul>
-          </div>
-        </div>,
-        {
-          duration: 10000,
-          action: {
-            label: "Log in ➡️",
-            onClick: () => {
-              emailInputRef.current?.focus();
-            },
-          },
-        }
-      );
-    }
 
     checkSession();
   }, [navigate, searchParams, setSearchParams]);
