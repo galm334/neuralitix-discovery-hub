@@ -1,31 +1,17 @@
 import { useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Auth as SupabaseAuth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
-import { toast } from "sonner";
 
 const Auth = () => {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         navigate("/");
-        return;
-      }
-
-      // Handle verification success
-      const isVerificationSuccess = searchParams.get("verification") === "success";
-      if (isVerificationSuccess) {
-        // Remove verification parameter from URL
-        const newParams = new URLSearchParams(searchParams);
-        newParams.delete("verification");
-        setSearchParams(newParams);
-        
-        toast.success("Email verified successfully! Please sign in to continue.");
       }
     };
 
@@ -40,7 +26,7 @@ const Auth = () => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate, searchParams, setSearchParams]);
+  }, [navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
