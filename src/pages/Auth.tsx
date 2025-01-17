@@ -77,9 +77,40 @@ const Auth = () => {
               label: {
                 color: '#F9FAFB',
               },
+              button: {
+                icon: {
+                  '&[aria-label="Show password"]': {
+                    color: '#6B7280',
+                  },
+                },
+              },
             }
           }}
           providers={[]}
+          showLinks={true}
+          view="sign_in"
+          localization={{
+            variables: {
+              sign_in: {
+                password_label: 'Password',
+                password_input_placeholder: 'Your password',
+                email_label: 'Email',
+                email_input_placeholder: 'Your email',
+                button_label: 'Sign in',
+                loading_button_label: 'Signing in ...',
+                link_text: "Don't have an account? Sign up",
+              },
+              sign_up: {
+                password_label: 'Password',
+                password_input_placeholder: 'Your password',
+                email_label: 'Email',
+                email_input_placeholder: 'Your email',
+                button_label: 'Sign up',
+                loading_button_label: 'Signing up ...',
+                link_text: "Already have an account? Sign in",
+              },
+            },
+          }}
         />
       </div>
     </div>
