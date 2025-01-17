@@ -12,21 +12,52 @@ const Auth = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Handle initial session check
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate("/");
+        toast.success("Successfully signed in!");
+        navigate("/onboarding");
       }
     };
 
     checkSession();
 
-    // Check for email confirmation success
-    const type = searchParams.get('type');
-    if (type === 'signup' && searchParams.get('error_description') === 'Email already confirmed') {
-      toast.success("Email verified successfully! Please sign in.");
-    }
+    // Handle magic link parameters
+    const handleMagicLink = async () => {
+      const hasError = searchParams.get('error');
+      const errorDescription = searchParams.get('error_description');
 
+      if (hasError) {
+        setErrorMessage(errorDescription || 'An error occurred during authentication');
+        return;
+      }
+
+      // Check if we're returning from a magic link
+      if (searchParams.get('type') === 'recovery') {
+        const token = searchParams.get('access_token');
+        const refreshToken = searchParams.get('refresh_token');
+        
+        if (token && refreshToken) {
+          const { error } = await supabase.auth.setSession({
+            access_token: token,
+            refresh_token: refreshToken
+          });
+
+          if (error) {
+            setErrorMessage(getErrorMessage(error));
+            return;
+          }
+
+          toast.success("Successfully signed in!");
+          navigate("/onboarding");
+        }
+      }
+    };
+
+    handleMagicLink();
+
+    // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state changed:', event, session);
       
