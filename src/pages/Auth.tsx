@@ -101,7 +101,7 @@ const Auth = () => {
   // Add password toggle functionality
   useEffect(() => {
     const addPasswordToggles = () => {
-      const passwordInputs = document.querySelectorAll('input[type="password"]');
+      const passwordInputs = document.querySelectorAll<HTMLInputElement>('input[type="password"]');
       passwordInputs.forEach(input => {
         const container = input.parentElement;
         if (container && !container.querySelector('.password-toggle-btn')) {
@@ -121,7 +121,7 @@ const Auth = () => {
       });
     };
 
-    // Add initial password toggles
+    // Add initial password toggles with a delay to ensure DOM is ready
     setTimeout(addPasswordToggles, 500);
 
     // Monitor for dynamic changes
