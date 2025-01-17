@@ -6,12 +6,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { AuthError, AuthApiError } from "@supabase/supabase-js";
 import { toast } from "sonner";
 
-declare global {
-  interface Window {
-    SUPABASE_SITE_URL?: string;
-  }
-}
-
 const Auth = () => {
   const [searchParams] = useSearchParams();
   const [errorMessage, setErrorMessage] = useState("");
@@ -26,57 +20,26 @@ const Auth = () => {
   };
 
   useEffect(() => {
-    const checkSession = async () => {
+    const handleAuth = async () => {
       console.log("=== Starting Authentication Flow ===");
-      console.log("Checking initial session...");
-      
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError) {
-        console.error("Session check error:", sessionError);
-        return;
-      }
-      
-      if (session) {
-        console.log("Active session found:", {
-          user: session.user.email,
-          lastSignIn: session.user.last_sign_in_at,
-          sessionExpiresAt: session.expires_at,
-          accessToken: session.access_token ? "present" : "missing",
-          refreshToken: session.refresh_token ? "present" : "missing"
-        });
-        toast.success("Successfully signed in!");
-        navigate("/onboarding", { replace: true });
-        return;
-      }
+      setIsLoading(true);
 
-      // Parse both URL parameters and hash parameters
-      const allParams = {
-        ...Object.fromEntries(searchParams.entries()),
-        ...parseHashParams(location.hash)
-      };
-      console.log("All parameters:", allParams);
+      try {
+        // Parse both URL parameters and hash parameters
+        const allParams = {
+          ...Object.fromEntries(searchParams.entries()),
+          ...parseHashParams(location.hash)
+        };
+        console.log("Auth parameters:", allParams);
 
-      // Extract magic link parameters from URL or hash
-      const type = allParams.type;
-      const accessToken = allParams.access_token;
-      const refreshToken = allParams.refresh_token;
-      const hasError = allParams.error;
-      const errorDescription = allParams.error_description;
+        const accessToken = allParams.access_token;
+        const refreshToken = allParams.refresh_token;
+        const hasError = allParams.error;
+        const errorDescription = allParams.error_description;
 
-      console.log("Magic link parameters:", {
-        type,
-        hasError,
-        errorDescription,
-        hasAccessToken: !!accessToken,
-        hasRefreshToken: !!refreshToken,
-        fullUrl: window.location.href,
-      });
-
-      // If this is a magic link callback with tokens
-      if (accessToken && refreshToken) {
-        console.log(`Processing ${type} magic link authentication...`);
-        try {
+        // If this is a magic link callback with tokens
+        if (accessToken && refreshToken) {
+          console.log("Processing magic link authentication...");
           const { data: { session }, error } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken
@@ -84,75 +47,39 @@ const Auth = () => {
 
           if (error) {
             console.error("Error setting session:", error);
-            setErrorMessage(getErrorMessage(error));
+            setErrorMessage(error.message);
+            setIsLoading(false);
             return;
           }
 
           if (session) {
-            console.log("Successfully established session:", {
-              user: session.user.email,
-              expiresAt: session.expires_at,
-              accessToken: "present",
-              refreshToken: "present"
-            });
-            toast.success("Successfully signed in!");
-            navigate("/onboarding", { replace: true });
-          } else {
-            console.error("No session established after setting tokens");
-            setErrorMessage("Failed to establish session");
+            console.log("Successfully established session");
+            // Navigation will be handled by AuthContext
+            setIsLoading(false);
+            return;
           }
-        } catch (error) {
-          console.error("Unexpected error during magic link processing:", error);
-          setErrorMessage("An unexpected error occurred");
+        } else if (hasError) {
+          console.error("Auth error:", errorDescription);
+          setErrorMessage(errorDescription || 'An error occurred during authentication');
         }
-      } else if (hasError) {
-        console.error("Magic link error:", errorDescription);
-        setErrorMessage(errorDescription || 'An error occurred during authentication');
+      } catch (error) {
+        console.error("Unexpected error during auth:", error);
+        setErrorMessage("An unexpected error occurred");
       }
+
+      setIsLoading(false);
     };
 
-    checkSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("Auth state changed:", { 
-        event, 
-        sessionExists: !!session,
-        userEmail: session?.user?.email,
-        hasAccessToken: session?.access_token ? "present" : "missing",
-        hasRefreshToken: session?.refresh_token ? "present" : "missing"
-      });
-      
-      if (event === 'SIGNED_IN' && session) {
-        console.log("Sign in detected, navigating to onboarding");
-        toast.success("Successfully signed in!");
-        navigate("/onboarding", { replace: true });
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
+    handleAuth();
   }, [navigate, searchParams, location.hash]);
 
-  const getErrorMessage = (error: AuthError) => {
-    console.error("Authentication error details:", error);
-    
-    if (error instanceof AuthApiError) {
-      switch (error.status) {
-        case 400:
-          return 'Invalid credentials or expired link. Please try again.';
-        case 422:
-          return 'Invalid email format. Please check your email address.';
-        case 429:
-          return 'Too many requests. Please wait a moment and try again.';
-        case 0:
-          return 'Network error. Please check your internet connection.';
-        default:
-          return error.message;
-      }
-    }
-    return error.message;
-  };
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">

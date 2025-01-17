@@ -64,53 +64,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const handleMagicLinkAuth = async (hash: string) => {
-    console.log("🔑 Processing magic link authentication...");
-    const hashParams = new URLSearchParams(hash.replace('#', ''));
-    const accessToken = hashParams.get('access_token');
-    const refreshToken = hashParams.get('refresh_token');
-
-    if (accessToken && refreshToken) {
-      try {
-        console.log("🔄 Setting session from magic link tokens...");
-        const { data: { session }, error } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken
-        });
-
-        if (error) throw error;
-
-        if (session) {
-          console.log("✅ Successfully established session from magic link");
-          setSession(session);
-          await handleNavigation(session);
-          toast.success("Successfully signed in!");
-          return true;
-        }
-      } catch (error) {
-        console.error("❌ Error setting session from magic link:", error);
-        toast.error("Failed to authenticate. Please try again.");
-        navigate("/auth", { replace: true });
-      }
-    }
-    return false;
-  };
-
   const handleNavigation = async (session: Session) => {
     console.log("🧭 Handling navigation for session:", session.user.email);
     try {
       const profile = await fetchProfile(session.user.id);
       setProfile(profile);
 
-      if (!profile) {
-        console.log("➡️ No profile found, redirecting to onboarding");
-        navigate('/onboarding', { replace: true });
-      } else if (!profile.terms_accepted) {
+      // If we're on the auth page and have a profile with accepted terms,
+      // navigate to home
+      if (location.pathname === '/auth' && profile?.terms_accepted) {
+        console.log("➡️ Auth complete and terms accepted, navigating to home");
+        navigate('/', { replace: true });
+        return;
+      }
+
+      // If no profile or terms not accepted, redirect to onboarding
+      if (!profile || !profile.terms_accepted) {
         console.log("➡️ Terms not accepted, redirecting to onboarding");
         navigate('/onboarding', { replace: true });
-      } else if (location.pathname === '/auth' || location.pathname === '/onboarding') {
-        console.log("➡️ Profile complete, navigating to home");
-        navigate('/', { replace: true });
+        return;
       }
     } catch (error) {
       console.error('❌ Navigation error:', error);
@@ -134,18 +106,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
       
       try {
-        // Handle magic link authentication first
-        if (location.hash && location.hash.includes('access_token')) {
-          console.log("🔑 Magic link detected, processing...");
-          const success = await handleMagicLinkAuth(location.hash);
-          if (success) {
-            setIsLoading(false);
-            initializationComplete.current = true;
-            return;
-          }
-        }
-
-        // If no magic link or magic link failed, check current session
+        // Get current session
         console.log("🔍 Checking current session...");
         const { data: { session }, error } = await supabase.auth.getSession();
         
@@ -181,9 +142,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSession(session);
 
         if (session) {
-          if (event === 'SIGNED_IN') {
-            await handleNavigation(session);
-          }
+          await handleNavigation(session);
         } else if (event === 'SIGNED_OUT') {
           console.log("👋 User signed out, clearing profile");
           setProfile(null);
@@ -196,7 +155,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [navigate, location.hash]);
+  }, [navigate, location.pathname]);
 
   return (
     <AuthContext.Provider value={{ session, profile, isLoading, refreshProfile }}>
