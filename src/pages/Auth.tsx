@@ -41,7 +41,7 @@ const Auth = () => {
   // Add custom styles for the auth UI
   const customStyles = {
     container: {
-      position: 'relative' as const, // Type assertion to fix the position property
+      position: 'relative' as const,
     },
     input: {
       backgroundColor: 'white',
@@ -104,7 +104,8 @@ const Auth = () => {
                 email_input_placeholder: 'Your email',
                 button_label: 'Sign in',
                 loading_button_label: 'Signing in ...',
-                link_text: "Don't have an account? Sign up"
+                link_text: "Don't have an account? Sign up",
+                password_toggle_label: 'Show password'
               },
               sign_up: {
                 password_label: 'Password',
@@ -113,7 +114,8 @@ const Auth = () => {
                 email_input_placeholder: 'Your email',
                 button_label: 'Sign up',
                 loading_button_label: 'Signing up ...',
-                link_text: "Already have an account? Sign in"
+                link_text: "Already have an account? Sign in",
+                password_toggle_label: 'Show password'
               },
             },
           }}
