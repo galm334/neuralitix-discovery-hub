@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Session, AuthError } from '@supabase/supabase-js';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Session, AuthError, AuthApiError } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -25,8 +25,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const fetchProfile = async (userId: string) => {
+    console.log("Fetching profile for user:", userId);
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -35,6 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .maybeSingle();
 
       if (error) throw error;
+      console.log("Profile fetch result:", data);
       return data;
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -60,23 +63,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const handleMagicLinkAuth = async (hash: string) => {
+    console.log("Processing magic link authentication...");
+    const hashParams = new URLSearchParams(hash.replace('#', ''));
+    const accessToken = hashParams.get('access_token');
+    const refreshToken = hashParams.get('refresh_token');
+
+    if (accessToken && refreshToken) {
+      try {
+        const { data, error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken
+        });
+
+        if (error) throw error;
+
+        if (data.session) {
+          console.log("Successfully established session from magic link");
+          toast.success("Successfully signed in!");
+          return true;
+        }
+      } catch (error) {
+        console.error("Error setting session from magic link:", error);
+        toast.error("Failed to authenticate. Please try again.");
+        navigate("/auth", { replace: true });
+      }
+    }
+    return false;
+  };
+
   const handleNavigation = async (session: Session) => {
+    console.log("Handling navigation for session:", session.user.email);
     try {
       const profile = await fetchProfile(session.user.id);
       setProfile(profile);
 
-      // Only redirect to onboarding if profile exists but terms not accepted
-      if (profile && !profile.terms_accepted) {
-        navigate('/onboarding');
-      } else if (!profile) {
-        // If no profile exists yet, wait briefly for it to be created
-        setTimeout(async () => {
-          const retryProfile = await fetchProfile(session.user.id);
-          setProfile(retryProfile);
-          if (retryProfile && !retryProfile.terms_accepted) {
-            navigate('/onboarding');
-          }
-        }, 1000);
+      if (!profile) {
+        console.log("No profile found, redirecting to onboarding");
+        navigate('/onboarding', { replace: true });
+      } else if (!profile.terms_accepted) {
+        console.log("Terms not accepted, redirecting to onboarding");
+        navigate('/onboarding', { replace: true });
+      } else {
+        console.log("Profile complete, navigating to home");
+        navigate('/', { replace: true });
       }
     } catch (error) {
       console.error('Navigation error:', error);
@@ -86,6 +116,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshProfile = async () => {
     if (!session?.user?.id) return;
+    console.log("Refreshing profile...");
     const profile = await fetchProfile(session.user.id);
     setProfile(profile);
   };
@@ -94,12 +125,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let mounted = true;
 
     const initializeAuth = async () => {
+      console.log("=== Starting Authentication Flow ===");
+      setIsLoading(true);
+      
       try {
+        // Handle magic link authentication if present
+        if (location.hash && location.hash.includes('access_token')) {
+          console.log("Magic link detected, processing...");
+          const success = await handleMagicLinkAuth(location.hash);
+          if (!success) {
+            setIsLoading(false);
+            return;
+          }
+        }
+
+        // Get current session
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) throw error;
         
         if (mounted) {
+          console.log("Session check complete:", session ? "Active session" : "No session");
           setSession(session);
           if (session) {
             await handleNavigation(session);
@@ -107,6 +153,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setIsLoading(false);
         }
       } catch (error) {
+        console.error("Error in initializeAuth:", error);
         if (error instanceof AuthError) {
           handleAuthError(error);
         }
@@ -119,7 +166,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initializeAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event);
+      console.log('Auth state changed:', event, session ? "Session present" : "No session");
       
       if (mounted) {
         setSession(session);
@@ -130,10 +177,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               await handleNavigation(session);
             }
           } else if (event === 'SIGNED_OUT') {
+            console.log("User signed out, clearing profile");
             setProfile(null);
             navigate('/auth');
           }
         } catch (error) {
+          console.error("Error handling auth state change:", error);
           if (error instanceof AuthError) {
             handleAuthError(error);
           }
@@ -145,7 +194,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [navigate, location.hash]);
 
   return (
     <AuthContext.Provider value={{ session, profile, isLoading, refreshProfile }}>
