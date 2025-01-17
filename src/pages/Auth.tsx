@@ -3,7 +3,6 @@ import { useSearchParams, useLocation } from "react-router-dom";
 import { Auth as SupabaseAuth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
-import { AuthError } from "@supabase/supabase-js";
 
 const Auth = () => {
   const [searchParams] = useSearchParams();
@@ -19,7 +18,7 @@ const Auth = () => {
 
   useEffect(() => {
     const handleAuth = async () => {
-      console.log("=== Starting Authentication Flow ===");
+      console.log("🔐 [Auth] Starting magic link authentication...");
       setIsLoading(true);
 
       try {
@@ -28,11 +27,11 @@ const Auth = () => {
           ...Object.fromEntries(searchParams.entries()),
           ...parseHashParams(location.hash)
         };
-        console.log("Auth parameters:", allParams);
+        console.log("🔍 [Auth] Auth parameters:", allParams);
 
         // Check for error parameters in the URL hash
         if (allParams.error) {
-          console.error("Auth error from URL:", allParams.error, allParams.error_description);
+          console.error("❌ [Auth] Error from URL:", allParams.error, allParams.error_description);
           switch (allParams.error_code) {
             case 'otp_expired':
               setErrorMessage("The magic link has expired. Please request a new one.");
@@ -53,19 +52,21 @@ const Auth = () => {
 
         // If this is a magic link callback
         if (type === 'recovery' || type === 'magiclink') {
-          console.log("Processing magic link authentication...");
+          console.log("✨ [Auth] Processing magic link authentication...");
           const { error } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken
           });
 
           if (error) {
-            console.error("Error setting session:", error);
+            console.error("❌ [Auth] Error setting session:", error);
             setErrorMessage(error.message);
+          } else {
+            console.log("✅ [Auth] Magic link authentication successful");
           }
         }
       } catch (error) {
-        console.error("Unexpected error during auth:", error);
+        console.error("❌ [Auth] Unexpected error during auth:", error);
         setErrorMessage("An unexpected error occurred");
       }
 
