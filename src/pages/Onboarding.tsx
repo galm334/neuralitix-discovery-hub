@@ -57,24 +57,35 @@ const Onboarding = () => {
         return;
       }
 
-      const { error } = await supabase
+      // First try to create the profile
+      const { error: insertError } = await supabase
         .from("profiles")
-        .update({ terms_accepted: true })
-        .eq("id", session.user.id);
+        .insert([{ 
+          id: session.user.id,
+          terms_accepted: true,
+          name: session.user.user_metadata.full_name,
+          avatar_url: session.user.user_metadata.avatar_url
+        }]);
 
-      if (error) {
-        console.error("Error updating profile:", error);
-        toast.error("Failed to accept terms. Please try again.");
-        return;
+      // If insert fails because profile exists, update it
+      if (insertError?.code === '23505') { // Unique violation error code
+        const { error: updateError } = await supabase
+          .from("profiles")
+          .update({ terms_accepted: true })
+          .eq("id", session.user.id);
+
+        if (updateError) throw updateError;
+      } else if (insertError) {
+        throw insertError;
       }
 
       await refreshProfile();
       setShowTerms(false);
-      // Redirect to auth page for login
-      navigate("/auth", { replace: true });
+      toast.success("Welcome to Neuralitix!");
+      navigate("/", { replace: true });
     } catch (error) {
       console.error("Error in handleAcceptTerms:", error);
-      toast.error("Something went wrong. Please try again.");
+      toast.error("Failed to accept terms. Please try again.");
     }
   };
 
