@@ -99,6 +99,10 @@ const Auth = () => {
                 button_label: 'Sign in',
                 loading_button_label: 'Signing in ...',
                 link_text: "Don't have an account? Sign up",
+                password_toggle: {
+                  visible: 'Hide',
+                  hidden: 'Show'
+                }
               },
               sign_up: {
                 password_label: 'Password',
@@ -108,6 +112,10 @@ const Auth = () => {
                 button_label: 'Sign up',
                 loading_button_label: 'Signing up ...',
                 link_text: "Already have an account? Sign in",
+                password_toggle: {
+                  visible: 'Hide',
+                  hidden: 'Show'
+                }
               },
             },
           }}
