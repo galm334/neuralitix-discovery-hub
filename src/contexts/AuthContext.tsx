@@ -73,16 +73,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (accessToken && refreshToken) {
       try {
         console.log("🔄 Setting session from magic link tokens...");
-        const { data, error } = await supabase.auth.setSession({
+        const { data: { session }, error } = await supabase.auth.setSession({
           access_token: accessToken,
           refresh_token: refreshToken
         });
 
         if (error) throw error;
 
-        if (data.session) {
+        if (session) {
           console.log("✅ Successfully established session from magic link");
-          setSession(data.session);
+          setSession(session);
+          await handleNavigation(session);
+          toast.success("Successfully signed in!");
           return true;
         }
       } catch (error) {
@@ -132,11 +134,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
       
       try {
+        // Handle magic link authentication first
         if (location.hash && location.hash.includes('access_token')) {
           console.log("🔑 Magic link detected, processing...");
-          await handleMagicLinkAuth(location.hash);
+          const success = await handleMagicLinkAuth(location.hash);
+          if (success) {
+            setIsLoading(false);
+            initializationComplete.current = true;
+            return;
+          }
         }
 
+        // If no magic link or magic link failed, check current session
         console.log("🔍 Checking current session...");
         const { data: { session }, error } = await supabase.auth.getSession();
         
