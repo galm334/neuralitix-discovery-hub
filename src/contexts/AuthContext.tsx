@@ -27,7 +27,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
   const initializationComplete = useRef(false);
-  const navigationInProgress = useRef(false);
 
   const fetchProfile = async (userId: string) => {
     console.log("🔍 [AuthContext] Fetching profile for user:", userId);
@@ -43,35 +42,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return data;
     } catch (error) {
       console.error('❌ [AuthContext] Error fetching profile:', error);
-      toast.error('Failed to load user profile');
       return null;
     }
   };
 
   const handleAuthError = (error: AuthError) => {
     console.error('🚫 [AuthContext] Auth error:', error);
-    
-    switch (error.message) {
-      case 'Token expired':
-      case 'Invalid JWT':
-        toast.error('Your session has expired. Please sign in again.');
-        navigate('/auth', { replace: true });
-        break;
-      case 'Network error':
-        toast.error('Network error. Please check your connection.');
-        break;
-      default:
-        toast.error('Authentication error. Please try again.');
-    }
+    toast.error('Authentication error. Please try again.');
   };
 
   const handleNavigation = async (session: Session) => {
-    if (navigationInProgress.current) {
-      console.log("⏳ [AuthContext] Navigation already in progress, skipping...");
-      return;
-    }
-
-    navigationInProgress.current = true;
     console.log("🧭 [AuthContext] Starting navigation handling");
     console.log("📍 [AuthContext] Current location:", location.pathname);
     console.log("👤 [AuthContext] Session user:", session.user.email);
@@ -81,23 +61,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log("📋 [AuthContext] Profile state:", profile);
       setProfile(profile);
 
-      const hasProfile = !!profile;
-      const hasAcceptedTerms = profile?.terms_accepted;
-      console.log("✨ [AuthContext] Profile exists:", hasProfile);
-      console.log("📝 [AuthContext] Terms accepted:", hasAcceptedTerms);
-
-      if (!hasProfile || !hasAcceptedTerms) {
-        console.log("➡️ [AuthContext] Redirecting to onboarding");
-        navigate('/onboarding', { replace: true });
-      } else if (location.pathname === '/auth' || location.pathname === '/onboarding') {
-        console.log("➡️ [AuthContext] Redirecting to home");
+      // If we're on auth page and have a profile, go to home
+      if (location.pathname === '/auth' && profile) {
+        console.log("➡️ [AuthContext] Redirecting from auth to home");
         navigate('/', { replace: true });
+        return;
+      }
+
+      // If we don't have a profile and we're not on onboarding, go to onboarding
+      if (!profile && location.pathname !== '/onboarding') {
+        console.log("➡️ [AuthContext] No profile, redirecting to onboarding");
+        navigate('/onboarding', { replace: true });
+        return;
+      }
+
+      // If we have a profile but we're on onboarding, go to home
+      if (profile && location.pathname === '/onboarding') {
+        console.log("➡️ [AuthContext] Have profile, redirecting from onboarding to home");
+        navigate('/', { replace: true });
+        return;
       }
     } catch (error) {
       console.error('❌ [AuthContext] Navigation error:', error);
       toast.error('Error loading user data');
-    } finally {
-      navigationInProgress.current = false;
     }
   };
 
@@ -108,7 +94,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     console.log("🔄 [AuthContext] Refreshing profile...");
     const profile = await fetchProfile(session.user.id);
-    console.log("✨ [AuthContext] Updated profile:", profile);
     setProfile(profile);
   };
 
@@ -154,11 +139,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (mounted) {
         setSession(session);
-
         if (session) {
           await handleNavigation(session);
         } else if (event === 'SIGNED_OUT') {
-          console.log("👋 [AuthContext] User signed out, clearing profile");
           setProfile(null);
           navigate('/auth', { replace: true });
         }
