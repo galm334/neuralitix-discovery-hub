@@ -27,10 +27,11 @@ const Auth = () => {
       if (session) {
         console.log("Active session found:", {
           user: session.user.email,
-          lastSignIn: session.user.last_sign_in_at
+          lastSignIn: session.user.last_sign_in_at,
+          sessionExpiresAt: session.expires_at
         });
         toast.success("Successfully signed in!");
-        navigate("/onboarding");
+        navigate("/", { replace: true });
         return;
       }
 
@@ -75,7 +76,7 @@ const Auth = () => {
               expiresAt: session.expires_at
             });
             toast.success("Successfully signed in!");
-            navigate("/onboarding");
+            navigate("/", { replace: true });
           } else {
             console.error("No session established after setting tokens");
             setErrorMessage("Failed to establish session");
@@ -103,9 +104,9 @@ const Auth = () => {
       });
       
       if (event === 'SIGNED_IN' && session) {
-        console.log("Sign in detected, navigating to onboarding");
+        console.log("Sign in detected, navigating to home");
         toast.success("Successfully signed in!");
-        navigate("/onboarding");
+        navigate("/", { replace: true });
       }
     });
 
@@ -125,18 +126,13 @@ const Auth = () => {
           return 'Invalid email format. Please check your email address.';
         case 429:
           return 'Too many requests. Please wait a moment and try again.';
-        case 0: // Network error
+        case 0:
           return 'Network error. Please check your internet connection.';
         default:
           return error.message;
       }
     }
     return error.message;
-  };
-
-  const handleNetworkError = () => {
-    setErrorMessage("Network error. Please check your internet connection and try again.");
-    setIsLoading(false);
   };
 
   return (
