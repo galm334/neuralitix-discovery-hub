@@ -7,10 +7,9 @@ import { AuthError, AuthApiError } from "@supabase/supabase-js";
 import { toast } from "sonner";
 
 const Auth = () => {
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [errorMessage, setErrorMessage] = useState("");
-  const initialView = searchParams.get('type') === 'signup' ? 'sign_up' : 'magic_link';
+  const navigate = useNavigate();
 
   useEffect(() => {
     const checkSession = async () => {
@@ -22,12 +21,18 @@ const Auth = () => {
 
     checkSession();
 
+    // Check for email confirmation success
+    const type = searchParams.get('type');
+    if (type === 'signup' && searchParams.get('error_description') === 'Email already confirmed') {
+      toast.success("Email verified successfully! Please sign in.");
+    }
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state changed:', event, session);
       
       if (event === 'SIGNED_IN') {
         toast.success("Successfully signed in!");
-        navigate("/");
+        navigate("/onboarding");
       } else if (event === 'SIGNED_OUT') {
         navigate("/auth");
       } else if (event === 'USER_UPDATED') {
@@ -37,12 +42,6 @@ const Auth = () => {
         }
       }
     });
-
-    // Check for email confirmation success
-    const type = searchParams.get('type');
-    if (type === 'signup' && searchParams.get('error_description') === 'Email already confirmed') {
-      toast.success("Email verified successfully! Please sign in.");
-    }
 
     return () => {
       subscription.unsubscribe();
@@ -82,7 +81,7 @@ const Auth = () => {
 
         <SupabaseAuth 
           supabaseClient={supabase}
-          view={initialView}
+          view="magic_link"
           appearance={{ 
             theme: ThemeSupa,
             variables: {
@@ -95,11 +94,6 @@ const Auth = () => {
                   inputBorder: '#E5E7EB',
                   inputBorderHover: '#6366F1',
                   inputBorderFocus: '#4F46E5',
-                },
-                fonts: {
-                  bodyFontFamily: `ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"`,
-                  buttonFontFamily: `ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"`,
-                  labelFontFamily: `ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"`,
                 },
               }
             },
@@ -116,7 +110,6 @@ const Auth = () => {
               },
             },
           }}
-          providers={['google']}
           localization={{
             variables: {
               magic_link: {
