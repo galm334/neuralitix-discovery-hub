@@ -1,16 +1,14 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
+import { useSearchParams, useLocation } from "react-router-dom";
 import { Auth as SupabaseAuth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
-import { AuthError, AuthApiError } from "@supabase/supabase-js";
-import { toast } from "sonner";
+import { AuthError } from "@supabase/supabase-js";
 
 const Auth = () => {
   const [searchParams] = useSearchParams();
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
   const location = useLocation();
 
   const parseHashParams = (hash: string) => {
@@ -56,7 +54,7 @@ const Auth = () => {
         // If this is a magic link callback
         if (type === 'recovery' || type === 'magiclink') {
           console.log("Processing magic link authentication...");
-          const { data: { session }, error } = await supabase.auth.setSession({
+          const { error } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken
           });
@@ -64,28 +62,6 @@ const Auth = () => {
           if (error) {
             console.error("Error setting session:", error);
             setErrorMessage(error.message);
-            setIsLoading(false);
-            return;
-          }
-
-          if (session) {
-            console.log("Successfully established session");
-            // Check if user has a profile
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', session.user.id)
-              .single();
-
-            if (!profile || !profile.terms_accepted) {
-              console.log("No profile found or terms not accepted, redirecting to onboarding");
-              navigate("/onboarding", { replace: true });
-            } else {
-              console.log("Profile exists and terms accepted, redirecting to home");
-              navigate("/", { replace: true });
-            }
-            setIsLoading(false);
-            return;
           }
         }
       } catch (error) {
@@ -97,7 +73,7 @@ const Auth = () => {
     };
 
     handleAuth();
-  }, [navigate, searchParams, location.hash]);
+  }, [searchParams, location.hash]);
 
   if (isLoading) {
     return (

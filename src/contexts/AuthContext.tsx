@@ -65,25 +65,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const handleNavigation = async (session: Session) => {
-    console.log("🧭 Handling navigation for session:", session.user.email);
+    console.log("🧭 Starting navigation handling for session:", session.user.email);
     try {
       const profile = await fetchProfile(session.user.id);
       console.log("📋 Current profile state:", profile);
       setProfile(profile);
 
-      // First priority: No profile or terms not accepted -> go to onboarding
-      // (unless already there)
-      if ((!profile || !profile.terms_accepted) && location.pathname !== '/onboarding') {
-        console.log("➡️ Profile incomplete, redirecting to onboarding");
-        navigate('/onboarding', { replace: true });
+      // If we're on the auth page and have a session, we need to redirect
+      if (location.pathname === '/auth') {
+        if (!profile || !profile.terms_accepted) {
+          console.log("➡️ No profile or terms not accepted, redirecting to onboarding");
+          navigate('/onboarding', { replace: true });
+        } else {
+          console.log("➡️ Profile complete, redirecting to home");
+          navigate('/', { replace: true });
+        }
         return;
       }
 
-      // Second priority: On auth or onboarding with complete profile -> go home
-      if ((location.pathname === '/auth' || location.pathname === '/onboarding') && profile?.terms_accepted) {
-        console.log("➡️ Profile complete, redirecting to home");
-        navigate('/', { replace: true });
-        return;
+      // If we're not on auth or onboarding, but profile is incomplete, redirect to onboarding
+      if (!profile || !profile.terms_accepted) {
+        if (location.pathname !== '/onboarding') {
+          console.log("➡️ Incomplete profile detected, redirecting to onboarding");
+          navigate('/onboarding', { replace: true });
+        }
       }
     } catch (error) {
       console.error('❌ Navigation error:', error);
@@ -111,7 +116,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
       
       try {
-        // Get current session
         console.log("🔍 Checking current session...");
         const { data: { session }, error } = await supabase.auth.getSession();
         
