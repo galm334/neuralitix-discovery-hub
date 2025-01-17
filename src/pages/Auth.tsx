@@ -87,21 +87,15 @@ const Auth = () => {
                   inputBorder: '#E5E7EB',
                   inputBorderHover: '#6366F1',
                   inputBorderFocus: '#4F46E5',
-                }
+                },
+                fonts: {
+                  bodyFontFamily: `ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"`,
+                  buttonFontFamily: `ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"`,
+                  labelFontFamily: `ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"`,
+                },
               }
             },
             style: customStyles,
-            // Add these properties to control password toggle text
-            theme: {
-              ...ThemeSupa,
-              defaultTheme: 'dark',
-              variables: {
-                default: {
-                  showPasswordText: 'Show password',
-                  hidePasswordText: 'Hide password'
-                }
-              }
-            }
           }}
           providers={[]}
           showLinks={true}
