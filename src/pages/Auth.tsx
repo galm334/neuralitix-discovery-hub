@@ -12,44 +12,45 @@ const Auth = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Handle initial session check
     const checkSession = async () => {
+      console.log("=== Starting Authentication Flow ===");
       console.log("Checking initial session...");
-      const { data: { session }, error } = await supabase.auth.getSession();
       
-      if (error) {
-        console.error("Session check error:", error);
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error("Session check error:", sessionError);
         return;
       }
       
       if (session) {
-        console.log("Active session found:", session);
+        console.log("Active session found:", {
+          user: session.user.email,
+          lastSignIn: session.user.last_sign_in_at
+        });
         toast.success("Successfully signed in!");
         navigate("/onboarding");
-      } else {
-        console.log("No active session found");
+        return;
       }
-    };
 
-    checkSession();
+      // Log all URL parameters for debugging
+      const allParams = Object.fromEntries(searchParams.entries());
+      console.log("All URL parameters:", allParams);
 
-    // Log URL parameters
-    console.log("Current URL parameters:", Object.fromEntries(searchParams.entries()));
-
-    // Handle magic link parameters
-    const handleMagicLink = async () => {
-      const hasError = searchParams.get('error');
-      const errorDescription = searchParams.get('error_description');
+      // Extract magic link parameters
       const type = searchParams.get('type');
       const accessToken = searchParams.get('access_token');
       const refreshToken = searchParams.get('refresh_token');
+      const hasError = searchParams.get('error');
+      const errorDescription = searchParams.get('error_description');
 
       console.log("Magic link parameters:", {
         type,
-        hasError,
+        hasError: hasError,
         errorDescription,
         hasAccessToken: !!accessToken,
-        hasRefreshToken: !!refreshToken
+        hasRefreshToken: !!refreshToken,
+        fullUrl: window.location.href
       });
 
       if (hasError) {
@@ -58,9 +59,9 @@ const Auth = () => {
         return;
       }
 
-      // Handle both signup and recovery flows
-      if ((type === 'recovery' || type === 'signup') && accessToken && refreshToken) {
-        console.log(`Processing ${type} magic link return...`);
+      // Handle magic link authentication
+      if (accessToken && refreshToken) {
+        console.log(`Processing authentication with ${type} magic link...`);
         try {
           const { data: { session }, error } = await supabase.auth.setSession({
             access_token: accessToken,
@@ -74,40 +75,39 @@ const Auth = () => {
           }
 
           if (session) {
-            console.log("Successfully set session from magic link");
+            console.log("Successfully established session:", {
+              user: session.user.email,
+              expiresAt: session.expires_at
+            });
             toast.success("Successfully signed in!");
             navigate("/onboarding");
           } else {
-            console.error("No session after setting tokens");
+            console.error("No session established after setting tokens");
             setErrorMessage("Failed to establish session");
           }
         } catch (error) {
           console.error("Unexpected error during magic link processing:", error);
           setErrorMessage("An unexpected error occurred");
         }
+      } else {
+        console.log("No authentication tokens found in URL");
       }
     };
 
-    handleMagicLink();
+    checkSession();
 
     // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', { event, sessionExists: !!session });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Auth state changed:", { 
+        event, 
+        sessionExists: !!session,
+        userEmail: session?.user?.email
+      });
       
-      if (event === 'SIGNED_IN') {
+      if (event === 'SIGNED_IN' && session) {
         console.log("Sign in detected, navigating to onboarding");
         toast.success("Successfully signed in!");
         navigate("/onboarding");
-      } else if (event === 'SIGNED_OUT') {
-        console.log("Sign out detected");
-        navigate("/auth");
-      } else if (event === 'USER_UPDATED') {
-        console.log("User updated event detected");
-        const { error } = await supabase.auth.getSession();
-        if (error) {
-          console.error("Error refreshing session:", error);
-          setErrorMessage(getErrorMessage(error));
-        }
       }
     });
 
@@ -117,18 +117,14 @@ const Auth = () => {
   }, [navigate, searchParams]);
 
   const getErrorMessage = (error: AuthError) => {
-    console.error("Authentication error:", error);
+    console.error("Authentication error details:", error);
     
     if (error instanceof AuthApiError) {
-      switch (error.code) {
-        case 'invalid_credentials':
-          return 'Invalid email or password. Please check your credentials and try again.';
-        case 'email_not_confirmed':
-          return 'Please verify your email address before signing in.';
-        case 'user_not_found':
-          return 'No user found with these credentials.';
-        case 'invalid_grant':
-          return 'Invalid login credentials.';
+      switch (error.status) {
+        case 400:
+          return 'Invalid credentials or expired link. Please try again.';
+        case 422:
+          return 'Invalid email format. Please check your email address.';
         default:
           return error.message;
       }
