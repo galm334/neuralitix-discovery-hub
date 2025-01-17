@@ -66,17 +66,25 @@ const Auth = () => {
       newParams.delete("verification");
       window.history.replaceState({}, '', `${window.location.pathname}?${newParams}`);
       
-      // Show the welcome toast with the specified message
       toast(
-        <div className="space-y-4">
-          <div className="font-bold text-lg">Welcome to Neuralitix! 🎉</div>
-          <p>Your email has been successfully verified! You're now ready to explore the #1 AI data aggregator</p>
+        <div className="flex flex-col gap-4 max-w-md">
+          <div className="text-xl font-bold">Welcome to Neuralitix! 🎉</div>
+          <p className="text-base">Your email has been successfully verified! You're now ready to explore the #1 AI data aggregator</p>
           <div className="space-y-2">
-            <div className="font-bold">Pro Tips for Your Journey:</div>
-            <ul className="space-y-1">
-              <li>👉 Use the search bar and the AI assistant to quickly find tools by category or purpose.</li>
-              <li>👉 Save your favorites to build a custom toolkit.</li>
-              <li>👉 Share insights or submit tools to grow our community.</li>
+            <div className="font-bold text-lg">Pro Tips for Your Journey:</div>
+            <ul className="space-y-2">
+              <li className="flex items-start gap-2">
+                <span>👉</span>
+                <span>Use the search bar and the AI assistant to quickly find tools by category or purpose.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span>👉</span>
+                <span>Save your favorites to build a custom toolkit.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span>👉</span>
+                <span>Share insights or submit tools to grow our community.</span>
+              </li>
             </ul>
           </div>
         </div>,
@@ -84,11 +92,16 @@ const Auth = () => {
           duration: 10000,
           action: {
             label: "Log in ➡️",
-            onClick: () => form.setFocus("email"),
+            onClick: () => {
+              form.setFocus("email");
+            },
           },
         }
       );
     }
+
+    // Update isSignUp when type parameter changes
+    setIsSignUp(searchParams.get("type") === "signup");
 
     checkSession();
   }, [navigate, searchParams, form]);
