@@ -29,7 +29,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const initializationComplete = useRef(false);
 
   const fetchProfile = async (userId: string) => {
-    console.log("🔍 Fetching profile for user:", userId);
+    console.log("🔍 [AuthContext] Fetching profile for user:", userId);
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -38,17 +38,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .maybeSingle();
 
       if (error) throw error;
-      console.log("✅ Profile fetch result:", data);
+      console.log("✅ [AuthContext] Profile fetch result:", data);
       return data;
     } catch (error) {
-      console.error('❌ Error fetching profile:', error);
+      console.error('❌ [AuthContext] Error fetching profile:', error);
       toast.error('Failed to load user profile');
       return null;
     }
   };
 
   const handleAuthError = (error: AuthError) => {
-    console.error('🚫 Auth error:', error);
+    console.error('🚫 [AuthContext] Auth error:', error);
     
     switch (error.message) {
       case 'Token expired':
@@ -65,45 +65,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const handleNavigation = async (session: Session) => {
-    console.log("🧭 Starting navigation handling for session:", session.user.email);
+    console.log("🧭 [AuthContext] Starting navigation handling");
+    console.log("📍 [AuthContext] Current location:", location.pathname);
+    console.log("👤 [AuthContext] Session user:", session.user.email);
+
     try {
       const profile = await fetchProfile(session.user.id);
-      console.log("📋 Current profile state:", profile);
+      console.log("📋 [AuthContext] Profile state:", profile);
       setProfile(profile);
 
-      // If we're on the auth page and have a session, we need to redirect
+      const hasProfile = !!profile;
+      const hasAcceptedTerms = profile?.terms_accepted;
+      console.log("✨ [AuthContext] Profile exists:", hasProfile);
+      console.log("📝 [AuthContext] Terms accepted:", hasAcceptedTerms);
+
       if (location.pathname === '/auth') {
-        if (!profile || !profile.terms_accepted) {
-          console.log("➡️ No profile or terms not accepted, redirecting to onboarding");
+        if (!hasProfile || !hasAcceptedTerms) {
+          console.log("➡️ [AuthContext] Redirecting to onboarding from auth");
           navigate('/onboarding', { replace: true });
         } else {
-          console.log("➡️ Profile complete, redirecting to home");
+          console.log("➡️ [AuthContext] Redirecting to home from auth");
           navigate('/', { replace: true });
         }
         return;
       }
 
-      // If we're not on auth or onboarding, but profile is incomplete, redirect to onboarding
-      if (!profile || !profile.terms_accepted) {
+      if (!hasProfile || !hasAcceptedTerms) {
         if (location.pathname !== '/onboarding') {
-          console.log("➡️ Incomplete profile detected, redirecting to onboarding");
+          console.log("➡️ [AuthContext] Redirecting to onboarding due to incomplete profile");
           navigate('/onboarding', { replace: true });
         }
       }
     } catch (error) {
-      console.error('❌ Navigation error:', error);
+      console.error('❌ [AuthContext] Navigation error:', error);
       toast.error('Error loading user data');
     }
   };
 
   const refreshProfile = async () => {
     if (!session?.user?.id) {
-      console.log("⚠️ Cannot refresh profile: No active session");
+      console.log("⚠️ [AuthContext] Cannot refresh profile: No active session");
       return;
     }
-    console.log("🔄 Refreshing profile...");
+    console.log("🔄 [AuthContext] Refreshing profile...");
     const profile = await fetchProfile(session.user.id);
-    console.log("✨ Updated profile:", profile);
+    console.log("✨ [AuthContext] Updated profile:", profile);
     setProfile(profile);
   };
 
@@ -112,17 +118,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const initializeAuth = async () => {
       if (initializationComplete.current) return;
-      console.log("🚀 === Starting Authentication Flow ===");
+      console.log("🚀 [AuthContext] === Starting Authentication Flow ===");
       setIsLoading(true);
       
       try {
-        console.log("🔍 Checking current session...");
+        console.log("🔍 [AuthContext] Checking current session...");
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) throw error;
         
         if (mounted) {
-          console.log("✅ Session check complete:", session ? "Active session" : "No session");
+          console.log("✅ [AuthContext] Session check complete:", session ? "Active session" : "No session");
           setSession(session);
           if (session) {
             await handleNavigation(session);
@@ -131,7 +137,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           initializationComplete.current = true;
         }
       } catch (error) {
-        console.error("❌ Error in initializeAuth:", error);
+        console.error("❌ [AuthContext] Error in initializeAuth:", error);
         if (error instanceof AuthError) {
           handleAuthError(error);
         }
@@ -145,7 +151,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initializeAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔄 Auth state changed:', event, session ? "Session present" : "No session");
+      console.log('🔄 [AuthContext] Auth state changed:', event, session ? "Session present" : "No session");
       
       if (mounted) {
         setSession(session);
@@ -153,7 +159,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (session) {
           await handleNavigation(session);
         } else if (event === 'SIGNED_OUT') {
-          console.log("👋 User signed out, clearing profile");
+          console.log("👋 [AuthContext] User signed out, clearing profile");
           setProfile(null);
           navigate('/auth');
         }
