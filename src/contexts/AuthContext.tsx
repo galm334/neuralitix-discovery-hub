@@ -65,31 +65,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const handleNavigation = async (session: Session) => {
-    console.log("🧭 Handling navigation for session:", session.user.email);
+    console.log("🧭 Starting navigation handling for session:", session.user.email);
     try {
+      // First, check if user has a profile
       const profile = await fetchProfile(session.user.id);
       console.log("📋 Current profile state:", profile);
       setProfile(profile);
 
-      // If we're on the auth page and have a profile with accepted terms,
-      // navigate to home
-      if (location.pathname === '/auth' && profile?.terms_accepted) {
-        console.log("➡️ Auth complete and terms accepted, navigating to home");
+      // If we're on the auth page
+      if (location.pathname === '/auth') {
+        // If no profile exists, redirect to onboarding
+        if (!profile) {
+          console.log("➡️ No profile found, redirecting to onboarding");
+          navigate('/onboarding', { replace: true });
+          return;
+        }
+        
+        // If profile exists but terms not accepted, redirect to onboarding
+        if (!profile.terms_accepted) {
+          console.log("➡️ Terms not accepted, redirecting to onboarding");
+          navigate('/onboarding', { replace: true });
+          return;
+        }
+
+        // If profile exists and terms accepted, redirect to home
+        console.log("➡️ Profile complete, redirecting to home");
         navigate('/', { replace: true });
         return;
       }
 
-      // If no profile or terms not accepted, redirect to onboarding
-      if (!profile || !profile.terms_accepted) {
-        console.log("➡️ Terms not accepted, redirecting to onboarding");
-        navigate('/onboarding', { replace: true });
-        return;
-      }
-
-      // If we're on onboarding but terms are accepted, redirect to home
+      // If we're on onboarding but have a complete profile, redirect to home
       if (location.pathname === '/onboarding' && profile?.terms_accepted) {
         console.log("➡️ Already completed onboarding, redirecting to home");
         navigate('/', { replace: true });
+        return;
+      }
+
+      // If no profile or terms not accepted, and we're not already on onboarding,
+      // redirect to onboarding
+      if ((!profile || !profile.terms_accepted) && location.pathname !== '/onboarding') {
+        console.log("➡️ Incomplete profile, redirecting to onboarding");
+        navigate('/onboarding', { replace: true });
         return;
       }
     } catch (error) {
