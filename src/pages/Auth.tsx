@@ -32,6 +32,23 @@ const Auth = () => {
         };
         console.log("Auth parameters:", allParams);
 
+        // Check for error parameters in the URL hash
+        if (allParams.error) {
+          console.error("Auth error from URL:", allParams.error, allParams.error_description);
+          switch (allParams.error_code) {
+            case 'otp_expired':
+              setErrorMessage("The magic link has expired. Please request a new one.");
+              break;
+            case 'invalid_otp':
+              setErrorMessage("Invalid magic link. Please request a new one.");
+              break;
+            default:
+              setErrorMessage(allParams.error_description || "Authentication failed. Please try again.");
+          }
+          setIsLoading(false);
+          return;
+        }
+
         const accessToken = allParams.access_token;
         const refreshToken = allParams.refresh_token;
         const type = allParams.type;
