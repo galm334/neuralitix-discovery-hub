@@ -58,10 +58,25 @@ const Auth = () => {
             variables: {
               default: {
                 colors: {
-                  brand: 'rgb(var(--primary))',
-                  brandAccent: 'rgb(var(--primary))',
+                  brand: '#6366F1',
+                  brandAccent: '#4F46E5',
+                  inputBackground: 'white',
+                  inputText: '#1F2937',
+                  inputBorder: '#E5E7EB',
+                  inputBorderHover: '#6366F1',
+                  inputBorderFocus: '#4F46E5',
                 }
               }
+            },
+            style: {
+              input: {
+                backgroundColor: 'white',
+                color: '#1F2937',
+                borderColor: '#E5E7EB',
+              },
+              label: {
+                color: '#F9FAFB',
+              },
             }
           }}
           providers={[]}
