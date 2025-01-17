@@ -79,16 +79,11 @@ const Auth = () => {
               },
               button: {
                 backgroundColor: '#6366F1',
-                '&:hover': {
-                  backgroundColor: '#4F46E5',
-                },
+                color: '#ffffff',
               },
               anchor: {
                 color: '#6366F1',
-                '&:hover': {
-                  color: '#4F46E5',
-                },
-              },
+              }
             }
           }}
           providers={[]}
