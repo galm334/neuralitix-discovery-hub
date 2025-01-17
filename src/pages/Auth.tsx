@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -65,14 +65,33 @@ const Auth = () => {
       const newParams = new URLSearchParams(searchParams);
       newParams.delete("verification");
       window.history.replaceState({}, '', `${window.location.pathname}?${newParams}`);
-      toast.success("Email verified successfully! Please sign in to continue.");
+      
+      // Show the welcome toast with the specified message
+      toast(
+        <div className="space-y-4">
+          <div className="font-bold text-lg">Welcome to Neuralitix! 🎉</div>
+          <p>Your email has been successfully verified! You're now ready to explore the #1 AI data aggregator</p>
+          <div className="space-y-2">
+            <div className="font-bold">Pro Tips for Your Journey:</div>
+            <ul className="space-y-1">
+              <li>👉 Use the search bar and the AI assistant to quickly find tools by category or purpose.</li>
+              <li>👉 Save your favorites to build a custom toolkit.</li>
+              <li>👉 Share insights or submit tools to grow our community.</li>
+            </ul>
+          </div>
+        </div>,
+        {
+          duration: 10000,
+          action: {
+            label: "Log in ➡️",
+            onClick: () => form.setFocus("email"),
+          },
+        }
+      );
     }
 
-    // Update isSignUp when type parameter changes
-    setIsSignUp(searchParams.get("type") === "signup");
-
     checkSession();
-  }, [navigate, searchParams]);
+  }, [navigate, searchParams, form]);
 
   const handleAuthError = (error: AuthError) => {
     console.error('Auth error:', error);
