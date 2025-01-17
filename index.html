@@ -11,7 +11,9 @@
   <body>
     <div id="root"></div>
     <script>
+      // Define allowed origins BEFORE loading gptengineer.js
       window.ALLOWED_ORIGINS = ['https://neuralitix.com', 'https://www.neuralitix.com'];
+      window.SUPABASE_SITE_URL = 'https://neuralitix.com';
     </script>
     <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
     <script type="module" src="/src/main.tsx"></script>
