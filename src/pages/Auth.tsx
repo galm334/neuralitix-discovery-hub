@@ -12,6 +12,9 @@ const Auth = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
+  // Get the initial view from URL parameters
+  const initialView = searchParams.get('type') === 'signup' ? 'sign_up' : 'sign_in';
+
   useEffect(() => {
     // Check if user came from email verification
     const type = searchParams.get('type');
@@ -90,6 +93,7 @@ const Auth = () => {
 
         <SupabaseAuth 
           supabaseClient={supabase}
+          view={initialView}
           appearance={{ 
             theme: ThemeSupa,
             variables: {
@@ -123,9 +127,6 @@ const Auth = () => {
               },
             },
           }}
-          providers={[]}
-          showLinks={true}
-          view="sign_in"
           localization={{
             variables: {
               sign_in: {
