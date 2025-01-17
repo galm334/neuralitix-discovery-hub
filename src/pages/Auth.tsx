@@ -36,12 +36,13 @@ type FormValues = z.infer<typeof formSchema>;
 
 const Auth = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [isSignUp, setIsSignUp] = useState(searchParams.get("type") === "signup");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const emailInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -62,6 +63,7 @@ const Auth = () => {
 
     const isVerificationCallback = searchParams.get("verification") === "success";
     if (isVerificationCallback) {
+      // Remove verification parameter from URL
       const newParams = new URLSearchParams(searchParams);
       newParams.delete("verification");
       window.history.replaceState({}, '', `${window.location.pathname}?${newParams}`);
@@ -93,7 +95,7 @@ const Auth = () => {
           action: {
             label: "Log in ➡️",
             onClick: () => {
-              form.setFocus("email");
+              emailInputRef.current?.focus();
             },
           },
         }
@@ -104,7 +106,7 @@ const Auth = () => {
     setIsSignUp(searchParams.get("type") === "signup");
 
     checkSession();
-  }, [navigate, searchParams, form]);
+  }, [navigate, searchParams]);
 
   const handleAuthError = (error: AuthError) => {
     console.error('Auth error:', error);
@@ -208,6 +210,7 @@ const Auth = () => {
                     <Input
                       type="email"
                       placeholder="Enter your email"
+                      ref={emailInputRef}
                       {...field}
                     />
                   </FormControl>
