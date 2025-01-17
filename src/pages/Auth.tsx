@@ -10,7 +10,7 @@ const Auth = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [errorMessage, setErrorMessage] = useState("");
-  const initialView = searchParams.get('type') === 'signup' ? 'sign_up' : 'sign_in';
+  const initialView = searchParams.get('type') === 'signup' ? 'sign_up' : 'magic_link';
 
   useEffect(() => {
     const checkSession = async () => {
@@ -26,11 +26,7 @@ const Auth = () => {
       console.log('Auth state changed:', event, session);
       
       if (event === 'SIGNED_IN') {
-        if (session?.user?.user_metadata?.signup) {
-          toast.success("Account created successfully! You are now signed in.");
-        } else {
-          toast.success("Successfully signed in!");
-        }
+        toast.success("Successfully signed in!");
         navigate("/");
       } else if (event === 'SIGNED_OUT') {
         navigate("/auth");
@@ -76,7 +72,7 @@ const Auth = () => {
       <div className="w-full max-w-md space-y-8 bg-card p-8 rounded-lg shadow-lg">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-2">Welcome to Neuralitix</h1>
-          <p className="text-muted-foreground">Sign in or create an account to continue</p>
+          <p className="text-muted-foreground">Sign in with magic link to continue</p>
           {errorMessage && (
             <div className="mt-4 p-4 bg-destructive/10 text-destructive rounded-md">
               {errorMessage}
@@ -123,23 +119,12 @@ const Auth = () => {
           providers={['google']}
           localization={{
             variables: {
-              sign_in: {
-                email_label: 'Email',
+              magic_link: {
+                email_input_label: 'Email',
                 email_input_placeholder: 'Your email',
-                password_label: 'Password',
-                password_input_placeholder: 'Your password',
-                button_label: 'Sign in',
-                loading_button_label: 'Signing in ...',
-                link_text: "Don't have an account? Sign up"
-              },
-              sign_up: {
-                email_label: 'Email',
-                email_input_placeholder: 'Your email',
-                password_label: 'Password',
-                password_input_placeholder: 'Your password',
-                button_label: 'Sign up',
-                loading_button_label: 'Signing up ...',
-                link_text: "Already have an account? Sign in"
+                button_label: 'Send Magic Link',
+                loading_button_label: 'Sending Magic Link ...',
+                link_text: "Don't have an account? Sign up",
               }
             }
           }}
