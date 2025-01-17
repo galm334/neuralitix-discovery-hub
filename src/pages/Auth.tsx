@@ -9,6 +9,7 @@ import { toast } from "sonner";
 const Auth = () => {
   const [searchParams] = useSearchParams();
   const [errorMessage, setErrorMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -122,11 +123,20 @@ const Auth = () => {
           return 'Invalid credentials or expired link. Please try again.';
         case 422:
           return 'Invalid email format. Please check your email address.';
+        case 429:
+          return 'Too many requests. Please wait a moment and try again.';
+        case 0: // Network error
+          return 'Network error. Please check your internet connection.';
         default:
           return error.message;
       }
     }
     return error.message;
+  };
+
+  const handleNetworkError = () => {
+    setErrorMessage("Network error. Please check your internet connection and try again.");
+    setIsLoading(false);
   };
 
   return (
