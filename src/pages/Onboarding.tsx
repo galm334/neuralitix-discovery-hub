@@ -82,7 +82,9 @@ const Onboarding = () => {
       await refreshProfile();
       setShowTerms(false);
       toast.success("Welcome to Neuralitix!");
-      navigate("/", { replace: true });
+      // Instead of navigating directly, let AuthContext handle the navigation
+      const { error: signInError } = await supabase.auth.signInWithSession(session);
+      if (signInError) throw signInError;
     } catch (error) {
       console.error("Error in handleAcceptTerms:", error);
       toast.error("Failed to accept terms. Please try again.");
