@@ -10,6 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { generateNickname } from "@/utils/nickname-generator";
 import { logger } from "@/utils/logger";
 import { showToast } from "@/utils/toast-config";
+import { terms } from "@/data/terms";
 
 // Lazy load the WelcomeDialog component
 const WelcomeDialog = lazy(() => import('@/components/onboarding/WelcomeDialog').then(module => ({
@@ -25,6 +26,7 @@ const Onboarding = () => {
   const [profilePic, setProfilePic] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
   const navigate = useNavigate();
   const { refreshProfile, session } = useAuth();
 
@@ -132,7 +134,7 @@ const Onboarding = () => {
       }
 
       if (!termsAccepted) {
-        showToast.warning("Please accept the terms and conditions");
+        setShowTerms(true);
         return;
       }
 
@@ -234,7 +236,7 @@ const Onboarding = () => {
               I accept the{" "}
               <button
                 type="button"
-                onClick={() => setTermsAccepted(true)}
+                onClick={() => setShowTerms(true)}
                 className="text-primary hover:underline"
               >
                 terms and conditions
@@ -267,7 +269,14 @@ const Onboarding = () => {
         <WelcomeDialog isOpen={false} onComplete={() => {}} />
       </Suspense>
 
-      <TermsDialog />
+      <TermsDialog 
+        isOpen={showTerms}
+        onAccept={() => {
+          setTermsAccepted(true);
+          setShowTerms(false);
+        }}
+        termsContent={terms}
+      />
     </div>
   );
 };
