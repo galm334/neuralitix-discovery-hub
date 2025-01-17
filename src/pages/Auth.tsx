@@ -90,7 +90,18 @@ const Auth = () => {
                 }
               }
             },
-            style: customStyles
+            style: customStyles,
+            // Add these properties to control password toggle text
+            theme: {
+              ...ThemeSupa,
+              defaultTheme: 'dark',
+              variables: {
+                default: {
+                  showPasswordText: 'Show password',
+                  hidePasswordText: 'Hide password'
+                }
+              }
+            }
           }}
           providers={[]}
           showLinks={true}
