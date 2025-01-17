@@ -78,10 +78,15 @@ const Auth = () => {
                 color: '#F9FAFB',
               },
               button: {
-                icon: {
-                  '&[aria-label="Show password"]': {
-                    color: '#6B7280',
-                  },
+                backgroundColor: '#6366F1',
+                '&:hover': {
+                  backgroundColor: '#4F46E5',
+                },
+              },
+              anchor: {
+                color: '#6366F1',
+                '&:hover': {
+                  color: '#4F46E5',
                 },
               },
             }
