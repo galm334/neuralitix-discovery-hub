@@ -104,8 +104,7 @@ const Auth = () => {
                 email_input_placeholder: 'Your email',
                 button_label: 'Sign in',
                 loading_button_label: 'Signing in ...',
-                link_text: "Don't have an account? Sign up",
-                password_toggle_label: 'Show password'
+                link_text: "Don't have an account? Sign up"
               },
               sign_up: {
                 password_label: 'Password',
@@ -114,8 +113,7 @@ const Auth = () => {
                 email_input_placeholder: 'Your email',
                 button_label: 'Sign up',
                 loading_button_label: 'Signing up ...',
-                link_text: "Already have an account? Sign in",
-                password_toggle_label: 'Show password'
+                link_text: "Already have an account? Sign in"
               },
             },
           }}
