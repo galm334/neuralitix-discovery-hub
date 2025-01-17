@@ -2,26 +2,36 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
-import { TermsDialog } from "@/components/onboarding/TermsDialog";
-import { terms } from "@/data/terms";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ExternalLink, Shield, Upload, User } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { generateNickname } from "@/utils/nickname-generator";
+
+const MAX_FILE_SIZE = 500 * 1024; // 500KB
+const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/gif'];
 
 const Onboarding = () => {
-  const [showTerms, setShowTerms] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
+  const [fullName, setFullName] = useState("");
+  const [nickname, setNickname] = useState("");
+  const [email, setEmail] = useState("");
+  const [profilePic, setProfilePic] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string>("");
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const navigate = useNavigate();
   const { refreshProfile } = useAuth();
 
   useAuthRedirect();
 
-  // Initial check for session and profile
   useEffect(() => {
-    const checkSessionAndProfile = async () => {
-      console.log("🔍 Checking session and profile status...");
+    const checkSessionAndSetup = async () => {
+      console.log("🔍 Checking session and setting up form...");
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        console.log("📝 Current session:", session ? "Active" : "None");
         
         if (!session) {
           console.log("⚠️ No session found, redirecting to auth");
@@ -29,87 +39,107 @@ const Onboarding = () => {
           return;
         }
 
-        // Check if profile exists and terms are accepted
-        const { data: profile, error: profileError } = await supabase
-          .from("profiles")
-          .select("terms_accepted")
-          .eq("id", session.user.id)
-          .maybeSingle();
+        // Set email from session
+        setEmail(session.user.email || "");
+        
+        // Generate default nickname
+        const defaultNickname = generateNickname();
+        setNickname(defaultNickname);
 
-        if (profileError) {
-          console.error("❌ Error fetching profile:", profileError);
-          throw profileError;
-        }
-
-        console.log("👤 Profile status:", profile);
-
-        if (profile?.terms_accepted) {
-          console.log("✅ Terms already accepted, redirecting to home");
-          navigate("/", { replace: true });
-          return;
+        // Set name from metadata if available
+        const metadataName = session.user.user_metadata.full_name;
+        if (metadataName) {
+          setFullName(metadataName);
         }
 
         setIsLoading(false);
       } catch (error) {
-        console.error("❌ Error in checkSessionAndProfile:", error);
+        console.error("❌ Error in checkSessionAndSetup:", error);
         toast.error("Something went wrong. Please try again.");
         setIsLoading(false);
       }
     };
 
-    checkSessionAndProfile();
+    checkSessionAndSetup();
   }, [navigate]);
 
-  const handleAcceptTerms = async () => {
-    console.log("🤝 Starting terms acceptance process...");
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+      toast.error("Please upload a valid image file (JPEG, PNG, or GIF)");
+      return;
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error("File size must be less than 500KB");
+      return;
+    }
+
+    setProfilePic(file);
+    const objectUrl = URL.createObjectURL(file);
+    setPreviewUrl(objectUrl);
+  };
+
+  const handleSubmit = async () => {
+    console.log("🚀 Starting profile creation...");
     try {
+      setIsLoading(true);
       const { data: { session } } = await supabase.auth.getSession();
-      console.log("🔐 Current session:", session ? "Active" : "None");
       
       if (!session) {
-        console.error("❌ No active session found");
         toast.error("Session expired. Please login again.");
         navigate("/auth");
         return;
       }
 
-      console.log("📝 Attempting to create/update profile...");
-      // First try to create the profile
-      const { error: insertError } = await supabase
-        .from("profiles")
-        .insert([{ 
-          id: session.user.id,
-          terms_accepted: true,
-          name: session.user.user_metadata.full_name,
-          avatar_url: session.user.user_metadata.avatar_url
-        }]);
+      let profilePicUrl = null;
+      if (profilePic) {
+        console.log("📤 Uploading profile picture...");
+        const fileExt = profilePic.name.split('.').pop();
+        const filePath = `${session.user.id}-${Date.now()}.${fileExt}`;
+        
+        const { error: uploadError, data } = await supabase.storage
+          .from('profile-pictures')
+          .upload(filePath, profilePic);
 
-      // If insert fails because profile exists, update it
-      if (insertError?.code === '23505') { // Unique violation error code
-        console.log("ℹ️ Profile exists, updating terms acceptance...");
-        const { error: updateError } = await supabase
-          .from("profiles")
-          .update({ terms_accepted: true })
-          .eq("id", session.user.id);
+        if (uploadError) {
+          console.error("❌ Error uploading profile picture:", uploadError);
+          toast.error("Failed to upload profile picture");
+          return;
+        }
 
-        if (updateError) throw updateError;
-      } else if (insertError) {
-        throw insertError;
+        profilePicUrl = data.path;
       }
 
-      console.log("🔄 Refreshing profile in AuthContext...");
+      console.log("👤 Creating profile...");
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: session.user.id,
+          name: fullName,
+          nickname: nickname,
+          email: email,
+          profile_pic_url: profilePicUrl,
+          terms_accepted: true
+        });
+
+      if (profileError) {
+        console.error("❌ Error creating profile:", profileError);
+        toast.error("Failed to create profile");
+        return;
+      }
+
+      console.log("✅ Profile created successfully!");
       await refreshProfile();
-      
-      console.log("✅ Terms accepted successfully");
-      setShowTerms(false);
-      
       toast.success("Welcome to Neuralitix!");
-      
-      console.log("🏠 Navigating to home page...");
       navigate("/", { replace: true });
     } catch (error) {
-      console.error("❌ Error in handleAcceptTerms:", error);
-      toast.error("Failed to accept terms. Please try again.");
+      console.error("❌ Error in handleSubmit:", error);
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -118,12 +148,134 @@ const Onboarding = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <TermsDialog 
-        isOpen={showTerms} 
-        onAccept={handleAcceptTerms}
-        termsContent={terms}
-      />
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="w-full max-w-md space-y-8">
+        <div className="text-center">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <Shield className="h-8 w-8 text-primary" />
+            <h1 className="text-3xl font-bold">One Last Step</h1>
+          </div>
+          <p className="text-muted-foreground">Complete your profile to continue</p>
+        </div>
+
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="fullName">Full Name</Label>
+            <Input
+              id="fullName"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="Enter your full name"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="nickname">Nickname</Label>
+            <Input
+              id="nickname"
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
+              placeholder="Choose a nickname"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              value={email}
+              readOnly
+              disabled
+              className="bg-muted"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="profilePic">Profile Picture</Label>
+            <div className="flex items-center gap-4">
+              {previewUrl ? (
+                <img
+                  src={previewUrl}
+                  alt="Profile preview"
+                  className="w-16 h-16 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
+                  <User className="w-8 h-8 text-muted-foreground" />
+                </div>
+              )}
+              <div className="flex-1">
+                <Label
+                  htmlFor="picture"
+                  className="flex items-center gap-2 w-full h-10 px-4 py-2 bg-muted rounded-md cursor-pointer hover:bg-muted/80 transition-colors"
+                >
+                  <Upload className="w-4 h-4" />
+                  <span>Upload Image</span>
+                </Label>
+                <Input
+                  id="picture"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Max size: 500KB. Supported formats: JPEG, PNG, GIF
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-start space-x-2">
+            <Checkbox
+              id="terms"
+              checked={termsAccepted}
+              onCheckedChange={(checked) => setTermsAccepted(checked as boolean)}
+              className="mt-1"
+            />
+            <label
+              htmlFor="terms"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              I accept the{" "}
+              <a
+                href="/terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+              >
+                terms and conditions
+              </a>
+              ,{" "}
+              <a
+                href="/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+              >
+                privacy policy <ExternalLink className="inline h-3 w-3" />
+              </a>
+              {" "}and{" "}
+              <a
+                href="/gdpr"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+              >
+                GDPR policy <ExternalLink className="inline h-3 w-3" />
+              </a>
+            </label>
+          </div>
+
+          <Button
+            onClick={handleSubmit}
+            disabled={!termsAccepted || !fullName || !nickname || isLoading}
+            className="w-full"
+          >
+            {isLoading ? "Creating Profile..." : "Approve and Continue"}
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };
