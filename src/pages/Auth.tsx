@@ -14,43 +14,71 @@ const Auth = () => {
   useEffect(() => {
     // Handle initial session check
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      console.log("Checking initial session...");
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        console.error("Session check error:", error);
+        return;
+      }
+      
       if (session) {
+        console.log("Active session found:", session);
         toast.success("Successfully signed in!");
         navigate("/onboarding");
+      } else {
+        console.log("No active session found");
       }
     };
 
     checkSession();
 
+    // Log URL parameters
+    console.log("Current URL parameters:", Object.fromEntries(searchParams.entries()));
+
     // Handle magic link parameters
     const handleMagicLink = async () => {
       const hasError = searchParams.get('error');
       const errorDescription = searchParams.get('error_description');
+      const type = searchParams.get('type');
+      const accessToken = searchParams.get('access_token');
+      const refreshToken = searchParams.get('refresh_token');
+
+      console.log("Magic link parameters:", {
+        type,
+        hasError,
+        errorDescription,
+        hasAccessToken: !!accessToken,
+        hasRefreshToken: !!refreshToken
+      });
 
       if (hasError) {
+        console.error("Magic link error:", errorDescription);
         setErrorMessage(errorDescription || 'An error occurred during authentication');
         return;
       }
 
       // Check if we're returning from a magic link
-      if (searchParams.get('type') === 'recovery') {
-        const token = searchParams.get('access_token');
-        const refreshToken = searchParams.get('refresh_token');
-        
-        if (token && refreshToken) {
+      if (type === 'recovery' && accessToken && refreshToken) {
+        console.log("Processing magic link return...");
+        try {
           const { error } = await supabase.auth.setSession({
-            access_token: token,
+            access_token: accessToken,
             refresh_token: refreshToken
           });
 
           if (error) {
+            console.error("Error setting session:", error);
             setErrorMessage(getErrorMessage(error));
             return;
           }
 
+          console.log("Successfully set session from magic link");
           toast.success("Successfully signed in!");
           navigate("/onboarding");
+        } catch (error) {
+          console.error("Unexpected error during magic link processing:", error);
+          setErrorMessage("An unexpected error occurred");
         }
       }
     };
@@ -59,16 +87,20 @@ const Auth = () => {
 
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event, session);
+      console.log('Auth state changed:', { event, sessionExists: !!session });
       
       if (event === 'SIGNED_IN') {
+        console.log("Sign in detected, navigating to onboarding");
         toast.success("Successfully signed in!");
         navigate("/onboarding");
       } else if (event === 'SIGNED_OUT') {
+        console.log("Sign out detected");
         navigate("/auth");
       } else if (event === 'USER_UPDATED') {
+        console.log("User updated event detected");
         const { error } = await supabase.auth.getSession();
         if (error) {
+          console.error("Error refreshing session:", error);
           setErrorMessage(getErrorMessage(error));
         }
       }
@@ -80,6 +112,8 @@ const Auth = () => {
   }, [navigate, searchParams]);
 
   const getErrorMessage = (error: AuthError) => {
+    console.error("Authentication error:", error);
+    
     if (error instanceof AuthApiError) {
       switch (error.code) {
         case 'invalid_credentials':
@@ -125,7 +159,7 @@ const Auth = () => {
                   inputBorder: '#E5E7EB',
                   inputBorderHover: '#6366F1',
                   inputBorderFocus: '#4F46E5',
-                },
+                }
               }
             },
             style: {
