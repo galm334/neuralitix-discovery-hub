@@ -51,50 +51,65 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     toast.error('Authentication error. Please try again.');
   };
 
-  const handleNavigation = async (session: Session) => {
+  const handleNavigation = useCallback(async (session: Session) => {
     console.log("🧭 [AuthContext] Starting navigation handling");
     console.log("📍 [AuthContext] Current location:", location.pathname);
     console.log("👤 [AuthContext] Session user:", session.user.email);
 
     try {
-      const profile = await fetchProfile(session.user.id);
-      console.log("📋 [AuthContext] Profile state:", profile);
-      setProfile(profile);
+      // Only fetch profile if we don't have it cached
+      let currentProfile = profile;
+      if (!currentProfile) {
+        currentProfile = await fetchProfile(session.user.id);
+        setProfile(currentProfile);
+      }
 
-      // If we're on auth page and have a profile, go to home
-      if (location.pathname === '/auth' && profile) {
-        console.log("➡️ [AuthContext] Redirecting from auth to home");
-        navigate('/', { replace: true });
+      // Handle different navigation scenarios
+      if (location.pathname === '/auth') {
+        if (currentProfile) {
+          console.log("➡️ [AuthContext] Redirecting from auth to home");
+          navigate('/', { replace: true });
+        } else {
+          console.log("➡️ [AuthContext] No profile, redirecting to onboarding");
+          navigate('/onboarding', { replace: true });
+        }
         return;
       }
 
-      // If we don't have a profile and we're not on onboarding, go to onboarding
-      if (!profile && location.pathname !== '/onboarding') {
+      if (!currentProfile && location.pathname !== '/onboarding') {
         console.log("➡️ [AuthContext] No profile, redirecting to onboarding");
         navigate('/onboarding', { replace: true });
         return;
       }
 
-      // If we have a profile but we're on onboarding, go to home
-      if (profile && location.pathname === '/onboarding') {
+      if (currentProfile && location.pathname === '/onboarding') {
         console.log("➡️ [AuthContext] Have profile, redirecting from onboarding to home");
+        navigate('/', { replace: true });
+        return;
+      }
+
+      // Handle invalid routes for authenticated users
+      if (currentProfile && !['/', '/onboarding', '/auth'].includes(location.pathname)) {
+        console.log("➡️ [AuthContext] Redirecting to home from invalid path");
         navigate('/', { replace: true });
         return;
       }
     } catch (error) {
       console.error('❌ [AuthContext] Navigation error:', error);
       toast.error('Error loading user data');
+      navigate('/auth', { replace: true });
     }
-  };
+  }, [navigate, location.pathname, profile]);
 
   const refreshProfile = async () => {
     if (!session?.user?.id) {
       console.log("⚠️ [AuthContext] Cannot refresh profile: No active session");
       return;
     }
+
     console.log("🔄 [AuthContext] Refreshing profile...");
-    const profile = await fetchProfile(session.user.id);
-    setProfile(profile);
+    const fetchedProfile = await fetchProfile(session.user.id);
+    setProfile(fetchedProfile);
   };
 
   useEffect(() => {
@@ -106,7 +121,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
       
       try {
-        console.log("🔍 [AuthContext] Checking current session...");
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) throw error;
@@ -152,7 +166,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [navigate, location.pathname]);
+  }, [handleNavigation]);
 
   return (
     <AuthContext.Provider value={{ session, profile, isLoading, refreshProfile }}>
