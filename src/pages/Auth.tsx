@@ -127,6 +127,7 @@ const Auth = () => {
               },
             },
           }}
+          providers={['google']}
           localization={{
             variables: {
               sign_in: {
