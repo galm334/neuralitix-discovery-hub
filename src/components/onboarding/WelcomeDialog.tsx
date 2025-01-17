@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { User, RefreshCw } from "lucide-react";
+import { logger } from "@/utils/logger";
+import { showToast } from "@/utils/toast-config";
 
 interface WelcomeDialogProps {
   isOpen: boolean;
@@ -32,9 +33,9 @@ export const WelcomeDialog = ({ isOpen, onComplete }: WelcomeDialogProps) => {
   };
 
   const createProfile = async () => {
-    console.log("🚀 Starting profile creation process");
+    logger.info("Starting profile creation process");
     if (isCreatingProfile) {
-      console.log("⚠️ Profile creation already in progress");
+      logger.warn("Profile creation already in progress");
       return;
     }
     
@@ -42,20 +43,20 @@ export const WelcomeDialog = ({ isOpen, onComplete }: WelcomeDialogProps) => {
     setProgress(25);
 
     try {
-      console.log("🔍 Fetching current session");
+      logger.info("Fetching current session");
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError) {
-        console.error("❌ Session error:", sessionError);
+        logger.error("Session error", sessionError);
         throw sessionError;
       }
       
       if (!session?.user?.id) {
-        console.error("❌ No user session found");
+        logger.error("No user session found");
         throw new Error("No user session found");
       }
 
-      console.log("✅ Session found for user:", session.user.email);
+      logger.info("Session found", { email: session.user.email });
       setProgress(50);
 
       // First check if profile already exists
@@ -66,7 +67,7 @@ export const WelcomeDialog = ({ isOpen, onComplete }: WelcomeDialogProps) => {
         .single();
 
       if (existingProfile) {
-        console.log("✅ Profile already exists, proceeding to home");
+        logger.info("Profile already exists, proceeding to home");
         setProgress(100);
         onComplete();
         navigate("/", { replace: true });
@@ -77,7 +78,7 @@ export const WelcomeDialog = ({ isOpen, onComplete }: WelcomeDialogProps) => {
       const fullName = session.user.user_metadata?.full_name || 'User';
       const avatarUrl = session.user.user_metadata?.avatar_url || null;
 
-      console.log("📝 Creating profile record");
+      logger.info("Creating profile record", { fullName });
       const { error: profileError } = await supabase
         .from('profiles')
         .insert([
@@ -90,40 +91,40 @@ export const WelcomeDialog = ({ isOpen, onComplete }: WelcomeDialogProps) => {
         ]);
 
       if (profileError) {
-        console.error("❌ Profile creation error:", profileError);
+        logger.error("Profile creation error", profileError);
         throw profileError;
       }
 
-      console.log("✅ Profile created successfully");
+      logger.info("Profile created successfully");
       setProgress(75);
 
-      console.log("🔄 Refreshing profile data");
+      logger.info("Refreshing profile data");
       await refreshProfile();
       
-      console.log("✅ Profile refresh complete");
+      logger.info("Profile refresh complete");
       setProgress(90);
 
       // Verify profile creation
       await verifyProfile(session.user.id);
 
-      console.log("✅ Profile verified, completing onboarding");
+      logger.info("Profile verified, completing onboarding");
       setProgress(100);
       onComplete();
       navigate("/", { replace: true });
-      toast.success("Welcome to Neuralitix! Your profile has been created.");
+      showToast.success("Welcome to Neuralitix! Your profile has been created.");
 
     } catch (error) {
-      console.error("❌ Error in profile creation:", error);
+      logger.error("Error in profile creation", error);
       
       if (retryCount < 3) {
-        toast.error("Profile creation failed. Retrying...");
+        showToast.error("Profile creation failed. Retrying...");
         setRetryCount(prev => prev + 1);
         setProgress(0);
         setIsCreatingProfile(false);
         // Retry after a short delay
         setTimeout(createProfile, 1000);
       } else {
-        toast.error("Failed to create profile. Please try again later.");
+        showToast.error("Failed to create profile. Please try again later.");
         setIsCreatingProfile(false);
         setProgress(0);
         navigate("/auth", { replace: true });
