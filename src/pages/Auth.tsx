@@ -11,7 +11,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, X } from "lucide-react";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -37,7 +37,7 @@ type FormValues = z.infer<typeof formSchema>;
 const Auth = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(searchParams.get("type") === "signup");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -67,6 +67,9 @@ const Auth = () => {
       window.history.replaceState({}, '', `${window.location.pathname}?${newParams}`);
       toast.success("Email verified successfully! Please sign in to continue.");
     }
+
+    // Update isSignUp when type parameter changes
+    setIsSignUp(searchParams.get("type") === "signup");
 
     checkSession();
   }, [navigate, searchParams]);
@@ -113,9 +116,22 @@ const Auth = () => {
     }
   };
 
+  const handleClose = () => {
+    navigate("/");
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="w-full max-w-md p-8 space-y-6 bg-card rounded-lg shadow-lg">
+      <div className="w-full max-w-md p-8 space-y-6 bg-card rounded-lg shadow-lg relative">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute right-4 top-4"
+          onClick={handleClose}
+        >
+          <X className="h-4 w-4" />
+        </Button>
+
         <div className="text-center">
           <h1 className="text-2xl font-bold">
             {isSignUp ? "Create an account" : "Sign in to your account"}
@@ -131,6 +147,10 @@ const Auth = () => {
                 setIsSignUp(!isSignUp);
                 setAuthError(null);
                 form.reset();
+                // Update URL parameter
+                const newParams = new URLSearchParams(searchParams);
+                newParams.set("type", isSignUp ? "signin" : "signup");
+                navigate(`/auth?${newParams.toString()}`);
               }}
             >
               {isSignUp ? "Sign in" : "Sign up"}
