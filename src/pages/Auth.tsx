@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { Auth as SupabaseAuth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,6 +17,13 @@ const Auth = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const parseHashParams = (hash: string) => {
+    if (!hash) return {};
+    const params = new URLSearchParams(hash.replace('#', ''));
+    return Object.fromEntries(params.entries());
+  };
 
   useEffect(() => {
     const checkSession = async () => {
@@ -43,16 +50,19 @@ const Auth = () => {
         return;
       }
 
-      // Log all URL parameters for debugging
-      const allParams = Object.fromEntries(searchParams.entries());
-      console.log("All URL parameters:", allParams);
+      // Parse both URL parameters and hash parameters
+      const allParams = {
+        ...Object.fromEntries(searchParams.entries()),
+        ...parseHashParams(location.hash)
+      };
+      console.log("All parameters:", allParams);
 
-      // Extract magic link parameters
-      const type = searchParams.get('type');
-      const accessToken = searchParams.get('access_token');
-      const refreshToken = searchParams.get('refresh_token');
-      const hasError = searchParams.get('error');
-      const errorDescription = searchParams.get('error_description');
+      // Extract magic link parameters from URL or hash
+      const type = allParams.type;
+      const accessToken = allParams.access_token;
+      const refreshToken = allParams.refresh_token;
+      const hasError = allParams.error;
+      const errorDescription = allParams.error_description;
 
       console.log("Magic link parameters:", {
         type,
@@ -61,7 +71,6 @@ const Auth = () => {
         hasAccessToken: !!accessToken,
         hasRefreshToken: !!refreshToken,
         fullUrl: window.location.href,
-        siteUrl: window.SUPABASE_SITE_URL || 'not set'
       });
 
       // If this is a magic link callback with tokens
@@ -99,8 +108,6 @@ const Auth = () => {
       } else if (hasError) {
         console.error("Magic link error:", errorDescription);
         setErrorMessage(errorDescription || 'An error occurred during authentication');
-      } else {
-        console.log("No authentication tokens found in URL");
       }
     };
 
@@ -125,7 +132,7 @@ const Auth = () => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate, searchParams]);
+  }, [navigate, searchParams, location.hash]);
 
   const getErrorMessage = (error: AuthError) => {
     console.error("Authentication error details:", error);
