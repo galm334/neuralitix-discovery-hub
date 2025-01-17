@@ -1,28 +1,18 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { Auth as SupabaseAuth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
-import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import { AuthError, AuthApiError } from "@supabase/supabase-js";
+import { toast } from "sonner";
 
 const Auth = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [showSuccess, setShowSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-
-  // Get the initial view from URL parameters
   const initialView = searchParams.get('type') === 'signup' ? 'sign_up' : 'sign_in';
 
   useEffect(() => {
-    // Check if user came from email verification
-    const type = searchParams.get('type');
-    if (type === 'signup' && searchParams.get('error_description') === 'Email already confirmed') {
-      setShowSuccess(true);
-      toast.success("Email verified successfully! Please sign in.");
-    }
-
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
@@ -35,20 +25,27 @@ const Auth = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state changed:', event, session);
       
-      if (event === 'SIGNED_IN' && session) {
+      if (event === 'SIGNED_IN') {
+        toast.success("Successfully signed in!");
+        navigate("/");
+      } else if (event === 'SIGNED_UP') {
+        toast.success("Account created successfully! You are now signed in.");
         navigate("/");
       } else if (event === 'SIGNED_OUT') {
         navigate("/auth");
-      }
-
-      // Handle auth errors
-      if (event === 'USER_UPDATED') {
+      } else if (event === 'USER_UPDATED') {
         const { error } = await supabase.auth.getSession();
         if (error) {
           setErrorMessage(getErrorMessage(error));
         }
       }
     });
+
+    // Check for email confirmation success
+    const type = searchParams.get('type');
+    if (type === 'signup' && searchParams.get('error_description') === 'Email already confirmed') {
+      toast.success("Email verified successfully! Please sign in.");
+    }
 
     return () => {
       subscription.unsubscribe();
@@ -79,13 +76,8 @@ const Auth = () => {
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-2">Welcome to Neuralitix</h1>
           <p className="text-muted-foreground">Sign in or create an account to continue</p>
-          {showSuccess && (
-            <div className="mt-4 p-4 bg-green-50 text-green-700 rounded-md">
-              Email verified successfully! Please sign in with your credentials.
-            </div>
-          )}
           {errorMessage && (
-            <div className="mt-4 p-4 bg-red-50 text-red-700 rounded-md">
+            <div className="mt-4 p-4 bg-destructive/10 text-destructive rounded-md">
               {errorMessage}
             </div>
           )}
