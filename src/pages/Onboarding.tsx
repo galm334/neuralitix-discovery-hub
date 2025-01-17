@@ -79,16 +79,17 @@ const Onboarding = () => {
         throw insertError;
       }
 
+      // Refresh the profile in AuthContext
       await refreshProfile();
+      
+      // Update the local state
       setShowTerms(false);
+      
+      // Show success message
       toast.success("Welcome to Neuralitix!");
       
-      // Refresh the session to trigger AuthContext navigation
-      const { error: sessionError } = await supabase.auth.setSession({
-        access_token: session.access_token,
-        refresh_token: session.refresh_token
-      });
-      if (sessionError) throw sessionError;
+      // Navigate to home page
+      navigate("/", { replace: true });
     } catch (error) {
       console.error("Error in handleAcceptTerms:", error);
       toast.error("Failed to accept terms. Please try again.");
