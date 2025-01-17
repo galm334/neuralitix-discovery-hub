@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Session, AuthError, AuthApiError } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,6 +26,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
+  const initializationComplete = useRef(false);
 
   const fetchProfile = async (userId: string) => {
     console.log("🔍 Fetching profile for user:", userId);
@@ -81,7 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (data.session) {
           console.log("✅ Successfully established session from magic link");
-          toast.success("Successfully signed in!");
+          setSession(data.session);
           return true;
         }
       } catch (error) {
@@ -105,7 +106,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else if (!profile.terms_accepted) {
         console.log("➡️ Terms not accepted, redirecting to onboarding");
         navigate('/onboarding', { replace: true });
-      } else {
+      } else if (location.pathname === '/auth' || location.pathname === '/onboarding') {
         console.log("➡️ Profile complete, navigating to home");
         navigate('/', { replace: true });
       }
@@ -126,17 +127,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let mounted = true;
 
     const initializeAuth = async () => {
+      if (initializationComplete.current) return;
       console.log("🚀 === Starting Authentication Flow ===");
       setIsLoading(true);
       
       try {
         if (location.hash && location.hash.includes('access_token')) {
           console.log("🔑 Magic link detected, processing...");
-          const success = await handleMagicLinkAuth(location.hash);
-          if (!success) {
-            setIsLoading(false);
-            return;
-          }
+          await handleMagicLinkAuth(location.hash);
         }
 
         console.log("🔍 Checking current session...");
@@ -151,6 +149,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             await handleNavigation(session);
           }
           setIsLoading(false);
+          initializationComplete.current = true;
         }
       } catch (error) {
         console.error("❌ Error in initializeAuth:", error);
@@ -159,6 +158,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         if (mounted) {
           setIsLoading(false);
+          initializationComplete.current = true;
         }
       }
     };
@@ -171,21 +171,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (mounted) {
         setSession(session);
 
-        try {
-          if (session) {
-            if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-              await handleNavigation(session);
-            }
-          } else if (event === 'SIGNED_OUT') {
-            console.log("👋 User signed out, clearing profile");
-            setProfile(null);
-            navigate('/auth');
+        if (session) {
+          if (event === 'SIGNED_IN') {
+            await handleNavigation(session);
           }
-        } catch (error) {
-          console.error("❌ Error handling auth state change:", error);
-          if (error instanceof AuthError) {
-            handleAuthError(error);
-          }
+        } else if (event === 'SIGNED_OUT') {
+          console.log("👋 User signed out, clearing profile");
+          setProfile(null);
+          navigate('/auth');
         }
       }
     });
