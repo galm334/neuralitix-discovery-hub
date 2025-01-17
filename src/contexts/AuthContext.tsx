@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Session, AuthError, AuthApiError } from '@supabase/supabase-js';
+import { Session, AuthError } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -27,6 +27,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
   const initializationComplete = useRef(false);
+  const navigationInProgress = useRef(false);
 
   const fetchProfile = async (userId: string) => {
     console.log("🔍 [AuthContext] Fetching profile for user:", userId);
@@ -54,7 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       case 'Token expired':
       case 'Invalid JWT':
         toast.error('Your session has expired. Please sign in again.');
-        navigate('/auth');
+        navigate('/auth', { replace: true });
         break;
       case 'Network error':
         toast.error('Network error. Please check your connection.');
@@ -65,6 +66,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const handleNavigation = async (session: Session) => {
+    if (navigationInProgress.current) {
+      console.log("⏳ [AuthContext] Navigation already in progress, skipping...");
+      return;
+    }
+
+    navigationInProgress.current = true;
     console.log("🧭 [AuthContext] Starting navigation handling");
     console.log("📍 [AuthContext] Current location:", location.pathname);
     console.log("👤 [AuthContext] Session user:", session.user.email);
@@ -79,26 +86,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log("✨ [AuthContext] Profile exists:", hasProfile);
       console.log("📝 [AuthContext] Terms accepted:", hasAcceptedTerms);
 
-      if (location.pathname === '/auth') {
-        if (!hasProfile || !hasAcceptedTerms) {
-          console.log("➡️ [AuthContext] Redirecting to onboarding from auth");
-          navigate('/onboarding', { replace: true });
-        } else {
-          console.log("➡️ [AuthContext] Redirecting to home from auth");
-          navigate('/', { replace: true });
-        }
-        return;
-      }
-
       if (!hasProfile || !hasAcceptedTerms) {
-        if (location.pathname !== '/onboarding') {
-          console.log("➡️ [AuthContext] Redirecting to onboarding due to incomplete profile");
-          navigate('/onboarding', { replace: true });
-        }
+        console.log("➡️ [AuthContext] Redirecting to onboarding");
+        navigate('/onboarding', { replace: true });
+      } else if (location.pathname === '/auth' || location.pathname === '/onboarding') {
+        console.log("➡️ [AuthContext] Redirecting to home");
+        navigate('/', { replace: true });
       }
     } catch (error) {
       console.error('❌ [AuthContext] Navigation error:', error);
       toast.error('Error loading user data');
+    } finally {
+      navigationInProgress.current = false;
     }
   };
 
@@ -161,7 +160,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else if (event === 'SIGNED_OUT') {
           console.log("👋 [AuthContext] User signed out, clearing profile");
           setProfile(null);
-          navigate('/auth');
+          navigate('/auth', { replace: true });
         }
       }
     });
