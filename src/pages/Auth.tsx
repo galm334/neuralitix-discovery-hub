@@ -6,6 +6,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { AuthError, AuthApiError } from "@supabase/supabase-js";
 import { toast } from "sonner";
 
+declare global {
+  interface Window {
+    SUPABASE_SITE_URL?: string;
+  }
+}
+
 const Auth = () => {
   const [searchParams] = useSearchParams();
   const [errorMessage, setErrorMessage] = useState("");
@@ -100,7 +106,6 @@ const Auth = () => {
 
     checkSession();
 
-    // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log("Auth state changed:", { 
         event, 
