@@ -110,6 +110,7 @@ const Auth = () => {
               },
             },
           }}
+          providers={[]}
           localization={{
             variables: {
               magic_link: {
