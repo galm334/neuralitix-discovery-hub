@@ -68,6 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log("🧭 Handling navigation for session:", session.user.email);
     try {
       const profile = await fetchProfile(session.user.id);
+      console.log("📋 Current profile state:", profile);
       setProfile(profile);
 
       // If we're on the auth page and have a profile with accepted terms,
@@ -84,6 +85,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         navigate('/onboarding', { replace: true });
         return;
       }
+
+      // If we're on onboarding but terms are accepted, redirect to home
+      if (location.pathname === '/onboarding' && profile?.terms_accepted) {
+        console.log("➡️ Already completed onboarding, redirecting to home");
+        navigate('/', { replace: true });
+        return;
+      }
     } catch (error) {
       console.error('❌ Navigation error:', error);
       toast.error('Error loading user data');
@@ -91,9 +99,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const refreshProfile = async () => {
-    if (!session?.user?.id) return;
+    if (!session?.user?.id) {
+      console.log("⚠️ Cannot refresh profile: No active session");
+      return;
+    }
     console.log("🔄 Refreshing profile...");
     const profile = await fetchProfile(session.user.id);
+    console.log("✨ Updated profile:", profile);
     setProfile(profile);
   };
 
