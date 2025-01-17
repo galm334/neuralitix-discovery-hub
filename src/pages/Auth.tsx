@@ -66,7 +66,7 @@ const Auth = () => {
       // Remove verification parameter from URL
       const newParams = new URLSearchParams(searchParams);
       newParams.delete("verification");
-      window.history.replaceState({}, '', `${window.location.pathname}?${newParams}`);
+      setSearchParams(newParams);
       
       toast(
         <div className="flex flex-col gap-4 max-w-md">
@@ -102,11 +102,8 @@ const Auth = () => {
       );
     }
 
-    // Update isSignUp when type parameter changes
-    setIsSignUp(searchParams.get("type") === "signup");
-
     checkSession();
-  }, [navigate, searchParams]);
+  }, [navigate, searchParams, setSearchParams]);
 
   const handleAuthError = (error: AuthError) => {
     console.error('Auth error:', error);
@@ -184,7 +181,7 @@ const Auth = () => {
                 // Update URL parameter
                 const newParams = new URLSearchParams(searchParams);
                 newParams.set("type", isSignUp ? "signin" : "signup");
-                navigate(`/auth?${newParams.toString()}`);
+                setSearchParams(newParams);
               }}
             >
               {isSignUp ? "Sign in" : "Sign up"}
