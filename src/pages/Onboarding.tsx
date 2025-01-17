@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense, lazy } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
@@ -10,6 +10,11 @@ import { ExternalLink, Shield, Upload, User } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { generateNickname } from "@/utils/nickname-generator";
+
+// Lazy load the WelcomeDialog component
+const WelcomeDialog = lazy(() => import('@/components/onboarding/WelcomeDialog').then(module => ({
+  default: module.WelcomeDialog
+})));
 
 const MAX_FILE_SIZE = 500 * 1024; // 500KB
 const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/gif'];
@@ -23,9 +28,18 @@ const Onboarding = () => {
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const [termsAccepted, setTermsAccepted] = useState(false);
   const navigate = useNavigate();
-  const { refreshProfile } = useAuth();
+  const { refreshProfile, session } = useAuth();
 
   useAuthRedirect();
+
+  // Check for session and redirect if not present
+  useEffect(() => {
+    if (!session) {
+      console.log("⚠️ No session found in Onboarding, redirecting to auth page");
+      navigate("/auth", { replace: true });
+      return;
+    }
+  }, [session, navigate]);
 
   useEffect(() => {
     const checkSessionAndSetup = async () => {
@@ -52,6 +66,8 @@ const Onboarding = () => {
       } catch (error) {
         console.error("❌ Error in checkSessionAndSetup:", error);
         toast.error("Something went wrong. Please try again.");
+        navigate("/auth");
+      } finally {
         setIsLoading(false);
       }
     };
@@ -76,6 +92,9 @@ const Onboarding = () => {
     setProfilePic(file);
     const objectUrl = URL.createObjectURL(file);
     setPreviewUrl(objectUrl);
+
+    // Cleanup previous preview URL
+    return () => URL.revokeObjectURL(objectUrl);
   };
 
   const uploadProfilePicture = async (userId: string, file: File): Promise<string | null> => {
@@ -107,7 +126,6 @@ const Onboarding = () => {
     console.log("🚀 Starting profile creation...");
     try {
       setIsLoading(true);
-      const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
         toast.error("Session expired. Please login again.");
@@ -152,7 +170,11 @@ const Onboarding = () => {
   };
 
   if (isLoading) {
-    return <div className="min-h-screen bg-background" />;
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
   }
 
   return (
@@ -284,6 +306,14 @@ const Onboarding = () => {
           </Button>
         </div>
       </div>
+
+      <Suspense fallback={
+        <div className="fixed inset-0 bg-background/80 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        </div>
+      }>
+        <WelcomeDialog isOpen={false} onComplete={() => {}} />
+      </Suspense>
     </div>
   );
 };
