@@ -46,22 +46,16 @@ const Auth = () => {
 
       console.log("Magic link parameters:", {
         type,
-        hasError: hasError,
+        hasError,
         errorDescription,
         hasAccessToken: !!accessToken,
         hasRefreshToken: !!refreshToken,
         fullUrl: window.location.href
       });
 
-      if (hasError) {
-        console.error("Magic link error:", errorDescription);
-        setErrorMessage(errorDescription || 'An error occurred during authentication');
-        return;
-      }
-
-      // Handle magic link authentication
+      // If this is a magic link callback with tokens
       if (accessToken && refreshToken) {
-        console.log(`Processing authentication with ${type} magic link...`);
+        console.log(`Processing ${type} magic link authentication...`);
         try {
           const { data: { session }, error } = await supabase.auth.setSession({
             access_token: accessToken,
@@ -89,6 +83,9 @@ const Auth = () => {
           console.error("Unexpected error during magic link processing:", error);
           setErrorMessage("An unexpected error occurred");
         }
+      } else if (hasError) {
+        console.error("Magic link error:", errorDescription);
+        setErrorMessage(errorDescription || 'An error occurred during authentication');
       } else {
         console.log("No authentication tokens found in URL");
       }
