@@ -129,24 +129,24 @@ const Auth = () => {
           localization={{
             variables: {
               sign_in: {
-                password_label: 'Password',
                 email_label: 'Email',
                 email_input_placeholder: 'Your email',
+                password_label: 'Password',
                 password_input_placeholder: 'Your password',
                 button_label: 'Sign in',
                 loading_button_label: 'Signing in ...',
                 link_text: "Don't have an account? Sign up"
               },
               sign_up: {
-                password_label: 'Password',
                 email_label: 'Email',
                 email_input_placeholder: 'Your email',
+                password_label: 'Password',
                 password_input_placeholder: 'Your password',
                 button_label: 'Sign up',
                 loading_button_label: 'Signing up ...',
                 link_text: "Already have an account? Sign in"
-              },
-            },
+              }
+            }
           }}
         />
       </div>
