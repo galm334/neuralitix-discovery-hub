@@ -4,11 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Auth as SupabaseAuth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { toast } from "sonner";
+import { AuthError, AuthApiError } from "@supabase/supabase-js";
 
 const Auth = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [showSuccess, setShowSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     // Check if user came from email verification
@@ -27,9 +29,21 @@ const Auth = () => {
 
     checkSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event, session);
+      
       if (event === 'SIGNED_IN' && session) {
         navigate("/");
+      } else if (event === 'SIGNED_OUT') {
+        navigate("/auth");
+      }
+
+      // Handle auth errors
+      if (event === 'USER_UPDATED') {
+        const { error } = await supabase.auth.getSession();
+        if (error) {
+          setErrorMessage(getErrorMessage(error));
+        }
       }
     });
 
@@ -38,25 +52,22 @@ const Auth = () => {
     };
   }, [navigate, searchParams]);
 
-  const customStyles = {
-    container: {
-      position: 'relative' as const,
-    },
-    input: {
-      backgroundColor: 'white',
-      color: '#1F2937',
-      borderColor: '#E5E7EB',
-    },
-    label: {
-      color: '#F9FAFB',
-    },
-    button: {
-      backgroundColor: '#6366F1',
-      color: '#ffffff',
-    },
-    anchor: {
-      color: '#6366F1',
+  const getErrorMessage = (error: AuthError) => {
+    if (error instanceof AuthApiError) {
+      switch (error.code) {
+        case 'invalid_credentials':
+          return 'Invalid email or password. Please check your credentials and try again.';
+        case 'email_not_confirmed':
+          return 'Please verify your email address before signing in.';
+        case 'user_not_found':
+          return 'No user found with these credentials.';
+        case 'invalid_grant':
+          return 'Invalid login credentials.';
+        default:
+          return error.message;
+      }
     }
+    return error.message;
   };
 
   return (
@@ -68,6 +79,11 @@ const Auth = () => {
           {showSuccess && (
             <div className="mt-4 p-4 bg-green-50 text-green-700 rounded-md">
               Email verified successfully! Please sign in with your credentials.
+            </div>
+          )}
+          {errorMessage && (
+            <div className="mt-4 p-4 bg-red-50 text-red-700 rounded-md">
+              {errorMessage}
             </div>
           )}
         </div>
@@ -94,7 +110,18 @@ const Auth = () => {
                 },
               }
             },
-            style: customStyles,
+            style: {
+              button: {
+                borderRadius: '0.375rem',
+                height: '2.5rem',
+              },
+              input: {
+                borderRadius: '0.375rem',
+              },
+              message: {
+                borderRadius: '0.375rem',
+              },
+            },
           }}
           providers={[]}
           showLinks={true}
@@ -103,18 +130,18 @@ const Auth = () => {
             variables: {
               sign_in: {
                 password_label: 'Password',
-                password_input_placeholder: 'Your password',
                 email_label: 'Email',
                 email_input_placeholder: 'Your email',
+                password_input_placeholder: 'Your password',
                 button_label: 'Sign in',
                 loading_button_label: 'Signing in ...',
                 link_text: "Don't have an account? Sign up"
               },
               sign_up: {
                 password_label: 'Password',
-                password_input_placeholder: 'Your password',
                 email_label: 'Email',
                 email_input_placeholder: 'Your email',
+                password_input_placeholder: 'Your password',
                 button_label: 'Sign up',
                 loading_button_label: 'Signing up ...',
                 link_text: "Already have an account? Sign in"
