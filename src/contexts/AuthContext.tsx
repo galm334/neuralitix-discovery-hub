@@ -129,15 +129,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const fetchedProfile = await Promise.race([fetchPromise, timeoutPromise]) as Profile | null;
       
-      const isMagicLinkAuth = new URLSearchParams(window.location.search).get('type') === 'recovery';
-      
-      if ((isMagicLinkAuth || location.pathname === '/auth') && 
-          (!fetchedProfile || !fetchedProfile.terms_accepted)) {
+      // Only redirect to onboarding if there's no profile
+      if (!fetchedProfile) {
+        logger.info("No profile found, redirecting to onboarding");
         navigate('/onboarding', { replace: true });
         return;
       }
 
       setProfile(fetchedProfile);
+      
+      // If on auth page, redirect to home
+      if (location.pathname === '/auth') {
+        navigate('/', { replace: true });
+      }
+      
     } catch (error) {
       logger.error("Navigation error", { error });
       toast.error("Failed to load your profile");
