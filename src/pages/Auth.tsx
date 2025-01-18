@@ -15,19 +15,25 @@ const Auth = () => {
 
   useEffect(() => {
     const handleAuth = async () => {
-      logger.info("Starting magic link authentication flow");
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
-        if (session) {
-          logger.info("User has a session, checking if new user");
-          const { data: profile, error: profileError } = await supabase
+        if (sessionError) {
+          logger.error("Session error:", sessionError);
+          setErrorMessage("Authentication failed. Please try again.");
+          return;
+        }
+
+        if (session?.user) {
+          logger.info("User authenticated, checking profile");
+          
+          const { data: profile } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', session.user.id)
             .single();
 
-          if (profileError || !profile) {
+          if (!profile) {
             logger.info("No profile found, redirecting to onboarding");
             navigate('/onboarding', { replace: true });
           } else {
@@ -36,12 +42,36 @@ const Auth = () => {
           }
         }
       } catch (error) {
-        logger.error("Error in auth flow:", error);
+        logger.error("Auth error:", error);
         setErrorMessage("An unexpected error occurred");
       }
     };
 
+    // Run auth check immediately
     handleAuth();
+
+    // Also listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      logger.info("Auth state changed:", event);
+      
+      if (event === 'SIGNED_IN' && session) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+
+        if (!profile) {
+          navigate('/onboarding', { replace: true });
+        } else {
+          navigate('/', { replace: true });
+        }
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [navigate]);
 
   return (
