@@ -21,8 +21,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// ⚠️ WARNING: DO NOT MODIFY THE AUTHENTICATION FLOW WITHOUT THOROUGH TESTING
-// Changes to this component can break user sign-up/sign-in functionality
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -31,7 +29,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const initializationComplete = useRef(false);
   const maxRetries = 3;
-  const retryDelay = 1000; // Base delay in milliseconds
+  const retryDelay = 1000;
 
   const fetchProfile = async (userId: string, retryCount = 0): Promise<Profile | null> => {
     try {
@@ -48,51 +46,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .maybeSingle();
 
       if (error) {
-        logger.error("Supabase error fetching profile", { 
+        logger.error("Profile fetch error", { 
           error, 
           status,
-          userId, 
-          retryCount 
+          userId,
+          retryAttempt: retryCount 
         });
-        
-        // Network error handling with exponential backoff
-        if (retryCount < maxRetries && (error.message.includes('fetch') || error.code === 'NETWORK_ERROR')) {
+
+        if (retryCount < maxRetries && (error.message.includes('fetch') || status === 503 || status === 429)) {
           const delay = retryDelay * Math.pow(2, retryCount);
-          logger.info("Retrying profile fetch after delay", { 
-            delay, 
-            retryCount: retryCount + 1 
+          logger.info("Retrying profile fetch", { 
+            nextAttemptIn: delay,
+            attemptNumber: retryCount + 1 
           });
           await new Promise(resolve => setTimeout(resolve, delay));
           return fetchProfile(userId, retryCount + 1);
         }
-        
         throw error;
       }
 
       logger.info("Profile fetch result", { 
         success: !!data,
         hasProfile: !!data,
-        userId,
-        profileData: data 
+        userId
       });
       
       return data;
     } catch (error) {
-      logger.error("Error in fetchProfile", { error, userId, retryCount });
+      logger.error("Profile fetch failed", { error, userId, retryCount });
       
-      // Additional retry for network errors
       if (retryCount < maxRetries && error instanceof Error && 
          (error.message.includes('fetch') || error.message.includes('network'))) {
         const delay = retryDelay * Math.pow(2, retryCount);
-        logger.info("Retrying after network error", { 
-          delay, 
-          retryCount: retryCount + 1 
-        });
         await new Promise(resolve => setTimeout(resolve, delay));
         return fetchProfile(userId, retryCount + 1);
       }
       
-      toast.error('Error loading profile. Please check your internet connection and refresh.');
+      toast.error('Unable to load profile. Please check your connection.');
       return null;
     }
   };
@@ -174,7 +164,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { data: { session: initialSession }, error } = await supabase.auth.getSession();
         
         if (error) {
-          logger.error("Error getting initial session", { error });
+          logger.error("Session initialization error", { error });
           throw error;
         }
         
@@ -196,11 +186,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           initializationComplete.current = true;
         }
       } catch (error) {
-        logger.error("Error in initializeAuth", { error });
+        logger.error("Auth initialization failed", { error });
         if (mounted) {
           setIsLoading(false);
           initializationComplete.current = true;
-          toast.error('Error initializing authentication. Please refresh the page.');
+          toast.error('Authentication error. Please refresh the page.');
         }
       }
     };
