@@ -74,15 +74,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const fetchedProfile = await fetchProfile(session.user.id);
       
-      // IMPORTANT: Only redirect to onboarding if:
-      // 1. No profile exists
-      // 2. User is not already on onboarding or auth pages
-      // 3. User is not on standalone-chat page
-      if (!fetchedProfile && 
-          !['/onboarding', '/auth', '/standalone-chat'].includes(location.pathname)) {
-        logger.info("No profile found, redirecting to onboarding", { 
+      // Only redirect to onboarding after auth if no profile exists or terms not accepted
+      if (location.pathname === '/auth' && (!fetchedProfile || !fetchedProfile.terms_accepted)) {
+        logger.info("Auth completed, redirecting to onboarding", { 
           userId: session.user.id,
-          currentPath: location.pathname 
+          hasProfile: !!fetchedProfile,
+          termsAccepted: fetchedProfile?.terms_accepted 
         });
         navigate('/onboarding', { replace: true });
         return;
