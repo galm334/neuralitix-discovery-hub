@@ -14,17 +14,26 @@ export function ChatWidget() {
       'https://www.neuralitix.com',
       'http://localhost:3000',
       'https://gptengineer.app',
-      'https://lovable.dev'
+      'https://lovable.dev',
+      'https://tlrrdakthzeytwpfygjn.supabase.co'
     ];
 
     const handleMessage = (event: MessageEvent) => {
-      // Validate origin
+      // Enhanced origin validation with detailed logging
       if (!allowedOrigins.includes(event.origin)) {
-        logger.error('Blocked message from untrusted origin:', event.origin);
+        logger.warn('Blocked message from unauthorized origin', {
+          origin: event.origin,
+          timestamp: new Date().toISOString(),
+          allowedOrigins
+        });
         return;
       }
 
-      logger.info('Received message from origin:', event.origin);
+      logger.info('Received message', {
+        origin: event.origin,
+        timestamp: new Date().toISOString(),
+        messageType: event.data?.type
+      });
 
       if (event.data?.type === 'OPEN_CHATBOT') {
         const chatbotEmbed = document.querySelector('#chatbot-embed');
@@ -36,13 +45,28 @@ export function ChatWidget() {
               view: window
             });
             chatbotEmbed.dispatchEvent(clickEvent);
-            logger.info('Successfully triggered chatbot open');
+            logger.info('Chatbot open triggered', {
+              timestamp: new Date().toISOString(),
+              success: true
+            });
           } catch (error) {
-            logger.error('Error opening chatbot:', error);
+            logger.error('Error opening chatbot', {
+              error: error instanceof Error ? error.message : 'Unknown error',
+              timestamp: new Date().toISOString(),
+              stack: error instanceof Error ? error.stack : undefined
+            });
           }
         }
       }
     };
+
+    // Set up timeout handling
+    const messageTimeout = setTimeout(() => {
+      logger.warn('Message channel timeout reached', {
+        timeout: window.MESSAGE_TIMEOUT,
+        timestamp: new Date().toISOString()
+      });
+    }, window.MESSAGE_TIMEOUT || 10000);
 
     // Increase message channel timeout
     const style = document.createElement('style');
@@ -67,12 +91,18 @@ export function ChatWidget() {
     document.head.appendChild(style);
 
     window.addEventListener('message', handleMessage);
-    logger.info('Message event listener attached');
+    logger.info('Message event listener attached', {
+      timestamp: new Date().toISOString(),
+      allowedOrigins
+    });
 
     return () => {
       window.removeEventListener('message', handleMessage);
       document.head.removeChild(style);
-      logger.info('Message event listener and styles cleaned up');
+      clearTimeout(messageTimeout);
+      logger.info('Chat widget cleanup completed', {
+        timestamp: new Date().toISOString()
+      });
     };
   }, []);
 
@@ -81,7 +111,13 @@ export function ChatWidget() {
   }
 
   const targetOrigin = window.location.origin;
-  logger.info('Chat widget initialized with target origin:', targetOrigin);
+  // Validate target origin
+  if (!targetOrigin.includes('neuralitix.com') && targetOrigin !== 'http://localhost:3000') {
+    logger.warn('Invalid target origin detected', {
+      targetOrigin,
+      timestamp: new Date().toISOString()
+    });
+  }
 
   return (
     <div 
