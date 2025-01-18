@@ -102,39 +102,37 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
   };
 
   return (
-    <>
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <OnboardingFields
-          name={name}
-          setName={setName}
-          nickname={nickname}
-          setNickname={setNickname}
-          email={session?.user?.email}
-          onFileSelect={setProfilePic}
-        />
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <OnboardingFields
+        name={name}
+        setName={setName}
+        nickname={nickname}
+        setNickname={setNickname}
+        email={session?.user?.email}
+        onFileSelect={setProfilePic}
+      />
 
-        <TermsAcceptance
-          termsAccepted={termsAccepted}
-          onShowTerms={onShowTerms}
-        />
+      <TermsAcceptance
+        termsAccepted={termsAccepted}
+        onShowTerms={onShowTerms}
+      />
 
-        <Button
-          type="submit"
-          className="w-full"
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? "Creating Profile..." : "Create Profile"}
-        </Button>
+      <Button
+        type="submit"
+        className="w-full"
+        disabled={isSubmitting}
+      >
+        {isSubmitting ? "Creating Profile..." : "Create Profile"}
+      </Button>
 
-        {isSubmitting && (
-          <div className="space-y-4">
-            <Progress value={progress} className="w-full" />
-            <p className="text-sm text-center text-muted-foreground">
-              {progress < 100 ? "Setting up your profile..." : "Almost there..."}
-            </p>
-          </div>
-        )}
-      </form>
-    </>
+      {isSubmitting && (
+        <div className="space-y-4">
+          <Progress value={progress} className="w-full" />
+          <p className="text-sm text-center text-muted-foreground">
+            {progress < 100 ? "Setting up your profile..." : "Almost there..."}
+          </p>
+        </div>
+      )}
+    </form>
   );
 };

@@ -18,7 +18,6 @@ const Auth = () => {
 
       if (session?.user?.id) {
         try {
-          // Check if user has a profile
           const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('id')
@@ -32,10 +31,10 @@ const Auth = () => {
           }
 
           if (!profile?.id) {
-            logger.info("No profile found, redirecting to onboarding", { userId: session.user.id });
+            logger.info("No profile found, redirecting to onboarding");
             navigate('/onboarding', { replace: true });
           } else {
-            logger.info("Profile exists, redirecting to home", { userId: session.user.id });
+            logger.info("Profile exists, redirecting to home");
             navigate('/', { replace: true });
           }
         } catch (error) {
