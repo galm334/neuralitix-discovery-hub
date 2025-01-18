@@ -11,7 +11,7 @@ import { showToast } from "@/utils/toast-config";
 import { supabase } from "@/integrations/supabase/client";
 import { ProfilePictureInput } from "./ProfilePictureInput";
 import { ProgressDialog } from "./ProgressDialog";
-import { waitForProfileCreation } from "./ProfileVerification";
+import { verifyProfile } from "./ProfileVerification";
 
 interface OnboardingFormProps {
   onShowTerms: () => void;
@@ -59,13 +59,11 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
 
     setIsSubmitting(true);
     setShowProgress(true);
-    setProgress(0);
+    setProgress(20);
 
     try {
       let avatarUrl = null;
       logger.info("Starting profile creation process");
-
-      setProgress(20);
 
       if (profilePic) {
         logger.info("Uploading profile picture");
@@ -81,20 +79,18 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
           throw new Error("Failed to upload profile picture: " + uploadError.message);
         }
 
-        logger.info("Profile picture uploaded successfully");
-        setProgress(40);
-
         const { data: { publicUrl } } = supabase.storage
           .from('profile-pictures')
           .getPublicUrl(filePath);
 
         avatarUrl = publicUrl;
-        logger.info("Generated public URL for profile picture:", avatarUrl);
+        logger.info("Profile picture uploaded successfully");
       }
 
       setProgress(60);
 
       const profileData = {
+        id: session.user.id,
         nickname,
         name,
         avatar_url: avatarUrl,
@@ -102,61 +98,30 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
         email: session.user.email
       };
 
-      logger.info("Updating profile with data:", profileData);
-
-      // First check if profile exists
-      const { data: existingProfile, error: checkError } = await supabase
+      const { error: upsertError } = await supabase
         .from('profiles')
-        .select('id')
-        .eq('id', session.user.id)
-        .single();
+        .upsert(profileData);
 
-      if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is "not found" error
-        logger.error("Error checking existing profile:", checkError);
-        throw new Error("Failed to check existing profile");
+      if (upsertError) {
+        throw new Error("Failed to create profile: " + upsertError.message);
       }
 
-      let updateError;
-      if (existingProfile) {
-        // Update existing profile
-        const { error } = await supabase
-          .from('profiles')
-          .update(profileData)
-          .eq('id', session.user.id);
-        updateError = error;
-      } else {
-        // Insert new profile
-        const { error } = await supabase
-          .from('profiles')
-          .insert([{ ...profileData, id: session.user.id }]);
-        updateError = error;
-      }
-
-      if (updateError) {
-        logger.error("Profile update/insert error:", updateError);
-        throw new Error("Failed to update profile: " + updateError.message);
-      }
-
-      logger.info("Profile updated successfully");
       setProgress(80);
 
-      const profileCreated = await waitForProfileCreation(session.user.id);
-      
-      if (!profileCreated) {
-        throw new Error("Profile creation verification failed. Please try again later.");
+      const isVerified = await verifyProfile(session.user.id);
+      if (!isVerified) {
+        throw new Error("Profile creation verification failed");
       }
 
       setProgress(100);
-
       await refreshProfile();
-      logger.info("Profile refreshed successfully");
       
       showToast.success("Profile created successfully!");
       navigate("/", { replace: true });
 
     } catch (error) {
       logger.error("Error during onboarding submission:", error);
-      showToast.error(error instanceof Error ? error.message : "Failed to create profile. Please try again.");
+      showToast.error(error instanceof Error ? error.message : "Failed to create profile");
       setRetryCount(prev => prev + 1);
     } finally {
       setIsSubmitting(false);
