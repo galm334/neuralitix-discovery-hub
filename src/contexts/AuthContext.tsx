@@ -87,13 +87,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         navigate('/', { replace: true });
         return;
       }
-
-      // Handle invalid routes for authenticated users
-      if (currentProfile && !['/', '/onboarding', '/auth'].includes(location.pathname)) {
-        console.log("➡️ [AuthContext] Redirecting to home from invalid path");
-        navigate('/', { replace: true });
-        return;
-      }
     } catch (error) {
       console.error('❌ [AuthContext] Navigation error:', error);
       toast.error('Error loading user data');
@@ -121,16 +114,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
       
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
+        // Get the initial session
+        const { data: { session: initialSession }, error } = await supabase.auth.getSession();
         
         if (error) throw error;
         
         if (mounted) {
-          console.log("✅ [AuthContext] Session check complete:", session ? "Active session" : "No session");
-          setSession(session);
-          if (session) {
-            await handleNavigation(session);
+          console.log("✅ [AuthContext] Session check complete:", initialSession ? "Active session" : "No session");
+          
+          if (initialSession) {
+            setSession(initialSession);
+            const fetchedProfile = await fetchProfile(initialSession.user.id);
+            setProfile(fetchedProfile);
+            await handleNavigation(initialSession);
           }
+          
           setIsLoading(false);
           initializationComplete.current = true;
         }
@@ -154,6 +152,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (mounted) {
         setSession(session);
         if (session) {
+          const fetchedProfile = await fetchProfile(session.user.id);
+          setProfile(fetchedProfile);
           await handleNavigation(session);
         } else if (event === 'SIGNED_OUT') {
           setProfile(null);
