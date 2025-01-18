@@ -26,9 +26,9 @@ export const verifyProfile = async (userId: string): Promise<boolean> => {
 
 export const waitForProfileCreation = async (
   userId: string,
-  maxAttempts: number = 5,
-  delayBetweenAttempts: number = 3000, // Increased to 3 seconds
-  maxWaitTime: number = 30000 // Increased to 30 seconds
+  maxAttempts: number = 10, // Increased from 5
+  delayBetweenAttempts: number = 5000, // Increased to 5 seconds
+  maxWaitTime: number = 60000 // Increased to 60 seconds
 ): Promise<boolean> => {
   const startTime = Date.now();
   let attempts = 0;

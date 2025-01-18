@@ -145,19 +145,6 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
     <>
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-4">
-          {session?.user?.email && (
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={session.user.email}
-                disabled
-                className="mt-1 bg-gray-100"
-              />
-            </div>
-          )}
-
           <div>
             <Label htmlFor="name">Your Real Name</Label>
             <Input
@@ -180,6 +167,19 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
               required
             />
           </div>
+
+          {session?.user?.email && (
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={session.user.email}
+                disabled
+                className="mt-1 bg-gray-100"
+              />
+            </div>
+          )}
 
           <ProfilePictureInput onFileSelect={setProfilePic} />
 
