@@ -25,7 +25,6 @@ export function AppSidebar() {
   const navigate = useNavigate();
 
   const handleAuthClick = (type: 'signin' | 'signup') => {
-    // Only navigate to auth when explicitly clicking sign in/up buttons
     navigate(`/auth?type=${type}`);
     setOpenMobile(false);
   };
@@ -102,14 +101,19 @@ export function AppSidebar() {
           {isMobile && (
             <li className="mt-4 space-y-2">
               <AuthOption
+                title="Sign up"
+                icon={UserPlus}
+                onClick={() => handleAuthClick('signup')}
+              />
+              <AuthOption
                 title="Sign in with Email"
                 icon={Mail}
                 onClick={() => handleAuthClick('signin')}
               />
               <AuthOption
-                title="Sign up"
-                icon={UserPlus}
-                onClick={() => handleAuthClick('signup')}
+                title="Sign in with Google"
+                icon={LogIn}
+                onClick={() => handleAuthClick('signin')}
               />
             </li>
           )}

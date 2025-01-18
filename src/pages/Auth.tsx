@@ -1,107 +1,97 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { Auth as SupabaseAuth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
-import { logger } from "@/utils/logger";
-import { X } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { AuthError, AuthApiError } from "@supabase/supabase-js";
 import { toast } from "sonner";
 
 const Auth = () => {
-  const [isLoading, setIsLoading] = useState(true);
+  const [searchParams] = useSearchParams();
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const parseHashParams = (hash: string) => {
+    if (!hash) return {};
+    const params = new URLSearchParams(hash.replace('#', ''));
+    return Object.fromEntries(params.entries());
+  };
 
   useEffect(() => {
-    const checkSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (session?.user) {
-          const { data: profile, error } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('id', session.user.id)
-            .single();
+    const handleAuth = async () => {
+      console.log("=== Starting Authentication Flow ===");
+      setIsLoading(true);
 
-          if (error && error.code !== 'PGRST116') {
-            logger.error("Error checking profile:", error);
-            toast.error("Error checking profile status");
+      try {
+        // Parse both URL parameters and hash parameters
+        const allParams = {
+          ...Object.fromEntries(searchParams.entries()),
+          ...parseHashParams(location.hash)
+        };
+        console.log("Auth parameters:", allParams);
+
+        const accessToken = allParams.access_token;
+        const refreshToken = allParams.refresh_token;
+        const hasError = allParams.error;
+        const errorDescription = allParams.error_description;
+
+        // If this is a magic link callback with tokens
+        if (accessToken && refreshToken) {
+          console.log("Processing magic link authentication...");
+          const { data: { session }, error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken
+          });
+
+          if (error) {
+            console.error("Error setting session:", error);
+            setErrorMessage(error.message);
             setIsLoading(false);
             return;
           }
 
-          if (!profile) {
-            navigate('/onboarding');
-          } else {
-            navigate('/');
-          }
-        } else {
-          setIsLoading(false);
-        }
-      } catch (error) {
-        logger.error("Session check error:", error);
-        setIsLoading(false);
-      }
-    };
-
-    checkSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      logger.info("Auth state changed:", { event, hasSession: !!session });
-      
-      if (event === 'SIGNED_IN' && session) {
-        try {
-          const { data: profile, error } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('id', session.user.id)
-            .single();
-
-          if (error && error.code !== 'PGRST116') {
-            logger.error("Error checking profile after sign in:", error);
-            toast.error("Error checking profile status");
+          if (session) {
+            console.log("Successfully established session");
+            // Navigation will be handled by AuthContext
+            setIsLoading(false);
             return;
           }
-
-          if (!profile) {
-            navigate('/onboarding');
-          } else {
-            navigate('/');
-          }
-        } catch (error) {
-          logger.error("Profile check error after sign in:", error);
-          toast.error("Error checking profile status");
+        } else if (hasError) {
+          console.error("Auth error:", errorDescription);
+          setErrorMessage(errorDescription || 'An error occurred during authentication');
         }
+      } catch (error) {
+        console.error("Unexpected error during auth:", error);
+        setErrorMessage("An unexpected error occurred");
       }
-    });
 
-    return () => {
-      subscription.unsubscribe();
+      setIsLoading(false);
     };
-  }, [navigate]);
+
+    handleAuth();
+  }, [navigate, searchParams, location.hash]);
 
   if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4 relative">
-      <div className="w-full max-w-md space-y-8 bg-card p-8 rounded-lg shadow-lg relative">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute right-4 top-4"
-          onClick={() => navigate(-1)}
-        >
-          <X className="h-4 w-4" />
-        </Button>
-        
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <div className="w-full max-w-md space-y-8 bg-card p-8 rounded-lg shadow-lg">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-2">Welcome</h1>
-          <p className="text-muted-foreground">
-            Sign in with magic link to continue
-          </p>
+          <h1 className="text-2xl font-bold mb-2">Welcome to Neuralitix</h1>
+          <p className="text-muted-foreground">Sign in with magic link to continue</p>
+          {errorMessage && (
+            <div className="mt-4 p-4 bg-destructive/10 text-destructive rounded-md">
+              {errorMessage}
+            </div>
+          )}
         </div>
 
         <SupabaseAuth 
