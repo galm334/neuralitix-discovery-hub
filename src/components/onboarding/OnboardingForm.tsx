@@ -9,8 +9,9 @@ import { generateNickname } from "@/utils/nickname-generator";
 import { logger } from "@/utils/logger";
 import { showToast } from "@/utils/toast-config";
 import { supabase } from "@/integrations/supabase/client";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Progress } from "@/components/ui/progress";
+import { ProfilePictureInput } from "./ProfilePictureInput";
+import { ProgressDialog } from "./ProgressDialog";
+import { waitForProfileCreation } from "./ProfileVerification";
 
 interface OnboardingFormProps {
   onShowTerms: () => void;
@@ -21,59 +22,16 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
   const [nickname, setNickname] = useState("");
   const [name, setName] = useState("");
   const [profilePic, setProfilePic] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showProgress, setShowProgress] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [retryCount, setRetryCount] = useState(0);
   const navigate = useNavigate();
   const { refreshProfile, session } = useAuth();
 
   useEffect(() => {
     setNickname(generateNickname());
   }, []);
-
-  useEffect(() => {
-    return () => {
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-      }
-    };
-  }, [previewUrl]);
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        showToast.error("File size must be less than 5MB");
-        return;
-      }
-      setProfilePic(file);
-      setPreviewUrl(URL.createObjectURL(file));
-    }
-  };
-
-  const verifyProfile = async (userId: string): Promise<boolean> => {
-    try {
-      logger.info("Starting profile verification for user:", userId);
-      
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, nickname, name, terms_accepted')
-        .eq('id', userId)
-        .maybeSingle();
-      
-      if (error) {
-        logger.error("Profile verification error:", error);
-        return false;
-      }
-      
-      logger.info("Profile verification result:", data);
-      return !!data && !!data.nickname && !!data.name && data.terms_accepted === true;
-    } catch (error) {
-      logger.error("Profile verification failed:", error);
-      return false;
-    }
-  };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -83,8 +41,6 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
       navigate("/auth");
       return;
     }
-
-    logger.info("Starting profile creation for user:", session.user.id);
 
     if (!termsAccepted) {
       showToast.error("Please accept the terms and conditions");
@@ -160,32 +116,9 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
       logger.info("Profile updated successfully");
       setProgress(80);
 
-      // Verify profile creation with increased timeout and delay between attempts
-      let profileCreated = false;
-      const startTime = Date.now();
-      const maxAttempts = 5;
-      const delayBetweenAttempts = 2000; // 2 seconds between attempts
-      const maxWaitTime = 15000; // 15 seconds total timeout
+      const profileCreated = await waitForProfileCreation(session.user.id);
       
-      logger.info("Starting profile verification loop");
-      let attempts = 0;
-      
-      while (Date.now() - startTime < maxWaitTime && attempts < maxAttempts) {
-        attempts++;
-        logger.info(`Verification attempt ${attempts}/${maxAttempts}`);
-        
-        profileCreated = await verifyProfile(session.user.id);
-        if (profileCreated) {
-          logger.info("Profile verified successfully");
-          break;
-        }
-        
-        logger.info(`Profile not verified yet, waiting ${delayBetweenAttempts}ms before retry...`);
-        await new Promise(resolve => setTimeout(resolve, delayBetweenAttempts));
-      }
-
       if (!profileCreated) {
-        logger.error("Profile creation verification timeout");
         throw new Error("Profile creation could not be verified. Please try again or contact support.");
       }
 
@@ -233,25 +166,7 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
             />
           </div>
 
-          <div>
-            <Label htmlFor="avatar">Profile Picture (optional)</Label>
-            <div className="mt-1 flex items-center gap-4">
-              {previewUrl && (
-                <img
-                  src={previewUrl}
-                  alt="Profile preview"
-                  className="h-16 w-16 rounded-full object-cover"
-                />
-              )}
-              <Input
-                id="avatar"
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="mt-1"
-              />
-            </div>
-          </div>
+          <ProfilePictureInput onFileSelect={setProfilePic} />
 
           <div className="flex items-center gap-2">
             <Checkbox
@@ -302,16 +217,11 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
         </Button>
       </form>
 
-      <Dialog open={showProgress} onOpenChange={() => {}}>
-        <DialogContent className="sm:max-w-[425px]">
-          <div className="space-y-4 py-4">
-            <p className="text-center text-muted-foreground">
-              Creating your profile...
-            </p>
-            <Progress value={progress} className="w-full" />
-          </div>
-        </DialogContent>
-      </Dialog>
+      <ProgressDialog 
+        showProgress={showProgress}
+        progress={progress}
+        retryCount={retryCount}
+      />
     </>
   );
 };
