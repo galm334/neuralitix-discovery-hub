@@ -54,9 +54,11 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
 
   const verifyProfile = async (userId: string): Promise<boolean> => {
     try {
+      logger.info("Starting profile verification for user:", userId);
+      
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, nickname')
+        .select('id, nickname, name, terms_accepted')
         .eq('id', userId)
         .single();
       
@@ -65,7 +67,8 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
         return false;
       }
       
-      return !!data && !!data.nickname;
+      logger.info("Profile verification result:", data);
+      return !!data && !!data.nickname && !!data.name && data.terms_accepted === true;
     } catch (error) {
       logger.error("Profile verification failed:", error);
       return false;
@@ -81,6 +84,8 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
       return;
     }
 
+    logger.info("Starting profile creation for user:", session.user.id);
+
     if (!termsAccepted) {
       showToast.error("Please accept the terms and conditions");
       return;
@@ -91,17 +96,23 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
       return;
     }
 
+    if (!nickname.trim()) {
+      showToast.error("Please enter a nickname");
+      return;
+    }
+
     setIsSubmitting(true);
     setShowProgress(true);
     setProgress(0);
 
     try {
       let avatarUrl = null;
+      logger.info("Starting profile creation process");
 
-      // Start progress
       setProgress(20);
 
       if (profilePic) {
+        logger.info("Uploading profile picture");
         const fileExt = profilePic.name.split('.').pop();
         const filePath = `${session.user.id}-${Math.random()}.${fileExt}`;
 
@@ -114,6 +125,7 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
           throw uploadError;
         }
 
+        logger.info("Profile picture uploaded successfully");
         setProgress(40);
 
         const { data: { publicUrl } } = supabase.storage
@@ -121,6 +133,7 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
           .getPublicUrl(filePath);
 
         avatarUrl = publicUrl;
+        logger.info("Generated public URL for profile picture:", avatarUrl);
       }
 
       setProgress(60);
@@ -132,6 +145,8 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
         terms_accepted: true
       };
 
+      logger.info("Updating profile with data:", profileData);
+
       const { error: updateError } = await supabase
         .from('profiles')
         .update(profileData)
@@ -142,24 +157,34 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
         throw updateError;
       }
 
+      logger.info("Profile updated successfully");
       setProgress(80);
 
       // Verify profile creation with timeout
       let profileCreated = false;
       const startTime = Date.now();
+      
+      logger.info("Starting profile verification loop");
       while (Date.now() - startTime < 6000) {
         profileCreated = await verifyProfile(session.user.id);
-        if (profileCreated) break;
+        if (profileCreated) {
+          logger.info("Profile verified successfully");
+          break;
+        }
+        logger.info("Profile not verified yet, retrying...");
         await new Promise(resolve => setTimeout(resolve, 500));
       }
 
       if (!profileCreated) {
+        logger.error("Profile creation verification timeout");
         throw new Error("Profile creation verification timeout");
       }
 
       setProgress(100);
 
       await refreshProfile();
+      logger.info("Profile refreshed successfully");
+      
       showToast.success("Profile created successfully!");
       navigate("/");
 
