@@ -53,7 +53,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           retryAttempt: retryCount 
         });
 
-        if (retryCount < maxRetries && (error.message.includes('fetch') || status === 503 || status === 429)) {
+        // Handle network errors with exponential backoff
+        if (retryCount < maxRetries && (
+          error.message.includes('fetch') || 
+          error.message.includes('network') ||
+          error.message.includes('internet') ||
+          status === 503 || 
+          status === 429 || 
+          status === 0
+        )) {
           const delay = retryDelay * Math.pow(2, retryCount);
           logger.info("Retrying profile fetch", { 
             nextAttemptIn: delay,
@@ -75,14 +83,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       logger.error("Profile fetch failed", { error, userId, retryCount });
       
-      if (retryCount < maxRetries && error instanceof Error && 
-         (error.message.includes('fetch') || error.message.includes('network'))) {
+      // Additional retry for network disconnection errors
+      if (retryCount < maxRetries && error instanceof Error && (
+        error.message.includes('internet disconnected') ||
+        error.message.includes('network') ||
+        error.message.includes('fetch')
+      )) {
         const delay = retryDelay * Math.pow(2, retryCount);
         await new Promise(resolve => setTimeout(resolve, delay));
         return fetchProfile(userId, retryCount + 1);
       }
       
-      toast.error('Unable to load profile. Please check your connection.');
+      toast.error('Unable to load profile. Please check your internet connection and try again.');
       return null;
     }
   };
