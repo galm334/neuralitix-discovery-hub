@@ -38,8 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logger.info("Attempting to fetch profile", { 
         userId, 
         retryCount,
-        apiUrl: supabase.supabaseUrl,
-        hasAuthHeader: !!supabase.auth.session()
+        hasAuthHeader: !!session?.access_token
       });
 
       const { data, error, status } = await supabase
@@ -166,8 +165,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       logger.info("Initializing authentication", {
         currentUrl: window.location.href,
-        pathname: location.pathname,
-        supabaseUrl: supabase.supabaseUrl
+        pathname: location.pathname
       });
       
       setIsLoading(true);
