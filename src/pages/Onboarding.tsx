@@ -1,13 +1,8 @@
-import { useState, useEffect, Suspense, lazy } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { OnboardingForm } from "@/components/onboarding/OnboardingForm";
 import { logger } from "@/utils/logger";
-
-// Lazy load the WelcomeDialog component
-const WelcomeDialog = lazy(() => import('@/components/onboarding/WelcomeDialog').then(module => ({
-  default: module.WelcomeDialog
-})));
 
 const Onboarding = () => {
   const [termsAccepted, setTermsAccepted] = useState(false);
@@ -39,10 +34,6 @@ const Onboarding = () => {
           onShowTerms={() => setTermsAccepted(true)}
           termsAccepted={termsAccepted}
         />
-
-        <Suspense fallback={<div>Loading...</div>}>
-          <WelcomeDialog isOpen={false} onComplete={() => {}} />
-        </Suspense>
       </div>
     </div>
   );
