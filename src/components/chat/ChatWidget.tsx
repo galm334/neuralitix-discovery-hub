@@ -67,21 +67,6 @@ export function ChatWidget() {
       });
     }, window.MESSAGE_TIMEOUT || defaultTimeout);
 
-    // Add necessary styles for the chat widget
-    const style = document.createElement('style');
-    style.textContent = `
-      .zi-embed-chat {
-        max-width: 100px !important;
-        width: 100px !important;
-        transition: all 0.3s ease-in-out !important;
-      }
-      .zi-embed-chat.open {
-        max-width: 400px !important;
-        width: 400px !important;
-      }
-    `;
-    document.head.appendChild(style);
-
     window.addEventListener('message', handleMessage);
     logger.info('Message event listener attached', {
       timestamp: new Date().toISOString(),
@@ -90,7 +75,6 @@ export function ChatWidget() {
 
     return () => {
       window.removeEventListener('message', handleMessage);
-      document.head.removeChild(style);
       clearTimeout(messageTimeout);
       logger.info('Chat widget cleanup completed', {
         timestamp: new Date().toISOString()
@@ -103,22 +87,11 @@ export function ChatWidget() {
   }
 
   return (
-    <div 
-      className="fixed bottom-0 right-0 z-50" 
-      style={{ 
-        width: '100px',
-        maxWidth: '100px',
-        overflow: 'hidden'
-      }}
-    >
+    <div className="fixed bottom-4 right-4 z-50">
       <zapier-interfaces-chatbot-embed 
         id="chatbot-embed"
         is-popup='true' 
         chatbot-id='clqec2l2r00ca28qsdfz0m4my'
-        style={{ 
-          width: '100px',
-          maxWidth: '100px'
-        }}
       />
     </div>
   );
