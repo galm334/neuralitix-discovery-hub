@@ -1,5 +1,4 @@
 import { Routes, Route } from "react-router-dom";
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Index from "@/pages/Index";
 import Popular from "@/pages/Popular";
 import Trending from "@/pages/Trending";
@@ -13,6 +12,7 @@ import Onboarding from "@/pages/Onboarding";
 import Terms from "@/pages/Terms";
 import Privacy from "@/pages/Privacy";
 import GDPR from "@/pages/GDPR";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 export function AppRoutes() {
   return (
@@ -30,7 +30,7 @@ export function AppRoutes() {
       <Route path="/tool/:toolId" element={<ToolPage />} />
       <Route path="/category/:category" element={<CategoryPage />} />
 
-      {/* Protected route that doesn't require a profile */}
+      {/* Protected routes - only for user profile management */}
       <Route 
         path="/onboarding" 
         element={
@@ -39,8 +39,6 @@ export function AppRoutes() {
           </ProtectedRoute>
         } 
       />
-
-      {/* Protected routes that require both auth and profile */}
       <Route path="/chat/:conversationId" element={
         <ProtectedRoute>
           <Chat />
