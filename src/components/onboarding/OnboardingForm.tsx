@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
@@ -27,18 +27,17 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
   const [progress, setProgress] = useState(0);
   const navigate = useNavigate();
   const { refreshProfile, session } = useAuth();
+  const mountedRef = useRef(true);
 
   useEffect(() => {
     setNickname(generateNickname());
-  }, []);
-
-  useEffect(() => {
     return () => {
+      mountedRef.current = false;
       if (previewUrl) {
         URL.revokeObjectURL(previewUrl);
       }
     };
-  }, [previewUrl]);
+  }, []);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -116,7 +115,7 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
 
       setProgress(20);
 
-      if (profilePic) {
+      if (profilePic && mountedRef.current) {
         logger.info("Uploading profile picture");
         const fileExt = profilePic.name.split('.').pop();
         const filePath = `${session.user.id}-${Math.random()}.${fileExt}`;
@@ -139,6 +138,11 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
 
         avatarUrl = publicUrl;
         logger.info("Generated public URL for profile picture:", avatarUrl);
+      }
+
+      if (!mountedRef.current) {
+        logger.info("Component unmounted during profile creation, aborting");
+        return;
       }
 
       setProgress(60);
@@ -168,10 +172,9 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
       // Verify profile creation with timeout
       let profileCreated = false;
       const startTime = Date.now();
-      let mounted = true;
       
       logger.info("Starting profile verification loop");
-      while (mounted && Date.now() - startTime < 6000) {
+      while (mountedRef.current && Date.now() - startTime < 6000) {
         profileCreated = await verifyProfile(session.user.id);
         if (profileCreated) {
           logger.info("Profile verified successfully");
@@ -186,21 +189,27 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
         throw new Error("Profile creation verification timeout");
       }
 
+      if (!mountedRef.current) {
+        logger.info("Component unmounted during verification, aborting");
+        return;
+      }
+
       setProgress(100);
 
       // Only proceed with navigation if the component is still mounted
-      if (mounted) {
+      if (mountedRef.current) {
         await refreshProfile();
         logger.info("Profile refreshed successfully");
         showToast.success("Profile created successfully!");
         navigate("/", { replace: true });
       }
     } catch (error) {
-      logger.error("Error during onboarding submission:", error);
-      showToast.error("Failed to create profile. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-      setShowProgress(false);
+      if (mountedRef.current) {
+        logger.error("Error during onboarding submission:", error);
+        showToast.error("Failed to create profile. Please try again.");
+        setIsSubmitting(false);
+        setShowProgress(false);
+      }
     }
   };
 
