@@ -7,14 +7,24 @@ import { logger } from "@/utils/logger";
 const Onboarding = () => {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const navigate = useNavigate();
-  const { session } = useAuth();
+  const { session, isLoading } = useAuth();
 
   useEffect(() => {
-    if (!session) {
+    if (!isLoading && !session) {
       logger.warn("No session found, redirecting to auth");
       navigate("/auth");
     }
-  }, [session, navigate]);
+  }, [session, navigate, isLoading]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="text-center">
+          <p className="text-muted-foreground">Loading your profile...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!session) {
     return null;
