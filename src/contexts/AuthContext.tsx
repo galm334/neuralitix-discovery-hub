@@ -110,46 +110,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     try {
-      let currentProfile = profile;
-      if (!currentProfile) {
-        logger.info("No cached profile, fetching", { userId: session.user.id });
-        currentProfile = await fetchProfile(session.user.id);
-        setProfile(currentProfile);
-      }
-
-      // If we're on /auth and have a profile, go home
-      if (location.pathname === '/auth' && currentProfile) {
-        logger.info("Redirecting from auth to home", { userId: session.user.id });
-        navigate('/', { replace: true });
-        return;
-      }
-
+      const fetchedProfile = await fetchProfile(session.user.id);
+      
       // If we're on /auth and don't have a profile, go to onboarding
-      if (location.pathname === '/auth' && !currentProfile) {
+      if (!fetchedProfile) {
         logger.info("No profile found, redirecting to onboarding", { userId: session.user.id });
         navigate('/onboarding', { replace: true });
         return;
       }
 
-      // If we don't have a profile and aren't on onboarding, go to onboarding
-      if (!currentProfile && location.pathname !== '/onboarding') {
-        logger.info("No profile detected, redirecting to onboarding", { userId: session.user.id });
-        navigate('/onboarding', { replace: true });
-        return;
-      }
-
-      // If we have a profile and are on onboarding, go home
-      if (currentProfile && location.pathname === '/onboarding') {
-        logger.info("Profile exists, redirecting from onboarding to home", { userId: session.user.id });
+      // If we have a profile and are on auth or onboarding, go home
+      if (fetchedProfile && (location.pathname === '/auth' || location.pathname === '/onboarding')) {
+        logger.info("Profile exists, redirecting to home", { userId: session.user.id });
         navigate('/', { replace: true });
         return;
       }
+
+      setProfile(fetchedProfile);
     } catch (error) {
       logger.error("Navigation error", { error });
       toast.error('Error loading user data. Please check your connection and try again.');
       navigate('/auth', { replace: true });
     }
-  }, [navigate, location.pathname, profile]);
+  }, [navigate, location.pathname]);
 
   const refreshProfile = async () => {
     if (!session?.user?.id) {
@@ -197,11 +180,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               email: initialSession.user.email 
             });
             setSession(initialSession);
-            const fetchedProfile = await fetchProfile(initialSession.user.id);
-            if (fetchedProfile) {
-              setProfile(fetchedProfile);
-              await handleNavigation(initialSession);
-            }
+            await handleNavigation(initialSession);
           } else {
             logger.info("No initial session found");
           }
@@ -231,11 +210,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (mounted) {
         setSession(session);
         if (session) {
-          const fetchedProfile = await fetchProfile(session.user.id);
-          if (fetchedProfile) {
-            setProfile(fetchedProfile);
-            await handleNavigation(session);
-          }
+          await handleNavigation(session);
         } else if (event === 'SIGNED_OUT') {
           setProfile(null);
           navigate('/auth', { replace: true });
