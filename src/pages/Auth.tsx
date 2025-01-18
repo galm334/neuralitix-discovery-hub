@@ -13,39 +13,53 @@ const Auth = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      logger.info("Auth state changed:", { event, hasSession: !!session?.user });
+    const checkAuthAndProfile = async (session: any) => {
+      if (!session?.user?.id) return;
 
-      if (session?.user?.id) {
-        try {
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('id', session.user.id)
-            .maybeSingle();
+      try {
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', session.user.id)
+          .maybeSingle();
 
-          if (profileError) {
-            logger.error("Error checking profile:", profileError);
-            showToast.error("Error checking profile status");
-            return;
-          }
-
-          if (!profile?.id) {
-            logger.info("No profile found, redirecting to onboarding");
-            navigate('/onboarding', { replace: true });
-          } else {
-            logger.info("Profile exists, redirecting to home");
-            navigate('/', { replace: true });
-          }
-        } catch (error) {
-          logger.error("Error in auth flow:", error);
-          showToast.error("Authentication error occurred");
+        if (profileError) {
+          logger.error("Error checking profile:", profileError);
+          showToast.error("Error checking profile status");
+          return;
         }
+
+        if (!profile?.id) {
+          logger.info("No profile found, redirecting to onboarding");
+          navigate('/onboarding', { replace: true });
+        } else {
+          logger.info("Profile exists, redirecting to home");
+          navigate('/', { replace: true });
+        }
+      } catch (error) {
+        logger.error("Error in auth flow:", error);
+        showToast.error("Authentication error occurred");
+      }
+    };
+
+    // Check initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      checkAuthAndProfile(session);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      logger.info("Auth state changed:", { event, hasSession: !!session });
+      
+      if (event === 'SIGNED_IN') {
+        await checkAuthAndProfile(session);
+      } else if (event === 'SIGNED_OUT') {
+        navigate("/auth");
       }
     });
 
     return () => {
-      authListener.subscription.unsubscribe();
+      subscription.unsubscribe();
     };
   }, [navigate]);
 
