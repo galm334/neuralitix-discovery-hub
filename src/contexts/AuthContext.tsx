@@ -28,14 +28,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
   const initializationComplete = useRef(false);
-  const maxRetries = 3;
-  const retryDelay = 1000;
 
-  const fetchProfile = async (userId: string, retryCount = 0): Promise<Profile | null> => {
+  const fetchProfile = async (userId: string): Promise<Profile | null> => {
     try {
       logger.info("Attempting to fetch profile", { 
         userId, 
-        retryCount,
         hasAuthHeader: !!session?.access_token
       });
 
@@ -46,19 +43,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .maybeSingle();
 
       if (error) {
-        logger.error("Profile fetch error", { 
-          error, 
-          status,
-          userId,
-          retryAttempt: retryCount
-        });
-
-        // Handle 406 specifically - this means the profile doesn't exist yet
+        logger.error("Profile fetch error", { error, status, userId });
         if (status === 406) {
           logger.info("Profile doesn't exist yet (406)", { userId });
           return null;
         }
-
         throw error;
       }
 
@@ -70,7 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       return data;
     } catch (error) {
-      logger.error("Profile fetch failed", { error, userId, retryCount });
+      logger.error("Profile fetch failed", { error, userId });
       return null;
     }
   };
@@ -94,7 +83,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setProfile(fetchedProfile);
     } catch (error) {
       logger.error("Navigation error", { error });
-      // Don't redirect to /auth here - let the protected route handle it
     }
   }, [navigate, location.pathname]);
 
@@ -147,10 +135,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             await handleNavigation(initialSession);
           } else {
             logger.info("No initial session found");
-            // Only redirect to /auth for protected routes
-            if (location.pathname === '/chat') {
-              navigate('/auth', { replace: true });
-            }
           }
           
           setIsLoading(false);
@@ -162,10 +146,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setIsLoading(false);
           initializationComplete.current = true;
           toast.error('Authentication error. Please refresh the page.');
-          // Only redirect to /auth for protected routes
-          if (location.pathname === '/chat') {
-            navigate('/auth', { replace: true });
-          }
         }
       }
     };
@@ -185,8 +165,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await handleNavigation(session);
         } else if (event === 'SIGNED_OUT') {
           setProfile(null);
-          // Don't automatically redirect to /auth on sign out
-          // Let the protected route handle the redirect if needed
         }
       }
     });
