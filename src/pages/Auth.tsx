@@ -18,14 +18,14 @@ const Auth = () => {
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session) {
-          logger.info("User already has a session, checking profile");
-          const { data: profile } = await supabase
+          logger.info("User has a session, checking if new user");
+          const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', session.user.id)
             .single();
 
-          if (!profile) {
+          if (profileError || !profile) {
             logger.info("No profile found, redirecting to onboarding");
             navigate('/onboarding');
           } else {
