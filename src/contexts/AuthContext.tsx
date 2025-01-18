@@ -165,6 +165,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await handleNavigation(session);
         } else if (event === 'SIGNED_OUT') {
           setProfile(null);
+          navigate('/', { replace: true });
         }
       }
     });
