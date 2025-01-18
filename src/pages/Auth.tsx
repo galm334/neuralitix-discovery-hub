@@ -3,35 +3,27 @@ import { useSearchParams, useLocation } from "react-router-dom";
 import { Auth as SupabaseAuth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
+import { logger } from "@/utils/logger";
 
 const Auth = () => {
   const [searchParams] = useSearchParams();
   const [errorMessage, setErrorMessage] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const location = useLocation();
-
-  const parseHashParams = (hash: string) => {
-    if (!hash) return {};
-    const params = new URLSearchParams(hash.replace('#', ''));
-    return Object.fromEntries(params.entries());
-  };
 
   useEffect(() => {
     const handleAuth = async () => {
-      console.log("🔐 [Auth] Starting magic link authentication...");
-      setIsLoading(true);
-
+      logger.info("🔐 [Auth] Starting magic link authentication...");
       try {
         // Parse both URL parameters and hash parameters
         const allParams = {
           ...Object.fromEntries(searchParams.entries()),
           ...parseHashParams(location.hash)
         };
-        console.log("🔍 [Auth] Auth parameters:", allParams);
+        logger.info("🔍 [Auth] Auth parameters:", allParams);
 
         // Check for error parameters in the URL hash
         if (allParams.error) {
-          console.error("❌ [Auth] Error from URL:", allParams.error, allParams.error_description);
+          logger.error("❌ [Auth] Error from URL:", allParams.error, allParams.error_description);
           switch (allParams.error_code) {
             case 'otp_expired':
               setErrorMessage("The magic link has expired. Please request a new one.");
@@ -42,47 +34,24 @@ const Auth = () => {
             default:
               setErrorMessage(allParams.error_description || "Authentication failed. Please try again.");
           }
-          setIsLoading(false);
           return;
         }
 
-        const accessToken = allParams.access_token;
-        const refreshToken = allParams.refresh_token;
-        const type = allParams.type;
-
-        // If this is a magic link callback
-        if (type === 'recovery' || type === 'magiclink') {
-          console.log("✨ [Auth] Processing magic link authentication...");
-          const { error } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken
-          });
-
-          if (error) {
-            console.error("❌ [Auth] Error setting session:", error);
-            setErrorMessage(error.message);
-          } else {
-            console.log("✅ [Auth] Magic link authentication successful");
-          }
-        }
+        logger.info("✅ [Auth] No errors in URL parameters");
       } catch (error) {
-        console.error("❌ [Auth] Unexpected error during auth:", error);
+        logger.error("❌ [Auth] Unexpected error during auth:", error);
         setErrorMessage("An unexpected error occurred");
       }
-
-      setIsLoading(false);
     };
 
     handleAuth();
   }, [searchParams, location.hash]);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
-    );
-  }
+  const parseHashParams = (hash: string) => {
+    if (!hash) return {};
+    const params = new URLSearchParams(hash.replace('#', ''));
+    return Object.fromEntries(params.entries());
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
