@@ -184,7 +184,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             await handleNavigation(initialSession);
           } else {
             logger.info("No initial session found");
-            if (location.pathname !== '/auth') {
+            // Only redirect to /auth if we're on a protected route
+            if (location.pathname === '/chat') {
               navigate('/auth', { replace: true });
             }
           }
@@ -198,7 +199,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setIsLoading(false);
           initializationComplete.current = true;
           toast.error('Authentication error. Please refresh the page.');
-          navigate('/auth', { replace: true });
+          // Only redirect to /auth if we're on a protected route
+          if (location.pathname === '/chat') {
+            navigate('/auth', { replace: true });
+          }
         }
       }
     };
