@@ -3,18 +3,11 @@ import { logger } from "@/utils/logger";
 
 export const verifyProfile = async (userId: string): Promise<boolean> => {
   try {
-    logger.info("Verifying profile creation", { userId });
-    
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('profiles')
       .select('id')
       .eq('id', userId)
       .single();
-    
-    if (error) {
-      logger.error("Profile verification failed", { error, userId });
-      return false;
-    }
     
     return !!data;
   } catch (error) {
