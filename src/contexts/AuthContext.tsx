@@ -37,11 +37,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq('id', userId)
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error("❌ [AuthContext] Error fetching profile:", error);
+        throw error;
+      }
       console.log("✅ [AuthContext] Profile fetch result:", data);
       return data;
     } catch (error) {
-      console.error('❌ [AuthContext] Error fetching profile:', error);
+      console.error('❌ [AuthContext] Error in fetchProfile:', error);
       return null;
     }
   };
@@ -55,12 +58,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log("🧭 [AuthContext] Starting navigation handling");
     console.log("📍 [AuthContext] Current location:", location.pathname);
     console.log("👤 [AuthContext] Session user:", session.user.email);
+    console.log("🔑 [AuthContext] Session token:", session.access_token ? "Present" : "Missing");
 
     try {
       // Only fetch profile if we don't have it cached
       let currentProfile = profile;
       if (!currentProfile) {
         currentProfile = await fetchProfile(session.user.id);
+        console.log("👥 [AuthContext] Fetched profile:", currentProfile);
         setProfile(currentProfile);
       }
 
@@ -111,22 +116,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const initializeAuth = async () => {
       if (initializationComplete.current) return;
       console.log("🚀 [AuthContext] === Starting Authentication Flow ===");
+      console.log("📝 [AuthContext] Current URL:", window.location.href);
       setIsLoading(true);
       
       try {
         // Get the initial session
         const { data: { session: initialSession }, error } = await supabase.auth.getSession();
+        console.log("🔐 [AuthContext] Initial session check:", initialSession ? "Found session" : "No session");
         
         if (error) throw error;
         
         if (mounted) {
-          console.log("✅ [AuthContext] Session check complete:", initialSession ? "Active session" : "No session");
-          
           if (initialSession) {
+            console.log("✅ [AuthContext] Setting initial session");
             setSession(initialSession);
             const fetchedProfile = await fetchProfile(initialSession.user.id);
             setProfile(fetchedProfile);
             await handleNavigation(initialSession);
+          } else {
+            console.log("ℹ️ [AuthContext] No initial session found");
           }
           
           setIsLoading(false);
@@ -148,6 +156,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('🔄 [AuthContext] Auth state changed:', event, session ? "Session present" : "No session");
+      console.log('📊 [AuthContext] Event details:', { event, sessionExists: !!session });
       
       if (mounted) {
         setSession(session);
@@ -156,6 +165,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setProfile(fetchedProfile);
           await handleNavigation(session);
         } else if (event === 'SIGNED_OUT') {
+          console.log('👋 [AuthContext] User signed out, clearing profile');
           setProfile(null);
           navigate('/auth', { replace: true });
         }

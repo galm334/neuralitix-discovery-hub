@@ -89,7 +89,7 @@ const Auth = () => {
       <div className="w-full max-w-md space-y-8 bg-card p-8 rounded-lg shadow-lg">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-2">Welcome to Neuralitix</h1>
-          <p className="text-muted-foreground">Sign in with magic link to continue</p>
+          <p className="text-muted-foreground">Sign up with magic link to continue</p>
           {errorMessage && (
             <div className="mt-4 p-4 bg-destructive/10 text-destructive rounded-md">
               {errorMessage}
