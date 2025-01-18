@@ -14,22 +14,16 @@ const Auth = () => {
   const authType = searchParams.get('type') || 'signin';
 
   useEffect(() => {
-    const handleAuth = async () => {
-      try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) {
-          logger.error("Session error:", sessionError);
-          setErrorMessage("Authentication failed. Please try again.");
-          return;
-        }
+    // Check for magic link completion
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      logger.info("Auth state changed:", { event, hasSession: !!session });
 
-        if (session?.user) {
-          logger.info("User authenticated, checking profile");
-          
+      if (event === 'SIGNED_IN' && session?.user?.id) {
+        try {
+          // Check if profile exists
           const { data: profile } = await supabase
             .from('profiles')
-            .select('*')
+            .select('id')
             .eq('id', session.user.id)
             .single();
 
@@ -37,40 +31,19 @@ const Auth = () => {
             logger.info("No profile found, redirecting to onboarding");
             navigate('/onboarding', { replace: true });
           } else {
-            logger.info("Profile found, redirecting to home");
+            logger.info("Profile exists, redirecting to home");
             navigate('/', { replace: true });
           }
-        }
-      } catch (error) {
-        logger.error("Auth error:", error);
-        setErrorMessage("An unexpected error occurred");
-      }
-    };
-
-    // Run auth check immediately
-    handleAuth();
-
-    // Also listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      logger.info("Auth state changed:", event);
-      
-      if (event === 'SIGNED_IN' && session) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-
-        if (!profile) {
+        } catch (error) {
+          logger.error("Error checking profile:", error);
+          // If there's an error checking the profile, assume we need onboarding
           navigate('/onboarding', { replace: true });
-        } else {
-          navigate('/', { replace: true });
         }
       }
     });
 
     return () => {
-      subscription.unsubscribe();
+      authListener.subscription.unsubscribe();
     };
   }, [navigate]);
 
