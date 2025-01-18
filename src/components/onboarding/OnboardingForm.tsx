@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { generateNickname } from "@/utils/nickname-generator";
 import { logger } from "@/utils/logger";
 import { showToast } from "@/utils/toast-config";
@@ -199,12 +200,11 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
           </div>
 
           <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
+            <Checkbox
               id="terms"
               checked={termsAccepted}
-              readOnly
-              className="h-4 w-4 rounded border-gray-300"
+              onCheckedChange={onShowTerms}
+              className="h-4 w-4"
             />
             <label htmlFor="terms" className="text-sm text-muted-foreground">
               I agree to the{" "}
