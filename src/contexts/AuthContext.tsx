@@ -39,7 +39,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         hasAuthHeader: !!session?.access_token
       });
 
-      // Use the Supabase client which automatically handles headers
       const { data, error, status } = await supabase
         .from('profiles')
         .select('id, terms_accepted, name, avatar_url')
@@ -51,14 +50,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           error, 
           status,
           userId,
-          retryAttempt: retryCount,
-          headers: {
-            // Only log if auth token is present, not the actual token
-            hasAuthToken: !!session?.access_token
-          }
+          retryAttempt: retryCount
         });
 
-        if (retryCount < maxRetries && (
+        // Check for specific error conditions that warrant a retry
+        const shouldRetry = retryCount < maxRetries && (
           error.message.includes('fetch') || 
           error.message.includes('network') ||
           error.message.includes('internet') ||
@@ -67,7 +63,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           status === 406 ||
           status === 401 ||
           status === 0
-        )) {
+        );
+
+        if (shouldRetry) {
           const delay = retryDelay * Math.pow(2, retryCount);
           logger.info("Retrying profile fetch", { 
             nextAttemptIn: delay,
@@ -76,10 +74,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await new Promise(resolve => setTimeout(resolve, delay));
           return fetchProfile(userId, retryCount + 1);
         }
+
+        // If we've exhausted retries or it's not a retryable error, throw
         throw error;
       }
 
-      logger.info("Profile fetch result", { 
+      logger.info("Profile fetch successful", { 
         success: !!data,
         hasProfile: !!data,
         userId
@@ -159,9 +159,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    logger.info("Refreshing profile", { userId: session.user.id });
-    const fetchedProfile = await fetchProfile(session.user.id);
-    setProfile(fetchedProfile);
+    try {
+      logger.info("Refreshing profile", { userId: session.user.id });
+      const fetchedProfile = await fetchProfile(session.user.id);
+      if (fetchedProfile) {
+        setProfile(fetchedProfile);
+      }
+    } catch (error) {
+      logger.error("Profile refresh failed", { error });
+      toast.error('Failed to refresh profile. Please try again.');
+    }
   };
 
   useEffect(() => {
@@ -193,8 +200,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             });
             setSession(initialSession);
             const fetchedProfile = await fetchProfile(initialSession.user.id);
-            setProfile(fetchedProfile);
-            await handleNavigation(initialSession);
+            if (fetchedProfile) {
+              setProfile(fetchedProfile);
+              await handleNavigation(initialSession);
+            }
           } else {
             logger.info("No initial session found");
           }
@@ -225,8 +234,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSession(session);
         if (session) {
           const fetchedProfile = await fetchProfile(session.user.id);
-          setProfile(fetchedProfile);
-          await handleNavigation(session);
+          if (fetchedProfile) {
+            setProfile(fetchedProfile);
+            await handleNavigation(session);
+          }
         } else if (event === 'SIGNED_OUT') {
           setProfile(null);
           navigate('/auth', { replace: true });
