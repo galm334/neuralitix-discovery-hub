@@ -53,13 +53,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           retryAttempt: retryCount
         });
 
+        // Handle 406 specifically - this means the profile doesn't exist yet
+        if (status === 406) {
+          logger.info("Profile doesn't exist yet (406)", { userId });
+          return null;
+        }
+
         const shouldRetry = retryCount < maxRetries && (
           error.message.includes('fetch') || 
           error.message.includes('network') ||
           error.message.includes('internet') ||
           status === 503 || 
-          status === 429 || 
-          status === 406 ||
+          status === 429 ||
           status === 401 ||
           status === 0
         );
@@ -97,7 +102,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return fetchProfile(userId, retryCount + 1);
       }
       
-      toast.error('Unable to load profile. Please check your internet connection and try again.');
       return null;
     }
   };
@@ -112,14 +116,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const fetchedProfile = await fetchProfile(session.user.id);
       
-      // If we're on /auth and don't have a profile, go to onboarding
       if (!fetchedProfile) {
         logger.info("No profile found, redirecting to onboarding", { userId: session.user.id });
         navigate('/onboarding', { replace: true });
         return;
       }
 
-      // If we have a profile and are on auth or onboarding, go home
       if (fetchedProfile && (location.pathname === '/auth' || location.pathname === '/onboarding')) {
         logger.info("Profile exists, redirecting to home", { userId: session.user.id });
         navigate('/', { replace: true });
@@ -129,7 +131,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setProfile(fetchedProfile);
     } catch (error) {
       logger.error("Navigation error", { error });
-      toast.error('Error loading user data. Please check your connection and try again.');
       navigate('/auth', { replace: true });
     }
   }, [navigate, location.pathname]);
@@ -183,6 +184,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             await handleNavigation(initialSession);
           } else {
             logger.info("No initial session found");
+            if (location.pathname !== '/auth') {
+              navigate('/auth', { replace: true });
+            }
           }
           
           setIsLoading(false);
@@ -194,6 +198,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setIsLoading(false);
           initializationComplete.current = true;
           toast.error('Authentication error. Please refresh the page.');
+          navigate('/auth', { replace: true });
         }
       }
     };
