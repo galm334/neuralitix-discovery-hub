@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Session, AuthError, AuthApiError } from '@supabase/supabase-js';
+import { Session, AuthError } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -29,7 +29,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const initializationComplete = useRef(false);
 
   const fetchProfile = async (userId: string) => {
-    console.log("🔍 Fetching profile for user:", userId);
+    console.log("🔍 [AuthContext] Fetching profile for user:", userId);
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -38,63 +38,71 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .maybeSingle();
 
       if (error) throw error;
-      console.log("✅ Profile fetch result:", data);
+      console.log("✅ [AuthContext] Profile fetch result:", data);
       return data;
     } catch (error) {
-      console.error('❌ Error fetching profile:', error);
-      toast.error('Failed to load user profile');
+      console.error('❌ [AuthContext] Error fetching profile:', error);
       return null;
     }
   };
 
   const handleAuthError = (error: AuthError) => {
-    console.error('🚫 Auth error:', error);
-    
-    switch (error.message) {
-      case 'Token expired':
-      case 'Invalid JWT':
-        toast.error('Your session has expired. Please sign in again.');
-        navigate('/auth');
-        break;
-      case 'Network error':
-        toast.error('Network error. Please check your connection.');
-        break;
-      default:
-        toast.error('Authentication error. Please try again.');
-    }
+    console.error('🚫 [AuthContext] Auth error:', error);
+    toast.error('Authentication error. Please try again.');
   };
 
-  const handleNavigation = async (session: Session) => {
-    console.log("🧭 Handling navigation for session:", session.user.email);
-    try {
-      const profile = await fetchProfile(session.user.id);
-      setProfile(profile);
+  const handleNavigation = useCallback(async (session: Session) => {
+    console.log("🧭 [AuthContext] Starting navigation handling");
+    console.log("📍 [AuthContext] Current location:", location.pathname);
+    console.log("👤 [AuthContext] Session user:", session.user.email);
 
-      // If we're on the auth page and have a profile with accepted terms,
-      // navigate to home
-      if (location.pathname === '/auth' && profile?.terms_accepted) {
-        console.log("➡️ Auth complete and terms accepted, navigating to home");
-        navigate('/', { replace: true });
+    try {
+      // Only fetch profile if we don't have it cached
+      let currentProfile = profile;
+      if (!currentProfile) {
+        currentProfile = await fetchProfile(session.user.id);
+        setProfile(currentProfile);
+      }
+
+      // Handle different navigation scenarios
+      if (location.pathname === '/auth') {
+        if (currentProfile) {
+          console.log("➡️ [AuthContext] Redirecting from auth to home");
+          navigate('/', { replace: true });
+        } else {
+          console.log("➡️ [AuthContext] No profile, redirecting to onboarding");
+          navigate('/onboarding', { replace: true });
+        }
         return;
       }
 
-      // If no profile or terms not accepted, redirect to onboarding
-      if (!profile || !profile.terms_accepted) {
-        console.log("➡️ Terms not accepted, redirecting to onboarding");
+      if (!currentProfile && location.pathname !== '/onboarding') {
+        console.log("➡️ [AuthContext] No profile, redirecting to onboarding");
         navigate('/onboarding', { replace: true });
         return;
       }
+
+      if (currentProfile && location.pathname === '/onboarding') {
+        console.log("➡️ [AuthContext] Have profile, redirecting from onboarding to home");
+        navigate('/', { replace: true });
+        return;
+      }
     } catch (error) {
-      console.error('❌ Navigation error:', error);
+      console.error('❌ [AuthContext] Navigation error:', error);
       toast.error('Error loading user data');
+      navigate('/auth', { replace: true });
     }
-  };
+  }, [navigate, location.pathname, profile]);
 
   const refreshProfile = async () => {
-    if (!session?.user?.id) return;
-    console.log("🔄 Refreshing profile...");
-    const profile = await fetchProfile(session.user.id);
-    setProfile(profile);
+    if (!session?.user?.id) {
+      console.log("⚠️ [AuthContext] Cannot refresh profile: No active session");
+      return;
+    }
+
+    console.log("🔄 [AuthContext] Refreshing profile...");
+    const fetchedProfile = await fetchProfile(session.user.id);
+    setProfile(fetchedProfile);
   };
 
   useEffect(() => {
@@ -102,27 +110,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const initializeAuth = async () => {
       if (initializationComplete.current) return;
-      console.log("🚀 === Starting Authentication Flow ===");
+      console.log("🚀 [AuthContext] === Starting Authentication Flow ===");
       setIsLoading(true);
       
       try {
-        // Get current session
-        console.log("🔍 Checking current session...");
-        const { data: { session }, error } = await supabase.auth.getSession();
+        // Get the initial session
+        const { data: { session: initialSession }, error } = await supabase.auth.getSession();
         
         if (error) throw error;
         
         if (mounted) {
-          console.log("✅ Session check complete:", session ? "Active session" : "No session");
-          setSession(session);
-          if (session) {
-            await handleNavigation(session);
+          console.log("✅ [AuthContext] Session check complete:", initialSession ? "Active session" : "No session");
+          
+          if (initialSession) {
+            setSession(initialSession);
+            const fetchedProfile = await fetchProfile(initialSession.user.id);
+            setProfile(fetchedProfile);
+            await handleNavigation(initialSession);
           }
+          
           setIsLoading(false);
           initializationComplete.current = true;
         }
       } catch (error) {
-        console.error("❌ Error in initializeAuth:", error);
+        console.error("❌ [AuthContext] Error in initializeAuth:", error);
         if (error instanceof AuthError) {
           handleAuthError(error);
         }
@@ -136,17 +147,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initializeAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔄 Auth state changed:', event, session ? "Session present" : "No session");
+      console.log('🔄 [AuthContext] Auth state changed:', event, session ? "Session present" : "No session");
       
       if (mounted) {
         setSession(session);
-
         if (session) {
+          const fetchedProfile = await fetchProfile(session.user.id);
+          setProfile(fetchedProfile);
           await handleNavigation(session);
         } else if (event === 'SIGNED_OUT') {
-          console.log("👋 User signed out, clearing profile");
           setProfile(null);
-          navigate('/auth');
+          navigate('/auth', { replace: true });
         }
       }
     });
@@ -155,7 +166,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [navigate, location.pathname]);
+  }, [handleNavigation]);
 
   return (
     <AuthContext.Provider value={{ session, profile, isLoading, refreshProfile }}>

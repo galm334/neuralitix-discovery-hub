@@ -1,16 +1,13 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
+import { useSearchParams, useLocation } from "react-router-dom";
 import { Auth as SupabaseAuth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
-import { AuthError, AuthApiError } from "@supabase/supabase-js";
-import { toast } from "sonner";
 
 const Auth = () => {
   const [searchParams] = useSearchParams();
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
   const location = useLocation();
 
   const parseHashParams = (hash: string) => {
@@ -21,7 +18,7 @@ const Auth = () => {
 
   useEffect(() => {
     const handleAuth = async () => {
-      console.log("=== Starting Authentication Flow ===");
+      console.log("🔐 [Auth] Starting magic link authentication...");
       setIsLoading(true);
 
       try {
@@ -30,40 +27,46 @@ const Auth = () => {
           ...Object.fromEntries(searchParams.entries()),
           ...parseHashParams(location.hash)
         };
-        console.log("Auth parameters:", allParams);
+        console.log("🔍 [Auth] Auth parameters:", allParams);
+
+        // Check for error parameters in the URL hash
+        if (allParams.error) {
+          console.error("❌ [Auth] Error from URL:", allParams.error, allParams.error_description);
+          switch (allParams.error_code) {
+            case 'otp_expired':
+              setErrorMessage("The magic link has expired. Please request a new one.");
+              break;
+            case 'invalid_otp':
+              setErrorMessage("Invalid magic link. Please request a new one.");
+              break;
+            default:
+              setErrorMessage(allParams.error_description || "Authentication failed. Please try again.");
+          }
+          setIsLoading(false);
+          return;
+        }
 
         const accessToken = allParams.access_token;
         const refreshToken = allParams.refresh_token;
-        const hasError = allParams.error;
-        const errorDescription = allParams.error_description;
+        const type = allParams.type;
 
-        // If this is a magic link callback with tokens
-        if (accessToken && refreshToken) {
-          console.log("Processing magic link authentication...");
-          const { data: { session }, error } = await supabase.auth.setSession({
+        // If this is a magic link callback
+        if (type === 'recovery' || type === 'magiclink') {
+          console.log("✨ [Auth] Processing magic link authentication...");
+          const { error } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken
           });
 
           if (error) {
-            console.error("Error setting session:", error);
+            console.error("❌ [Auth] Error setting session:", error);
             setErrorMessage(error.message);
-            setIsLoading(false);
-            return;
+          } else {
+            console.log("✅ [Auth] Magic link authentication successful");
           }
-
-          if (session) {
-            console.log("Successfully established session");
-            // Navigation will be handled by AuthContext
-            setIsLoading(false);
-            return;
-          }
-        } else if (hasError) {
-          console.error("Auth error:", errorDescription);
-          setErrorMessage(errorDescription || 'An error occurred during authentication');
         }
       } catch (error) {
-        console.error("Unexpected error during auth:", error);
+        console.error("❌ [Auth] Unexpected error during auth:", error);
         setErrorMessage("An unexpected error occurred");
       }
 
@@ -71,7 +74,7 @@ const Auth = () => {
     };
 
     handleAuth();
-  }, [navigate, searchParams, location.hash]);
+  }, [searchParams, location.hash]);
 
   if (isLoading) {
     return (

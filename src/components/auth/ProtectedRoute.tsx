@@ -11,7 +11,11 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    console.log("🔒 Protected Route - Session:", session ? "Present" : "None");
+    console.log("⌛ Protected Route - Loading:", isLoading);
+
     if (!isLoading && !session) {
+      console.log("🚫 No session found, redirecting to auth");
       navigate("/auth", { replace: true });
     }
   }, [session, isLoading, navigate]);
