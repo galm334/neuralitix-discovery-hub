@@ -12,18 +12,18 @@ const Auth = () => {
 
   useEffect(() => {
     const handleAuth = async () => {
-      logger.info("🔐 [Auth] Starting magic link authentication...");
+      logger.info("Starting magic link authentication...");
       try {
         // Parse both URL parameters and hash parameters
         const allParams = {
           ...Object.fromEntries(searchParams.entries()),
           ...parseHashParams(location.hash)
         };
-        logger.info("🔍 [Auth] Auth parameters:", allParams);
+        logger.info("Auth parameters", allParams);
 
         // Check for error parameters in the URL hash
         if (allParams.error) {
-          logger.error("❌ [Auth] Error from URL:", allParams.error, allParams.error_description);
+          logger.error("Error from URL", { error: allParams.error, description: allParams.error_description });
           switch (allParams.error_code) {
             case 'otp_expired':
               setErrorMessage("The magic link has expired. Please request a new one.");
@@ -37,9 +37,9 @@ const Auth = () => {
           return;
         }
 
-        logger.info("✅ [Auth] No errors in URL parameters");
+        logger.info("No errors in URL parameters");
       } catch (error) {
-        logger.error("❌ [Auth] Unexpected error during auth:", error);
+        logger.error("Unexpected error during auth", error);
         setErrorMessage("An unexpected error occurred");
       }
     };
