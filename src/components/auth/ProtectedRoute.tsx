@@ -16,8 +16,8 @@ export const ProtectedRoute = ({ children, requireProfile = true }: ProtectedRou
   useEffect(() => {
     const checkAuth = async () => {
       logger.info("Protected Route - Checking auth", {
-        hasSession: !!session,
-        hasProfile: !!profile,
+        hasSession: !!session?.user?.id,
+        hasProfile: !!profile?.id,
         isLoading,
         currentPath: location.pathname,
         requireProfile
@@ -25,14 +25,14 @@ export const ProtectedRoute = ({ children, requireProfile = true }: ProtectedRou
 
       if (!isLoading) {
         // If no session, redirect to auth except for /auth path
-        if (!session && location.pathname !== '/auth') {
+        if (!session?.user?.id && location.pathname !== '/auth') {
           logger.info("No session found, redirecting to auth");
           navigate("/auth", { replace: true });
           return;
         }
 
         // If we have a session but no profile and profile is required
-        if (session && !profile && requireProfile) {
+        if (session?.user?.id && !profile?.id && requireProfile) {
           // Allow access to onboarding
           if (location.pathname !== '/onboarding') {
             logger.info("No profile found, redirecting to onboarding");
@@ -42,7 +42,7 @@ export const ProtectedRoute = ({ children, requireProfile = true }: ProtectedRou
         }
 
         // If we have both session and profile
-        if (session && profile) {
+        if (session?.user?.id && profile?.id) {
           // Redirect from auth page to home
           if (location.pathname === '/auth') {
             logger.info("Already authenticated, redirecting to home");
@@ -61,7 +61,7 @@ export const ProtectedRoute = ({ children, requireProfile = true }: ProtectedRou
     };
 
     checkAuth();
-  }, [session, profile, isLoading, navigate, location.pathname, requireProfile]);
+  }, [session?.user?.id, profile?.id, isLoading, navigate, location.pathname, requireProfile]);
 
   if (isLoading) {
     return (
@@ -72,12 +72,12 @@ export const ProtectedRoute = ({ children, requireProfile = true }: ProtectedRou
   }
 
   // For protected routes, show nothing while redirecting if no session
-  if (!session && requireProfile) {
+  if (!session?.user?.id && requireProfile) {
     return null;
   }
 
   // For routes that require a profile, show nothing while redirecting if no profile
-  if (requireProfile && !profile) {
+  if (requireProfile && !profile?.id) {
     return null;
   }
 

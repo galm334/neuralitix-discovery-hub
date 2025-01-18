@@ -19,9 +19,10 @@ export const useOnboardingSubmit = () => {
   const { refreshProfile, session } = useAuth();
 
   const handleSubmit = async (data: OnboardingData) => {
-    if (!session?.user) {
+    if (!session?.user?.id) {
       logger.error("No session found during onboarding submission");
-      navigate("/auth");
+      showToast.error("Authentication error. Please try signing in again.");
+      navigate("/auth", { replace: true });
       return;
     }
 
@@ -30,7 +31,7 @@ export const useOnboardingSubmit = () => {
 
     try {
       let avatarUrl = null;
-      logger.info("Starting profile creation process");
+      logger.info("Starting profile creation process", { userId: session.user.id });
 
       if (data.profilePic) {
         logger.info("Uploading profile picture");
@@ -71,6 +72,24 @@ export const useOnboardingSubmit = () => {
         throw new Error("Failed to create profile: " + upsertError.message);
       }
 
+      setProgress(80);
+
+      // Wait for profile to be available
+      let retries = 3;
+      while (retries > 0) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', session.user.id)
+          .single();
+        
+        if (profile?.id) {
+          break;
+        }
+        retries--;
+      }
+
       setProgress(100);
       await refreshProfile();
       
@@ -81,7 +100,6 @@ export const useOnboardingSubmit = () => {
       logger.error("Error during onboarding submission:", error);
       showToast.error(error instanceof Error ? error.message : "Failed to create profile");
       setRetryCount(prev => prev + 1);
-    } finally {
       setIsSubmitting(false);
     }
   };
