@@ -111,15 +111,6 @@ export function ChatWidget() {
     return null;
   }
 
-  const targetOrigin = window.location.origin;
-  // Validate target origin
-  if (!targetOrigin.includes('neuralitix.com') && targetOrigin !== 'http://localhost:3000') {
-    logger.warn('Invalid target origin detected', {
-      targetOrigin,
-      timestamp: new Date().toISOString()
-    });
-  }
-
   return (
     <div 
       className="fixed bottom-0 right-0 z-50" 
