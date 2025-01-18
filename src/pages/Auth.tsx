@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Auth as SupabaseAuth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,15 +8,9 @@ import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { showToast } from "@/utils/toast-config";
 
-// IMPORTANT: This component handles the critical magic link -> onboarding flow.
-// Changes here must be thoroughly tested to ensure new users are properly redirected
-// to the onboarding page after authentication.
-
 const Auth = () => {
-  const [searchParams] = useSearchParams();
   const [errorMessage, setErrorMessage] = useState("");
   const navigate = useNavigate();
-  const authType = searchParams.get('type') || 'signin';
 
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -24,6 +18,7 @@ const Auth = () => {
 
       if (session?.user?.id) {
         try {
+          // Check if user has a profile
           const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('id')
@@ -33,7 +28,6 @@ const Auth = () => {
           if (profileError) {
             logger.error("Error checking profile:", profileError);
             showToast.error("Error checking profile status");
-            navigate('/onboarding', { replace: true });
             return;
           }
 
@@ -47,7 +41,6 @@ const Auth = () => {
         } catch (error) {
           logger.error("Error in auth flow:", error);
           showToast.error("Authentication error occurred");
-          navigate('/onboarding', { replace: true });
         }
       }
     });
@@ -70,13 +63,9 @@ const Auth = () => {
         </Button>
         
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-2">
-            {authType === 'signin' ? 'Welcome Back' : 'Create Account'}
-          </h1>
+          <h1 className="text-2xl font-bold mb-2">Welcome</h1>
           <p className="text-muted-foreground">
-            {authType === 'signin' 
-              ? 'Sign in with magic link to continue' 
-              : 'Sign up with magic link to get started'}
+            Sign in with magic link to continue
           </p>
           {errorMessage && (
             <div className="mt-4 p-4 bg-destructive/10 text-destructive rounded-md">
@@ -122,11 +111,9 @@ const Auth = () => {
               magic_link: {
                 email_input_label: 'Email',
                 email_input_placeholder: 'Your email',
-                button_label: authType === 'signin' ? 'Send Magic Link' : 'Sign Up with Magic Link',
+                button_label: 'Send Magic Link',
                 loading_button_label: 'Sending Magic Link ...',
-                link_text: authType === 'signin' 
-                  ? "Don't have an account? Sign up" 
-                  : "Already have an account? Sign in",
+                link_text: "Don't have an account? Sign up",
               }
             }
           }}

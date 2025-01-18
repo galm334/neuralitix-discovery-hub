@@ -12,12 +12,10 @@ import Onboarding from "@/pages/Onboarding";
 import Terms from "@/pages/Terms";
 import Privacy from "@/pages/Privacy";
 import GDPR from "@/pages/GDPR";
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 export function AppRoutes() {
   return (
     <Routes>
-      {/* Public routes */}
       <Route path="/auth" element={<Auth />} />
       <Route path="/terms" element={<Terms />} />
       <Route path="/privacy" element={<Privacy />} />
@@ -29,21 +27,8 @@ export function AppRoutes() {
       <Route path="/just-added" element={<JustAdded />} />
       <Route path="/tool/:toolId" element={<ToolPage />} />
       <Route path="/category/:category" element={<CategoryPage />} />
-
-      {/* Protected routes - only for user profile management */}
-      <Route 
-        path="/onboarding" 
-        element={
-          <ProtectedRoute requireProfile={false}>
-            <Onboarding />
-          </ProtectedRoute>
-        } 
-      />
-      <Route path="/chat/:conversationId" element={
-        <ProtectedRoute>
-          <Chat />
-        </ProtectedRoute>
-      } />
+      <Route path="/onboarding" element={<Onboarding />} />
+      <Route path="/chat/:conversationId" element={<Chat />} />
     </Routes>
   );
 }
