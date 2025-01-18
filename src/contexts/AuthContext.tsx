@@ -28,75 +28,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
   const initializationComplete = useRef(false);
+  const sessionTimeoutRef = useRef<NodeJS.Timeout>();
 
   const fetchProfile = async (userId: string): Promise<Profile | null> => {
     try {
-      logger.info("Attempting to fetch profile", { 
-        userId, 
-        hasAuthHeader: !!session?.access_token
-      });
-
-      const { data, error, status } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .select('id, terms_accepted, name, avatar_url')
         .eq('id', userId)
         .maybeSingle();
 
       if (error) {
-        logger.error("Profile fetch error", { error, status, userId });
-        if (status === 406) {
-          logger.info("Profile doesn't exist yet (406)", { userId });
-          return null;
-        }
-        throw error;
+        logger.error("Profile fetch error", { error, userId });
+        toast.error("Failed to load profile. Please try again.");
+        return null;
       }
 
-      logger.info("Profile fetch successful", { 
-        success: !!data,
-        hasProfile: !!data,
-        userId
-      });
-      
       return data;
     } catch (error) {
       logger.error("Profile fetch failed", { error, userId });
+      toast.error("An unexpected error occurred while loading your profile.");
       return null;
     }
   };
-
-  const handleNavigation = useCallback(async (session: Session) => {
-    logger.info("Starting navigation handling", {
-      currentPath: location.pathname,
-      userEmail: session.user.email,
-      hasAccessToken: !!session.access_token
-    });
-
-    try {
-      const fetchedProfile = await fetchProfile(session.user.id);
-      
-      // Check if this is a magic link authentication
-      const isMagicLinkAuth = new URLSearchParams(window.location.search).get('type') === 'recovery';
-      
-      // Redirect to onboarding if:
-      // 1. User just completed magic link auth and has no profile or hasn't accepted terms
-      // 2. User is on auth page and has no profile or hasn't accepted terms
-      if ((isMagicLinkAuth || location.pathname === '/auth') && 
-          (!fetchedProfile || !fetchedProfile.terms_accepted)) {
-        logger.info("Auth completed, redirecting to onboarding", { 
-          userId: session.user.id,
-          hasProfile: !!fetchedProfile,
-          termsAccepted: fetchedProfile?.terms_accepted,
-          isMagicLinkAuth
-        });
-        navigate('/onboarding', { replace: true });
-        return;
-      }
-
-      setProfile(fetchedProfile);
-    } catch (error) {
-      logger.error("Navigation error", { error });
-    }
-  }, [navigate, location.pathname]);
 
   const refreshProfile = async () => {
     if (!session?.user?.id) {
@@ -105,16 +59,55 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      logger.info("Refreshing profile", { userId: session.user.id });
       const fetchedProfile = await fetchProfile(session.user.id);
       if (fetchedProfile) {
         setProfile(fetchedProfile);
       }
     } catch (error) {
       logger.error("Profile refresh failed", { error });
-      toast.error('Failed to refresh profile. Please try again.');
+      toast.error('Failed to refresh profile data');
     }
   };
+
+  const handleSessionTimeout = useCallback(() => {
+    logger.warn("Session timeout detected");
+    setSession(null);
+    setProfile(null);
+    toast.error("Your session has expired. Please sign in again.");
+    navigate('/auth', { replace: true });
+  }, [navigate]);
+
+  const handleNavigation = useCallback(async (session: Session) => {
+    try {
+      const fetchedProfile = await fetchProfile(session.user.id);
+      
+      // Clear any existing session timeout
+      if (sessionTimeoutRef.current) {
+        clearTimeout(sessionTimeoutRef.current);
+      }
+
+      // Set new session timeout based on session expiry
+      if (session.expires_at) {
+        const timeUntilExpiry = new Date(session.expires_at).getTime() - Date.now();
+        if (timeUntilExpiry > 0) {
+          sessionTimeoutRef.current = setTimeout(handleSessionTimeout, timeUntilExpiry);
+        }
+      }
+
+      const isMagicLinkAuth = new URLSearchParams(window.location.search).get('type') === 'recovery';
+      
+      if ((isMagicLinkAuth || location.pathname === '/auth') && 
+          (!fetchedProfile || !fetchedProfile.terms_accepted)) {
+        navigate('/onboarding', { replace: true });
+        return;
+      }
+
+      setProfile(fetchedProfile);
+    } catch (error) {
+      logger.error("Navigation error", { error });
+      toast.error("Failed to load your profile");
+    }
+  }, [navigate, location.pathname, handleSessionTimeout]);
 
   useEffect(() => {
     let mounted = true;
@@ -122,31 +115,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const initializeAuth = async () => {
       if (initializationComplete.current) return;
       
-      logger.info("Initializing authentication", {
-        currentUrl: window.location.href,
-        pathname: location.pathname
-      });
-      
       setIsLoading(true);
       
       try {
         const { data: { session: initialSession }, error } = await supabase.auth.getSession();
         
         if (error) {
-          logger.error("Session initialization error", { error });
           throw error;
         }
         
         if (mounted) {
           if (initialSession) {
-            logger.info("Initial session found", { 
-              userId: initialSession.user.id,
-              email: initialSession.user.email 
-            });
             setSession(initialSession);
             await handleNavigation(initialSession);
-          } else {
-            logger.info("No initial session found");
           }
           
           setIsLoading(false);
@@ -165,11 +146,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initializeAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      logger.info("Auth state changed", { 
-        event, 
-        hasSession: !!session,
-        userId: session?.user?.id 
-      });
+      logger.info("Auth state changed", { event, hasSession: !!session });
       
       if (mounted) {
         setSession(session);
@@ -184,9 +161,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       mounted = false;
+      if (sessionTimeoutRef.current) {
+        clearTimeout(sessionTimeoutRef.current);
+      }
       subscription.unsubscribe();
     };
-  }, [handleNavigation, navigate, location.pathname]);
+  }, [handleNavigation, navigate]);
 
   return (
     <AuthContext.Provider value={{ session, profile, isLoading, refreshProfile }}>
