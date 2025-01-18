@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
@@ -27,17 +27,18 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
   const [progress, setProgress] = useState(0);
   const navigate = useNavigate();
   const { refreshProfile, session } = useAuth();
-  const mountedRef = useRef(true);
 
   useEffect(() => {
     setNickname(generateNickname());
+  }, []);
+
+  useEffect(() => {
     return () => {
-      mountedRef.current = false;
       if (previewUrl) {
         URL.revokeObjectURL(previewUrl);
       }
     };
-  }, []);
+  }, [previewUrl]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -83,11 +84,6 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
       return;
     }
 
-    if (isSubmitting) {
-      logger.warn("Submission already in progress");
-      return;
-    }
-
     logger.info("Starting profile creation for user:", session.user.id);
 
     if (!termsAccepted) {
@@ -115,12 +111,12 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
 
       setProgress(20);
 
-      if (profilePic && mountedRef.current) {
+      if (profilePic) {
         logger.info("Uploading profile picture");
         const fileExt = profilePic.name.split('.').pop();
         const filePath = `${session.user.id}-${Math.random()}.${fileExt}`;
 
-        const { error: uploadError } = await supabase.storage
+        const { error: uploadError, data: uploadData } = await supabase.storage
           .from('profile-pictures')
           .upload(filePath, profilePic);
 
@@ -138,11 +134,6 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
 
         avatarUrl = publicUrl;
         logger.info("Generated public URL for profile picture:", avatarUrl);
-      }
-
-      if (!mountedRef.current) {
-        logger.info("Component unmounted during profile creation, aborting");
-        return;
       }
 
       setProgress(60);
@@ -174,7 +165,7 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
       const startTime = Date.now();
       
       logger.info("Starting profile verification loop");
-      while (mountedRef.current && Date.now() - startTime < 6000) {
+      while (Date.now() - startTime < 6000) {
         profileCreated = await verifyProfile(session.user.id);
         if (profileCreated) {
           logger.info("Profile verified successfully");
@@ -189,27 +180,20 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
         throw new Error("Profile creation verification timeout");
       }
 
-      if (!mountedRef.current) {
-        logger.info("Component unmounted during verification, aborting");
-        return;
-      }
-
       setProgress(100);
 
-      // Only proceed with navigation if the component is still mounted
-      if (mountedRef.current) {
-        await refreshProfile();
-        logger.info("Profile refreshed successfully");
-        showToast.success("Profile created successfully!");
-        navigate("/", { replace: true });
-      }
+      await refreshProfile();
+      logger.info("Profile refreshed successfully");
+      
+      showToast.success("Profile created successfully!");
+      navigate("/");
+
     } catch (error) {
-      if (mountedRef.current) {
-        logger.error("Error during onboarding submission:", error);
-        showToast.error("Failed to create profile. Please try again.");
-        setIsSubmitting(false);
-        setShowProgress(false);
-      }
+      logger.error("Error during onboarding submission:", error);
+      showToast.error("Failed to create profile. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+      setShowProgress(false);
     }
   };
 
