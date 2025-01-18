@@ -19,19 +19,28 @@ export function AppRoutes() {
     <Routes>
       {/* Public routes */}
       <Route path="/auth" element={<Auth />} />
-      <Route path="/onboarding" element={<Onboarding />} />
       <Route path="/terms" element={<Terms />} />
       <Route path="/privacy" element={<Privacy />} />
       <Route path="/gdpr" element={<GDPR />} />
       <Route path="/standalone-chat" element={<StandaloneChat />} />
-      <Route path="/" element={<Index />} />
-      <Route path="/popular" element={<Popular />} />
-      <Route path="/trending" element={<Trending />} />
-      <Route path="/just-added" element={<JustAdded />} />
-      <Route path="/tool/:toolId" element={<ToolPage />} />
-      <Route path="/category/:category" element={<CategoryPage />} />
 
-      {/* Protected routes - only for features requiring authentication */}
+      {/* Protected route that doesn't require a profile */}
+      <Route 
+        path="/onboarding" 
+        element={
+          <ProtectedRoute requireProfile={false}>
+            <Onboarding />
+          </ProtectedRoute>
+        } 
+      />
+
+      {/* Protected routes that require both auth and profile */}
+      <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+      <Route path="/popular" element={<ProtectedRoute><Popular /></ProtectedRoute>} />
+      <Route path="/trending" element={<ProtectedRoute><Trending /></ProtectedRoute>} />
+      <Route path="/just-added" element={<ProtectedRoute><JustAdded /></ProtectedRoute>} />
+      <Route path="/tool/:toolId" element={<ProtectedRoute><ToolPage /></ProtectedRoute>} />
+      <Route path="/category/:category" element={<ProtectedRoute><CategoryPage /></ProtectedRoute>} />
       <Route path="/chat/:conversationId" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
     </Routes>
   );

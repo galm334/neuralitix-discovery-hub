@@ -1,24 +1,53 @@
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { logger } from "@/utils/logger";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  requireProfile?: boolean;
 }
 
-export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const { session, isLoading } = useAuth();
+export const ProtectedRoute = ({ children, requireProfile = true }: ProtectedRouteProps) => {
+  const { session, profile, isLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
-    console.log("🔒 Protected Route - Session:", session ? "Present" : "None");
-    console.log("⌛ Protected Route - Loading:", isLoading);
+    const checkAuth = async () => {
+      logger.info("Protected Route - Checking auth", {
+        hasSession: !!session,
+        hasProfile: !!profile,
+        isLoading,
+        currentPath: location.pathname
+      });
 
-    if (!isLoading && !session) {
-      console.log("🚫 No session found, redirecting to auth");
-      navigate("/auth", { replace: true });
-    }
-  }, [session, isLoading, navigate]);
+      if (!isLoading) {
+        if (!session) {
+          logger.info("No session found, redirecting to auth");
+          navigate("/auth", { replace: true });
+          return;
+        }
+
+        if (requireProfile && !profile) {
+          if (location.pathname !== '/onboarding') {
+            logger.info("No profile found, redirecting to onboarding");
+            navigate("/onboarding", { replace: true });
+            return;
+          }
+        }
+
+        // Redirect from onboarding if profile exists
+        if (location.pathname === '/onboarding' && profile) {
+          logger.info("Profile exists, redirecting from onboarding to home");
+          navigate("/", { replace: true });
+          return;
+        }
+      }
+    };
+
+    checkAuth();
+  }, [session, profile, isLoading, navigate, location.pathname, requireProfile]);
 
   if (isLoading) {
     return (
@@ -28,5 +57,10 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     );
   }
 
-  return session ? <>{children}</> : null;
+  // Show nothing while redirecting
+  if (!session || (requireProfile && !profile)) {
+    return null;
+  }
+
+  return <>{children}</>;
 };
