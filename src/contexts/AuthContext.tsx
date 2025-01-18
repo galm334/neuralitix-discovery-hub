@@ -29,6 +29,60 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const initializationComplete = useRef(false);
 
+  // ⚠️ IMPORTANT: DO NOT MODIFY THE AUTHENTICATION FLOW ROUTING LOGIC BELOW
+  // This code ensures users are properly directed to /onboarding when they first sign up
+  // Changing this logic may break the user registration process
+  const handleNavigation = useCallback(async (session: Session) => {
+    logger.info("Starting navigation handling", {
+      currentPath: location.pathname,
+      userEmail: session.user.email,
+      hasAccessToken: !!session.access_token
+    });
+
+    try {
+      let currentProfile = profile;
+      if (!currentProfile) {
+        logger.info("No cached profile, fetching", { userId: session.user.id });
+        currentProfile = await fetchProfile(session.user.id);
+        setProfile(currentProfile);
+      }
+
+      logger.info("Navigation state", {
+        hasProfile: !!currentProfile,
+        currentPath: location.pathname,
+        isOnAuth: location.pathname === '/auth',
+        isOnOnboarding: location.pathname === '/onboarding'
+      });
+
+      if (location.pathname === '/auth') {
+        if (currentProfile) {
+          logger.info("Redirecting from auth to home", { userId: session.user.id });
+          navigate('/', { replace: true });
+        } else {
+          logger.info("No profile found, redirecting to onboarding", { userId: session.user.id });
+          navigate('/onboarding', { replace: true });
+        }
+        return;
+      }
+
+      if (!currentProfile && location.pathname !== '/onboarding') {
+        logger.info("No profile detected, redirecting to onboarding", { userId: session.user.id });
+        navigate('/onboarding', { replace: true });
+        return;
+      }
+
+      if (currentProfile && location.pathname === '/onboarding') {
+        logger.info("Profile exists, redirecting from onboarding to home", { userId: session.user.id });
+        navigate('/', { replace: true });
+        return;
+      }
+    } catch (error) {
+      logger.error("Navigation error", { error });
+      toast.error('Error loading user data');
+      navigate('/auth', { replace: true });
+    }
+  }, [navigate, location.pathname, profile]);
+
   const fetchProfile = async (userId: string) => {
     logger.info("Fetching profile", { userId });
     try {
@@ -64,57 +118,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
     toast.error('Authentication error. Please try again.');
   };
-
-  const handleNavigation = useCallback(async (session: Session) => {
-    logger.info("Starting navigation handling", {
-      currentPath: location.pathname,
-      userEmail: session.user.email,
-      hasAccessToken: !!session.access_token
-    });
-
-    try {
-      let currentProfile = profile;
-      if (!currentProfile) {
-        logger.info("No cached profile, fetching", { userId: session.user.id });
-        currentProfile = await fetchProfile(session.user.id);
-        setProfile(currentProfile);
-      }
-
-      logger.info("Navigation state", {
-        hasProfile: !!currentProfile,
-        currentPath: location.pathname,
-        isOnAuth: location.pathname === '/auth',
-        isOnOnboarding: location.pathname === '/onboarding'
-      });
-
-      if (location.pathname === '/auth') {
-        if (currentProfile) {
-          logger.info("Redirecting from auth to home", { userId: session.user.id });
-          navigate('/', { replace: true });
-        } else {
-          logger.info("No profile, redirecting to onboarding", { userId: session.user.id });
-          navigate('/onboarding', { replace: true });
-        }
-        return;
-      }
-
-      if (!currentProfile && location.pathname !== '/onboarding') {
-        logger.info("No profile detected, redirecting to onboarding", { userId: session.user.id });
-        navigate('/onboarding', { replace: true });
-        return;
-      }
-
-      if (currentProfile && location.pathname === '/onboarding') {
-        logger.info("Profile exists, redirecting from onboarding to home", { userId: session.user.id });
-        navigate('/', { replace: true });
-        return;
-      }
-    } catch (error) {
-      logger.error("Navigation error", { error });
-      toast.error('Error loading user data');
-      navigate('/auth', { replace: true });
-    }
-  }, [navigate, location.pathname, profile]);
 
   const refreshProfile = async () => {
     if (!session?.user?.id) {
