@@ -5,6 +5,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
 
+const SESSION_REFRESH_INTERVAL = 4 * 60 * 1000; // 4 minutes
+const PROFILE_FETCH_TIMEOUT = 30000; // 30 seconds
+const MAX_PROFILE_FETCH_ATTEMPTS = 3;
+
 interface Profile {
   id: string;
   terms_accepted: boolean;
@@ -29,8 +33,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const initializationComplete = useRef(false);
   const sessionTimeoutRef = useRef<NodeJS.Timeout>();
+  const refreshIntervalRef = useRef<NodeJS.Timeout>();
 
-  const fetchProfile = async (userId: string): Promise<Profile | null> => {
+  const fetchProfile = async (userId: string, attempt = 1): Promise<Profile | null> => {
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -39,14 +44,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .maybeSingle();
 
       if (error) {
-        logger.error("Profile fetch error", { error, userId });
+        logger.error("Profile fetch error", { error, userId, attempt });
+        if (attempt < MAX_PROFILE_FETCH_ATTEMPTS) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          return fetchProfile(userId, attempt + 1);
+        }
         toast.error("Failed to load profile. Please try again.");
         return null;
       }
 
       return data;
     } catch (error) {
-      logger.error("Profile fetch failed", { error, userId });
+      logger.error("Profile fetch failed", { error, userId, attempt });
       toast.error("An unexpected error occurred while loading your profile.");
       return null;
     }
@@ -69,6 +78,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const setupSessionRefresh = useCallback((session: Session) => {
+    // Clear any existing refresh interval
+    if (refreshIntervalRef.current) {
+      clearInterval(refreshIntervalRef.current);
+    }
+
+    // Set up periodic session refresh
+    refreshIntervalRef.current = setInterval(async () => {
+      try {
+        const { error } = await supabase.auth.refreshSession();
+        if (error) {
+          logger.error("Session refresh failed", { error });
+          handleSessionTimeout();
+        }
+      } catch (error) {
+        logger.error("Session refresh error", { error });
+        handleSessionTimeout();
+      }
+    }, SESSION_REFRESH_INTERVAL);
+
+    // Set session timeout based on expiry
+    if (session.expires_at) {
+      const timeUntilExpiry = new Date(session.expires_at).getTime() - Date.now();
+      if (timeUntilExpiry > 0) {
+        if (sessionTimeoutRef.current) {
+          clearTimeout(sessionTimeoutRef.current);
+        }
+        sessionTimeoutRef.current = setTimeout(handleSessionTimeout, timeUntilExpiry);
+      }
+    }
+  }, []);
+
   const handleSessionTimeout = useCallback(() => {
     logger.warn("Session timeout detected");
     setSession(null);
@@ -79,21 +120,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const handleNavigation = useCallback(async (session: Session) => {
     try {
-      const fetchedProfile = await fetchProfile(session.user.id);
+      setupSessionRefresh(session);
       
-      // Clear any existing session timeout
-      if (sessionTimeoutRef.current) {
-        clearTimeout(sessionTimeoutRef.current);
-      }
+      const fetchPromise = fetchProfile(session.user.id);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Profile fetch timeout')), PROFILE_FETCH_TIMEOUT)
+      );
 
-      // Set new session timeout based on session expiry
-      if (session.expires_at) {
-        const timeUntilExpiry = new Date(session.expires_at).getTime() - Date.now();
-        if (timeUntilExpiry > 0) {
-          sessionTimeoutRef.current = setTimeout(handleSessionTimeout, timeUntilExpiry);
-        }
-      }
-
+      const fetchedProfile = await Promise.race([fetchPromise, timeoutPromise]) as Profile | null;
+      
       const isMagicLinkAuth = new URLSearchParams(window.location.search).get('type') === 'recovery';
       
       if ((isMagicLinkAuth || location.pathname === '/auth') && 
@@ -107,7 +142,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logger.error("Navigation error", { error });
       toast.error("Failed to load your profile");
     }
-  }, [navigate, location.pathname, handleSessionTimeout]);
+  }, [navigate, location.pathname, setupSessionRefresh]);
 
   useEffect(() => {
     let mounted = true;
@@ -120,9 +155,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const { data: { session: initialSession }, error } = await supabase.auth.getSession();
         
-        if (error) {
-          throw error;
-        }
+        if (error) throw error;
         
         if (mounted) {
           if (initialSession) {
@@ -163,6 +196,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       mounted = false;
       if (sessionTimeoutRef.current) {
         clearTimeout(sessionTimeoutRef.current);
+      }
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
       }
       subscription.unsubscribe();
     };
