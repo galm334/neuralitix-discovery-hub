@@ -19,11 +19,12 @@ export const ProtectedRoute = ({ children, requireProfile = true }: ProtectedRou
         hasSession: !!session,
         hasProfile: !!profile,
         isLoading,
-        currentPath: location.pathname
+        currentPath: location.pathname,
+        requireProfile
       });
 
       if (!isLoading) {
-        // If we're on /auth and have a session, check profile status
+        // If we're on /auth and have a session, check where to redirect
         if (location.pathname === '/auth' && session) {
           if (!profile && requireProfile) {
             logger.info("User authenticated but no profile, redirecting to onboarding");
@@ -35,23 +36,24 @@ export const ProtectedRoute = ({ children, requireProfile = true }: ProtectedRou
           return;
         }
 
-        // Only redirect to /auth if there's no session and we're not already on /auth
+        // For protected routes that require authentication
         if (!session && location.pathname !== '/auth') {
           logger.info("No session found, redirecting to auth");
           navigate("/auth", { replace: true });
           return;
         }
 
-        // Only check profile requirements if we have a session and requireProfile is true
+        // Only enforce profile requirement for routes that need it
         if (session && requireProfile && !profile) {
+          // Allow access to onboarding
           if (location.pathname !== '/onboarding') {
-            logger.info("No profile found, redirecting to onboarding");
+            logger.info("Protected route requires profile, redirecting to onboarding");
             navigate("/onboarding", { replace: true });
             return;
           }
         }
 
-        // Redirect from onboarding if profile exists
+        // Prevent accessing onboarding if profile exists
         if (location.pathname === '/onboarding' && profile) {
           logger.info("Profile exists, redirecting from onboarding to home");
           navigate("/", { replace: true });
@@ -71,8 +73,13 @@ export const ProtectedRoute = ({ children, requireProfile = true }: ProtectedRou
     );
   }
 
-  // Show nothing while redirecting
-  if (!session || (requireProfile && !profile)) {
+  // For protected routes, show nothing while redirecting if no session
+  if (!session && requireProfile) {
+    return null;
+  }
+
+  // For routes that require a profile, show nothing while redirecting if no profile
+  if (requireProfile && !profile) {
     return null;
   }
 
