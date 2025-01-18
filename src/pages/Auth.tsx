@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { logger } from "@/utils/logger";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { showToast } from "@/utils/toast-config";
 
 const Auth = () => {
   const [searchParams] = useSearchParams();
@@ -14,21 +15,21 @@ const Auth = () => {
   const authType = searchParams.get('type') || 'signin';
 
   useEffect(() => {
-    // Check for magic link completion
+    // Handle magic link completion
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       logger.info("Auth state changed:", { event, hasSession: !!session });
 
-      if (event === 'SIGNED_IN' && session?.user?.id) {
+      if (session?.user?.id) {
         try {
           // Check if profile exists
-          const { data: profile } = await supabase
+          const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('id')
             .eq('id', session.user.id)
             .single();
 
-          if (!profile) {
-            logger.info("No profile found, redirecting to onboarding");
+          if (profileError || !profile) {
+            logger.info("No profile found or error, redirecting to onboarding", { profileError });
             navigate('/onboarding', { replace: true });
           } else {
             logger.info("Profile exists, redirecting to home");
@@ -36,7 +37,7 @@ const Auth = () => {
           }
         } catch (error) {
           logger.error("Error checking profile:", error);
-          // If there's an error checking the profile, assume we need onboarding
+          showToast.error("Error checking profile. Redirecting to onboarding.");
           navigate('/onboarding', { replace: true });
         }
       }

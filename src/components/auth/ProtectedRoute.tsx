@@ -24,40 +24,38 @@ export const ProtectedRoute = ({ children, requireProfile = true }: ProtectedRou
       });
 
       if (!isLoading) {
-        // If we're on /auth and have a session, check where to redirect
-        if (location.pathname === '/auth' && session) {
-          if (!profile && requireProfile) {
-            logger.info("User authenticated but no profile, redirecting to onboarding");
-            navigate("/onboarding", { replace: true });
-            return;
-          }
-          logger.info("User is authenticated, redirecting to home");
-          navigate("/", { replace: true });
-          return;
-        }
-
-        // For protected routes that require authentication
+        // If no session, redirect to auth except for /auth path
         if (!session && location.pathname !== '/auth') {
           logger.info("No session found, redirecting to auth");
           navigate("/auth", { replace: true });
           return;
         }
 
-        // Only enforce profile requirement for routes that need it
-        if (session && requireProfile && !profile) {
+        // If we have a session but no profile and profile is required
+        if (session && !profile && requireProfile) {
           // Allow access to onboarding
           if (location.pathname !== '/onboarding') {
-            logger.info("Protected route requires profile, redirecting to onboarding");
+            logger.info("No profile found, redirecting to onboarding");
             navigate("/onboarding", { replace: true });
             return;
           }
         }
 
-        // Prevent accessing onboarding if profile exists
-        if (location.pathname === '/onboarding' && profile) {
-          logger.info("Profile exists, redirecting from onboarding to home");
-          navigate("/", { replace: true });
-          return;
+        // If we have both session and profile
+        if (session && profile) {
+          // Redirect from auth page to home
+          if (location.pathname === '/auth') {
+            logger.info("Already authenticated, redirecting to home");
+            navigate("/", { replace: true });
+            return;
+          }
+          
+          // Redirect from onboarding if profile exists
+          if (location.pathname === '/onboarding') {
+            logger.info("Profile exists, redirecting from onboarding to home");
+            navigate("/", { replace: true });
+            return;
+          }
         }
       }
     };
