@@ -74,12 +74,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const fetchedProfile = await fetchProfile(session.user.id);
       
-      // Only redirect to onboarding after auth if no profile exists or terms not accepted
-      if (location.pathname === '/auth' && (!fetchedProfile || !fetchedProfile.terms_accepted)) {
+      // Check if this is a magic link authentication
+      const isMagicLinkAuth = new URLSearchParams(window.location.search).get('type') === 'recovery';
+      
+      // Redirect to onboarding if:
+      // 1. User just completed magic link auth and has no profile or hasn't accepted terms
+      // 2. User is on auth page and has no profile or hasn't accepted terms
+      if ((isMagicLinkAuth || location.pathname === '/auth') && 
+          (!fetchedProfile || !fetchedProfile.terms_accepted)) {
         logger.info("Auth completed, redirecting to onboarding", { 
           userId: session.user.id,
           hasProfile: !!fetchedProfile,
-          termsAccepted: fetchedProfile?.terms_accepted 
+          termsAccepted: fetchedProfile?.terms_accepted,
+          isMagicLinkAuth
         });
         navigate('/onboarding', { replace: true });
         return;
