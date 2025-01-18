@@ -60,13 +60,14 @@ export function ChatWidget() {
       }
     };
 
-    // Set up timeout handling
+    // Set up timeout handling with default fallback
+    const defaultTimeout = 10000; // 10 seconds default
     const messageTimeout = setTimeout(() => {
       logger.warn('Message channel timeout reached', {
-        timeout: window.MESSAGE_TIMEOUT,
+        timeout: window.MESSAGE_TIMEOUT || defaultTimeout,
         timestamp: new Date().toISOString()
       });
-    }, window.MESSAGE_TIMEOUT || 10000);
+    }, window.MESSAGE_TIMEOUT || defaultTimeout);
 
     // Increase message channel timeout
     const style = document.createElement('style');
