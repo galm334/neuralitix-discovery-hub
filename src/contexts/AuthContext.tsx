@@ -79,12 +79,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const setupSessionRefresh = useCallback((session: Session) => {
-    // Clear any existing refresh interval
     if (refreshIntervalRef.current) {
       clearInterval(refreshIntervalRef.current);
     }
 
-    // Set up periodic session refresh
     refreshIntervalRef.current = setInterval(async () => {
       try {
         const { error } = await supabase.auth.refreshSession();
@@ -98,7 +96,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }, SESSION_REFRESH_INTERVAL);
 
-    // Set session timeout based on expiry
     if (session.expires_at) {
       const timeUntilExpiry = new Date(session.expires_at).getTime() - Date.now();
       if (timeUntilExpiry > 0) {
@@ -118,54 +115,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     navigate('/auth', { replace: true });
   }, [navigate]);
 
-  const handleNavigation = useCallback(async (session: Session) => {
-    try {
-      setupSessionRefresh(session);
-      
-      const fetchPromise = fetchProfile(session.user.id);
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Profile fetch timeout')), PROFILE_FETCH_TIMEOUT)
-      );
-
-      const fetchedProfile = await Promise.race([fetchPromise, timeoutPromise]) as Profile | null;
-      
-      // Only redirect to onboarding if there's no profile
-      if (!fetchedProfile) {
-        logger.info("No profile found, redirecting to onboarding");
-        navigate('/onboarding', { replace: true });
-        return;
-      }
-
-      setProfile(fetchedProfile);
-      
-      // If on auth page, redirect to home
-      if (location.pathname === '/auth') {
-        navigate('/', { replace: true });
-      }
-      
-    } catch (error) {
-      logger.error("Navigation error", { error });
-      toast.error("Failed to load your profile");
-    }
-  }, [navigate, location.pathname, setupSessionRefresh]);
-
   useEffect(() => {
     let mounted = true;
 
     const initializeAuth = async () => {
       if (initializationComplete.current) return;
       
-      setIsLoading(true);
-      
       try {
-        const { data: { session: initialSession }, error } = await supabase.auth.getSession();
-        
-        if (error) throw error;
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
         
         if (mounted) {
           if (initialSession) {
             setSession(initialSession);
-            await handleNavigation(initialSession);
+            setupSessionRefresh(initialSession);
+            
+            const fetchedProfile = await fetchProfile(initialSession.user.id);
+            if (fetchedProfile) {
+              setProfile(fetchedProfile);
+            }
           }
           
           setIsLoading(false);
@@ -183,16 +150,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     initializeAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      logger.info("Auth state changed", { event, hasSession: !!session });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+      logger.info("Auth state changed", { event, hasSession: !!newSession });
       
       if (mounted) {
-        setSession(session);
-        if (session) {
-          await handleNavigation(session);
-        } else if (event === 'SIGNED_OUT') {
+        if (newSession) {
+          setSession(newSession);
+          setupSessionRefresh(newSession);
+          
+          const fetchedProfile = await fetchProfile(newSession.user.id);
+          if (fetchedProfile) {
+            setProfile(fetchedProfile);
+          }
+        } else {
+          setSession(null);
           setProfile(null);
-          navigate('/', { replace: true });
+          if (event === 'SIGNED_OUT') {
+            navigate('/auth', { replace: true });
+          }
         }
       }
     });
@@ -207,7 +182,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       subscription.unsubscribe();
     };
-  }, [handleNavigation, navigate]);
+  }, [navigate, setupSessionRefresh]);
 
   return (
     <AuthContext.Provider value={{ session, profile, isLoading, refreshProfile }}>
