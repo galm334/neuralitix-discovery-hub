@@ -2,11 +2,16 @@ import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { logger } from "@/utils/logger";
+import { showToast } from "@/utils/toast-config";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requireProfile?: boolean;
 }
+
+// IMPORTANT: Do not modify the logic in this component without thorough testing
+// of all authentication flows, especially the magic link -> onboarding flow for new users.
+// Changes here can break the critical user onboarding process.
 
 export const ProtectedRoute = ({ children, requireProfile = true }: ProtectedRouteProps) => {
   const { session, profile, isLoading } = useAuth();
@@ -15,9 +20,12 @@ export const ProtectedRoute = ({ children, requireProfile = true }: ProtectedRou
 
   useEffect(() => {
     const checkAuth = async () => {
+      const userId = session?.user?.id;
+      const profileId = profile?.id;
+
       logger.info("Protected Route - Checking auth", {
-        hasSession: !!session?.user?.id,
-        hasProfile: !!profile?.id,
+        userId,
+        profileId,
         isLoading,
         currentPath: location.pathname,
         requireProfile
@@ -25,24 +33,24 @@ export const ProtectedRoute = ({ children, requireProfile = true }: ProtectedRou
 
       if (!isLoading) {
         // If no session, redirect to auth except for /auth path
-        if (!session?.user?.id && location.pathname !== '/auth') {
+        if (!userId && location.pathname !== '/auth') {
           logger.info("No session found, redirecting to auth");
           navigate("/auth", { replace: true });
           return;
         }
 
         // If we have a session but no profile and profile is required
-        if (session?.user?.id && !profile?.id && requireProfile) {
+        if (userId && !profileId && requireProfile) {
           // Allow access to onboarding
           if (location.pathname !== '/onboarding') {
-            logger.info("No profile found, redirecting to onboarding");
+            logger.info("No profile found, redirecting to onboarding", { userId });
             navigate("/onboarding", { replace: true });
             return;
           }
         }
 
         // If we have both session and profile
-        if (session?.user?.id && profile?.id) {
+        if (userId && profileId) {
           // Redirect from auth page to home
           if (location.pathname === '/auth') {
             logger.info("Already authenticated, redirecting to home");

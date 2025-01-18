@@ -8,6 +8,10 @@ import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { showToast } from "@/utils/toast-config";
 
+// IMPORTANT: This component handles the critical magic link -> onboarding flow.
+// Changes here must be thoroughly tested to ensure new users are properly redirected
+// to the onboarding page after authentication.
+
 const Auth = () => {
   const [searchParams] = useSearchParams();
   const [errorMessage, setErrorMessage] = useState("");
@@ -15,29 +19,34 @@ const Auth = () => {
   const authType = searchParams.get('type') || 'signin';
 
   useEffect(() => {
-    // Handle magic link completion
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      logger.info("Auth state changed:", { event, hasSession: !!session });
+      logger.info("Auth state changed:", { event, hasSession: !!session?.user });
 
       if (session?.user?.id) {
         try {
-          // Check if profile exists
           const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('id')
             .eq('id', session.user.id)
-            .single();
+            .maybeSingle();
 
-          if (profileError || !profile) {
-            logger.info("No profile found or error, redirecting to onboarding", { profileError });
+          if (profileError) {
+            logger.error("Error checking profile:", profileError);
+            showToast.error("Error checking profile status");
+            navigate('/onboarding', { replace: true });
+            return;
+          }
+
+          if (!profile?.id) {
+            logger.info("No profile found, redirecting to onboarding", { userId: session.user.id });
             navigate('/onboarding', { replace: true });
           } else {
-            logger.info("Profile exists, redirecting to home");
+            logger.info("Profile exists, redirecting to home", { userId: session.user.id });
             navigate('/', { replace: true });
           }
         } catch (error) {
-          logger.error("Error checking profile:", error);
-          showToast.error("Error checking profile. Redirecting to onboarding.");
+          logger.error("Error in auth flow:", error);
+          showToast.error("Authentication error occurred");
           navigate('/onboarding', { replace: true });
         }
       }
