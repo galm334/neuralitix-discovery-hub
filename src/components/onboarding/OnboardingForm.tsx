@@ -60,7 +60,7 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
         .from('profiles')
         .select('id, nickname, name, terms_accepted')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
       
       if (error) {
         logger.error("Profile verification error:", error);
@@ -122,7 +122,7 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
 
         if (uploadError) {
           logger.error("Profile picture upload error:", uploadError);
-          throw uploadError;
+          throw new Error("Failed to upload profile picture: " + uploadError.message);
         }
 
         logger.info("Profile picture uploaded successfully");
@@ -154,30 +154,39 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
 
       if (updateError) {
         logger.error("Profile update error:", updateError);
-        throw updateError;
+        throw new Error("Failed to update profile: " + updateError.message);
       }
 
       logger.info("Profile updated successfully");
       setProgress(80);
 
-      // Verify profile creation with timeout
+      // Verify profile creation with increased timeout and delay between attempts
       let profileCreated = false;
       const startTime = Date.now();
+      const maxAttempts = 5;
+      const delayBetweenAttempts = 2000; // 2 seconds between attempts
+      const maxWaitTime = 15000; // 15 seconds total timeout
       
       logger.info("Starting profile verification loop");
-      while (Date.now() - startTime < 6000) {
+      let attempts = 0;
+      
+      while (Date.now() - startTime < maxWaitTime && attempts < maxAttempts) {
+        attempts++;
+        logger.info(`Verification attempt ${attempts}/${maxAttempts}`);
+        
         profileCreated = await verifyProfile(session.user.id);
         if (profileCreated) {
           logger.info("Profile verified successfully");
           break;
         }
-        logger.info("Profile not verified yet, retrying...");
-        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        logger.info(`Profile not verified yet, waiting ${delayBetweenAttempts}ms before retry...`);
+        await new Promise(resolve => setTimeout(resolve, delayBetweenAttempts));
       }
 
       if (!profileCreated) {
         logger.error("Profile creation verification timeout");
-        throw new Error("Profile creation verification timeout");
+        throw new Error("Profile creation could not be verified. Please try again or contact support.");
       }
 
       setProgress(100);
@@ -186,11 +195,11 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
       logger.info("Profile refreshed successfully");
       
       showToast.success("Profile created successfully!");
-      navigate("/");
+      navigate("/", { replace: true });
 
     } catch (error) {
       logger.error("Error during onboarding submission:", error);
-      showToast.error("Failed to create profile. Please try again.");
+      showToast.error(error instanceof Error ? error.message : "Failed to create profile. Please try again.");
     } finally {
       setIsSubmitting(false);
       setShowProgress(false);
