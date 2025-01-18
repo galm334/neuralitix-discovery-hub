@@ -23,13 +23,15 @@ export const ProtectedRoute = ({ children, requireProfile = true }: ProtectedRou
       });
 
       if (!isLoading) {
-        if (!session) {
+        // Only redirect to /auth if there's no session and we're not already on /auth
+        if (!session && location.pathname !== '/auth') {
           logger.info("No session found, redirecting to auth");
           navigate("/auth", { replace: true });
           return;
         }
 
-        if (requireProfile && !profile) {
+        // Only check profile requirements if we have a session
+        if (session && requireProfile && !profile) {
           if (location.pathname !== '/onboarding') {
             logger.info("No profile found, redirecting to onboarding");
             navigate("/onboarding", { replace: true });
