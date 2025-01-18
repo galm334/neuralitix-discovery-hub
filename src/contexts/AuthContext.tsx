@@ -59,26 +59,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return null;
         }
 
-        const shouldRetry = retryCount < maxRetries && (
-          error.message.includes('fetch') || 
-          error.message.includes('network') ||
-          error.message.includes('internet') ||
-          status === 503 || 
-          status === 429 ||
-          status === 401 ||
-          status === 0
-        );
-
-        if (shouldRetry) {
-          const delay = retryDelay * Math.pow(2, retryCount);
-          logger.info("Retrying profile fetch", { 
-            nextAttemptIn: delay,
-            attemptNumber: retryCount + 1 
-          });
-          await new Promise(resolve => setTimeout(resolve, delay));
-          return fetchProfile(userId, retryCount + 1);
-        }
-
         throw error;
       }
 
@@ -91,17 +71,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return data;
     } catch (error) {
       logger.error("Profile fetch failed", { error, userId, retryCount });
-      
-      if (retryCount < maxRetries && error instanceof Error && (
-        error.message.includes('internet disconnected') ||
-        error.message.includes('network') ||
-        error.message.includes('fetch')
-      )) {
-        const delay = retryDelay * Math.pow(2, retryCount);
-        await new Promise(resolve => setTimeout(resolve, delay));
-        return fetchProfile(userId, retryCount + 1);
-      }
-      
       return null;
     }
   };
@@ -122,16 +91,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      if (fetchedProfile && (location.pathname === '/auth' || location.pathname === '/onboarding')) {
-        logger.info("Profile exists, redirecting to home", { userId: session.user.id });
-        navigate('/', { replace: true });
-        return;
-      }
-
       setProfile(fetchedProfile);
     } catch (error) {
       logger.error("Navigation error", { error });
-      navigate('/auth', { replace: true });
+      // Don't redirect to /auth here - let the protected route handle it
     }
   }, [navigate, location.pathname]);
 
@@ -184,7 +147,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             await handleNavigation(initialSession);
           } else {
             logger.info("No initial session found");
-            // Only redirect to /auth if we're on a protected route
+            // Only redirect to /auth for protected routes
             if (location.pathname === '/chat') {
               navigate('/auth', { replace: true });
             }
@@ -199,7 +162,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setIsLoading(false);
           initializationComplete.current = true;
           toast.error('Authentication error. Please refresh the page.');
-          // Only redirect to /auth if we're on a protected route
+          // Only redirect to /auth for protected routes
           if (location.pathname === '/chat') {
             navigate('/auth', { replace: true });
           }
@@ -222,7 +185,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await handleNavigation(session);
         } else if (event === 'SIGNED_OUT') {
           setProfile(null);
-          navigate('/auth', { replace: true });
+          // Don't automatically redirect to /auth on sign out
+          // Let the protected route handle the redirect if needed
         }
       }
     });

@@ -25,6 +25,7 @@ export function AppSidebar() {
   const navigate = useNavigate();
 
   const handleAuthClick = (type: 'signin' | 'signup') => {
+    // Only navigate to auth when explicitly clicking sign in/up buttons
     navigate(`/auth?type=${type}`);
     setOpenMobile(false);
   };
