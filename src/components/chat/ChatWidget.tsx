@@ -19,7 +19,6 @@ export function ChatWidget() {
     ];
 
     const handleMessage = (event: MessageEvent) => {
-      // Enhanced origin validation with detailed logging
       if (!allowedOrigins.includes(event.origin)) {
         logger.warn('Blocked message from unauthorized origin', {
           origin: event.origin,
@@ -60,36 +59,13 @@ export function ChatWidget() {
       }
     };
 
-    // Set up timeout handling with default fallback
-    const defaultTimeout = 10000; // 10 seconds default
+    const defaultTimeout = 10000;
     const messageTimeout = setTimeout(() => {
       logger.warn('Message channel timeout reached', {
         timeout: window.MESSAGE_TIMEOUT || defaultTimeout,
         timestamp: new Date().toISOString()
       });
     }, window.MESSAGE_TIMEOUT || defaultTimeout);
-
-    // Increase message channel timeout
-    const style = document.createElement('style');
-    style.textContent = `
-      .zi-embed-chat,
-      .zi-embed-chat *,
-      .zi-embed-chat div,
-      .zi-embed-chat iframe {
-        max-width: 100px !important;
-        width: 100px !important;
-        transition: all 0.5s ease-in-out !important;
-      }
-      .zi-embed-chat-popup-wrapper,
-      .zi-embed-chat-popup-wrapper *,
-      .zi-embed-chat-popup-wrapper div,
-      .zi-embed-chat-popup-wrapper iframe {
-        max-width: 100px !important;
-        width: 100px !important;
-        transition: all 0.5s ease-in-out !important;
-      }
-    `;
-    document.head.appendChild(style);
 
     window.addEventListener('message', handleMessage);
     logger.info('Message event listener attached', {
@@ -99,7 +75,6 @@ export function ChatWidget() {
 
     return () => {
       window.removeEventListener('message', handleMessage);
-      document.head.removeChild(style);
       clearTimeout(messageTimeout);
       logger.info('Chat widget cleanup completed', {
         timestamp: new Date().toISOString()
