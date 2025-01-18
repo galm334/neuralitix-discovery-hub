@@ -4,6 +4,8 @@ import { Auth as SupabaseAuth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
 import { logger } from "@/utils/logger";
+import { X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const Auth = () => {
   const [searchParams] = useSearchParams();
@@ -27,10 +29,10 @@ const Auth = () => {
 
           if (profileError || !profile) {
             logger.info("No profile found, redirecting to onboarding");
-            navigate('/onboarding');
+            navigate('/onboarding', { replace: true });
           } else {
             logger.info("Profile found, redirecting to home");
-            navigate('/');
+            navigate('/', { replace: true });
           }
         }
       } catch (error) {
@@ -43,8 +45,17 @@ const Auth = () => {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md space-y-8 bg-card p-8 rounded-lg shadow-lg">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 relative">
+      <div className="w-full max-w-md space-y-8 bg-card p-8 rounded-lg shadow-lg relative">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute right-4 top-4"
+          onClick={() => navigate(-1)}
+        >
+          <X className="h-4 w-4" />
+        </Button>
+        
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-2">
             {authType === 'signin' ? 'Welcome Back' : 'Create Account'}

@@ -23,9 +23,14 @@ export const ProtectedRoute = ({ children, requireProfile = true }: ProtectedRou
       });
 
       if (!isLoading) {
-        // If we're on /auth and have a session, redirect to home
+        // If we're on /auth and have a session, check profile status
         if (location.pathname === '/auth' && session) {
-          logger.info("User is authenticated, redirecting from auth to home");
+          if (!profile && requireProfile) {
+            logger.info("User authenticated but no profile, redirecting to onboarding");
+            navigate("/onboarding", { replace: true });
+            return;
+          }
+          logger.info("User is authenticated, redirecting to home");
           navigate("/", { replace: true });
           return;
         }
