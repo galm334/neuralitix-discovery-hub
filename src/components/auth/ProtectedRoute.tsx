@@ -9,9 +9,13 @@ interface ProtectedRouteProps {
   requireProfile?: boolean;
 }
 
-// IMPORTANT: Do not modify the logic in this component without thorough testing
-// of all authentication flows, especially the magic link -> onboarding flow for new users.
+// CRITICAL: This component handles the magic link -> onboarding flow.
+// DO NOT modify the redirection logic without thorough testing.
 // Changes here can break the critical user onboarding process.
+// The order of checks is important:
+// 1. Check for session
+// 2. Check for profile
+// 3. Handle redirections based on current path
 
 export const ProtectedRoute = ({ children, requireProfile = true }: ProtectedRouteProps) => {
   const { session, profile, isLoading } = useAuth();
@@ -23,7 +27,7 @@ export const ProtectedRoute = ({ children, requireProfile = true }: ProtectedRou
       const userId = session?.user?.id;
       const profileId = profile?.id;
 
-      logger.info("Protected Route - Checking auth", {
+      logger.info("Protected Route - Auth Check", {
         userId,
         profileId,
         isLoading,
@@ -32,35 +36,28 @@ export const ProtectedRoute = ({ children, requireProfile = true }: ProtectedRou
       });
 
       if (!isLoading) {
-        // If no session, redirect to auth except for /auth path
+        // No session -> redirect to auth
         if (!userId && location.pathname !== '/auth') {
-          logger.info("No session found, redirecting to auth");
+          logger.info("No session, redirecting to auth");
           navigate("/auth", { replace: true });
           return;
         }
 
-        // If we have a session but no profile and profile is required
+        // Has session but no profile -> redirect to onboarding
         if (userId && !profileId && requireProfile) {
-          // Allow access to onboarding
           if (location.pathname !== '/onboarding') {
             logger.info("No profile found, redirecting to onboarding", { userId });
             navigate("/onboarding", { replace: true });
+            showToast.info("Please complete your profile to continue");
             return;
           }
         }
 
-        // If we have both session and profile
+        // Has both session and profile
         if (userId && profileId) {
-          // Redirect from auth page to home
-          if (location.pathname === '/auth') {
-            logger.info("Already authenticated, redirecting to home");
-            navigate("/", { replace: true });
-            return;
-          }
-          
-          // Redirect from onboarding if profile exists
-          if (location.pathname === '/onboarding') {
-            logger.info("Profile exists, redirecting from onboarding to home");
+          // Prevent authenticated users from accessing auth/onboarding pages
+          if (location.pathname === '/auth' || location.pathname === '/onboarding') {
+            logger.info("User already has profile, redirecting to home");
             navigate("/", { replace: true });
             return;
           }
@@ -71,6 +68,7 @@ export const ProtectedRoute = ({ children, requireProfile = true }: ProtectedRou
     checkAuth();
   }, [session?.user?.id, profile?.id, isLoading, navigate, location.pathname, requireProfile]);
 
+  // Show loading spinner while checking auth state
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -79,12 +77,11 @@ export const ProtectedRoute = ({ children, requireProfile = true }: ProtectedRou
     );
   }
 
-  // For protected routes, show nothing while redirecting if no session
+  // Show nothing while redirecting if no session/profile when required
   if (!session?.user?.id && requireProfile) {
     return null;
   }
 
-  // For routes that require a profile, show nothing while redirecting if no profile
   if (requireProfile && !profile?.id) {
     return null;
   }
