@@ -15,48 +15,45 @@ import Terms from "@/pages/Terms";
 import Privacy from "@/pages/Privacy";
 import GDPR from "@/pages/GDPR";
 import { logger } from "@/utils/logger";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function AppRoutes() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [shouldRedirect, setShouldRedirect] = useState<string | null>(null);
+  const { session, profile, isLoading } = useAuth();
+  const [isCheckingProfile, setIsCheckingProfile] = useState(true);
 
   useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session?.user) {
-        try {
-          const { data: profile, error } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('id', session.user.id)
-            .single();
-
-          if (error) {
-            logger.error("Profile check error:", error);
-            setIsLoading(false);
-            return;
-          }
-
-          if (!profile) {
-            setShouldRedirect('/onboarding');
-          }
-        } catch (error) {
-          logger.error("Session check error:", error);
-        }
+    const checkProfile = async () => {
+      if (!session?.user) {
+        setIsCheckingProfile(false);
+        return;
       }
-      setIsLoading(false);
+
+      try {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', session.user.id)
+          .single();
+
+        if (error) {
+          logger.error("Profile check error:", error);
+        }
+
+        if (!profile && window.location.pathname !== '/onboarding') {
+          window.location.href = '/onboarding';
+        }
+      } catch (error) {
+        logger.error("Profile check failed:", error);
+      }
+      
+      setIsCheckingProfile(false);
     };
 
-    checkSession();
-  }, []);
+    checkProfile();
+  }, [session]);
 
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
-  if (shouldRedirect) {
-    return <Navigate to={shouldRedirect} replace />;
+  if (isLoading || isCheckingProfile) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
 
   return (

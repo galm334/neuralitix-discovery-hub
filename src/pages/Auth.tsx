@@ -14,28 +14,33 @@ const Auth = () => {
 
   useEffect(() => {
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session?.user) {
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('id', session.user.id)
-          .single();
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.user) {
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('id', session.user.id)
+            .single();
 
-        if (error && error.code !== 'PGRST116') {
-          logger.error("Error checking profile:", error);
-          toast.error("Error checking profile status");
-          setIsLoading(false);
-          return;
-        }
+          if (error && error.code !== 'PGRST116') {
+            logger.error("Error checking profile:", error);
+            toast.error("Error checking profile status");
+            setIsLoading(false);
+            return;
+          }
 
-        if (!profile) {
-          navigate('/onboarding', { replace: true });
+          if (!profile) {
+            navigate('/onboarding');
+          } else {
+            navigate('/');
+          }
         } else {
-          navigate('/', { replace: true });
+          setIsLoading(false);
         }
-      } else {
+      } catch (error) {
+        logger.error("Session check error:", error);
         setIsLoading(false);
       }
     };
@@ -46,22 +51,27 @@ const Auth = () => {
       logger.info("Auth state changed:", { event, hasSession: !!session });
       
       if (event === 'SIGNED_IN' && session) {
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('id', session.user.id)
-          .single();
+        try {
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('id', session.user.id)
+            .single();
 
-        if (error && error.code !== 'PGRST116') {
-          logger.error("Error checking profile after sign in:", error);
+          if (error && error.code !== 'PGRST116') {
+            logger.error("Error checking profile after sign in:", error);
+            toast.error("Error checking profile status");
+            return;
+          }
+
+          if (!profile) {
+            navigate('/onboarding');
+          } else {
+            navigate('/');
+          }
+        } catch (error) {
+          logger.error("Profile check error after sign in:", error);
           toast.error("Error checking profile status");
-          return;
-        }
-
-        if (!profile) {
-          navigate('/onboarding', { replace: true });
-        } else {
-          navigate('/', { replace: true });
         }
       }
     });
