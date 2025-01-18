@@ -3,7 +3,7 @@ import { logger } from "@/utils/logger";
 
 export const verifyProfile = async (userId: string): Promise<boolean> => {
   try {
-    logger.info("Starting profile verification for user:", userId);
+    logger.info("Starting profile verification", { userId });
     
     const { data, error } = await supabase
       .from('profiles')
@@ -12,15 +12,23 @@ export const verifyProfile = async (userId: string): Promise<boolean> => {
       .maybeSingle();
     
     if (error) {
-      logger.error("Profile verification error:", error);
+      logger.error("Profile verification error", { error, userId });
       return false;
     }
     
     const isValid = !!data && !!data.nickname && !!data.name && data.terms_accepted === true;
-    logger.info("Profile verification result:", { data, isValid });
+    logger.info("Profile verification completed", { 
+      userId,
+      isValid,
+      hasData: !!data,
+      hasNickname: !!data?.nickname,
+      hasName: !!data?.name,
+      termsAccepted: data?.terms_accepted
+    });
+    
     return isValid;
   } catch (error) {
-    logger.error("Profile verification failed:", error);
+    logger.error("Profile verification failed", { error, userId });
     return false;
   }
 };
@@ -34,22 +42,48 @@ export const waitForProfileCreation = async (
   const startTime = Date.now();
   let attempts = 0;
   
+  logger.info("Starting profile creation verification", {
+    userId,
+    maxAttempts,
+    delayBetweenAttempts,
+    maxWaitTime
+  });
+  
   while (Date.now() - startTime < maxWaitTime && attempts < maxAttempts) {
     attempts++;
-    logger.info(`Verification attempt ${attempts}/${maxAttempts}`);
+    logger.info("Profile verification attempt", { 
+      attempt: attempts,
+      maxAttempts,
+      timeElapsed: Date.now() - startTime,
+      maxWaitTime
+    });
     
     const profileCreated = await verifyProfile(userId);
     if (profileCreated) {
-      logger.info("Profile verified successfully");
+      logger.info("Profile verified successfully", { 
+        userId,
+        attempts,
+        timeElapsed: Date.now() - startTime 
+      });
       return true;
     }
     
     if (attempts < maxAttempts) {
-      logger.info(`Profile not verified yet, waiting ${delayBetweenAttempts}ms before retry...`);
+      logger.info("Profile not verified yet", {
+        userId,
+        nextAttemptIn: delayBetweenAttempts,
+        attemptsRemaining: maxAttempts - attempts
+      });
       await new Promise(resolve => setTimeout(resolve, delayBetweenAttempts));
     }
   }
   
-  logger.error(`Profile creation verification timeout after ${attempts} attempts and ${Date.now() - startTime}ms`);
+  logger.error("Profile creation verification timeout", {
+    userId,
+    attempts,
+    timeElapsed: Date.now() - startTime,
+    maxAttempts,
+    maxWaitTime
+  });
   return false;
 };

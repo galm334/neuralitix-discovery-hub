@@ -29,7 +29,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const initializationComplete = useRef(false);
 
   const fetchProfile = async (userId: string) => {
-    console.log("🔍 [AuthContext] Fetching profile for user:", userId);
+    logger.info("Fetching profile", { userId });
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -38,62 +38,78 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .maybeSingle();
 
       if (error) {
-        console.error("❌ [AuthContext] Error fetching profile:", error);
+        logger.error("Error fetching profile", { error, userId });
         throw error;
       }
-      console.log("✅ [AuthContext] Profile fetch result:", data);
+      
+      logger.info("Profile fetch result", { 
+        success: !!data,
+        hasProfile: !!data,
+        userId 
+      });
+      
       return data;
     } catch (error) {
-      console.error('❌ [AuthContext] Error in fetchProfile:', error);
+      logger.error("Error in fetchProfile", { error, userId });
       return null;
     }
   };
 
   const handleAuthError = (error: AuthError) => {
-    console.error('🚫 [AuthContext] Auth error:', error);
+    logger.error("Auth error occurred", { 
+      code: error.code,
+      message: error.message,
+      status: error.status
+    });
     toast.error('Authentication error. Please try again.');
   };
 
   const handleNavigation = useCallback(async (session: Session) => {
-    console.log("🧭 [AuthContext] Starting navigation handling");
-    console.log("📍 [AuthContext] Current location:", location.pathname);
-    console.log("👤 [AuthContext] Session user:", session.user.email);
-    console.log("🔑 [AuthContext] Session token:", session.access_token ? "Present" : "Missing");
+    logger.info("Starting navigation handling", {
+      currentPath: location.pathname,
+      userEmail: session.user.email,
+      hasAccessToken: !!session.access_token
+    });
 
     try {
-      // Only fetch profile if we don't have it cached
       let currentProfile = profile;
       if (!currentProfile) {
+        logger.info("No cached profile, fetching", { userId: session.user.id });
         currentProfile = await fetchProfile(session.user.id);
-        console.log("👥 [AuthContext] Fetched profile:", currentProfile);
         setProfile(currentProfile);
       }
 
-      // Handle different navigation scenarios
+      logger.info("Navigation state", {
+        hasProfile: !!currentProfile,
+        currentPath: location.pathname,
+        isOnAuth: location.pathname === '/auth',
+        isOnOnboarding: location.pathname === '/onboarding'
+      });
+
       if (location.pathname === '/auth') {
         if (currentProfile) {
-          console.log("➡️ [AuthContext] Redirecting from auth to home");
+          logger.info("Redirecting from auth to home", { userId: session.user.id });
           navigate('/', { replace: true });
         } else {
-          console.log("➡️ [AuthContext] No profile, redirecting to onboarding");
+          logger.info("No profile, redirecting to onboarding", { userId: session.user.id });
           navigate('/onboarding', { replace: true });
         }
         return;
       }
 
       if (!currentProfile && location.pathname !== '/onboarding') {
-        console.log("➡️ [AuthContext] No profile, redirecting to onboarding");
+        logger.info("No profile detected, redirecting to onboarding", { userId: session.user.id });
         navigate('/onboarding', { replace: true });
         return;
       }
 
       if (currentProfile && location.pathname === '/onboarding') {
-        console.log("➡️ [AuthContext] Have profile, redirecting from onboarding to home");
+        logger.info("Profile exists, redirecting from onboarding to home", { userId: session.user.id });
         navigate('/', { replace: true });
         return;
       }
     } catch (error) {
-      console.error('❌ [AuthContext] Navigation error:', error);
+      logger.error("Navigation error", { error });
       toast.error('Error loading user data');
       navigate('/auth', { replace: true });
     }
@@ -101,11 +117,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshProfile = async () => {
     if (!session?.user?.id) {
-      console.log("⚠️ [AuthContext] Cannot refresh profile: No active session");
+      logger.info("Cannot refresh profile: No active session");
       return;
     }
 
-    console.log("🔄 [AuthContext] Refreshing profile...");
+    logger.info("Refreshing profile", { userId: session.user.id });
     const fetchedProfile = await fetchProfile(session.user.id);
     setProfile(fetchedProfile);
   };
@@ -115,33 +131,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const initializeAuth = async () => {
       if (initializationComplete.current) return;
-      console.log("🚀 [AuthContext] === Starting Authentication Flow ===");
-      console.log("📝 [AuthContext] Current URL:", window.location.href);
+      
+      logger.info("Initializing authentication", {
+        currentUrl: window.location.href,
+        pathname: location.pathname
+      });
+      
       setIsLoading(true);
       
       try {
-        // Get the initial session
         const { data: { session: initialSession }, error } = await supabase.auth.getSession();
-        console.log("🔐 [AuthContext] Initial session check:", initialSession ? "Found session" : "No session");
+        logger.info("Initial session check", { 
+          hasSession: !!initialSession,
+          error: !!error 
+        });
         
         if (error) throw error;
         
         if (mounted) {
           if (initialSession) {
-            console.log("✅ [AuthContext] Setting initial session");
+            logger.info("Setting initial session", { userId: initialSession.user.id });
             setSession(initialSession);
             const fetchedProfile = await fetchProfile(initialSession.user.id);
             setProfile(fetchedProfile);
             await handleNavigation(initialSession);
           } else {
-            console.log("ℹ️ [AuthContext] No initial session found");
+            logger.info("No initial session found");
           }
           
           setIsLoading(false);
           initializationComplete.current = true;
         }
       } catch (error) {
-        console.error("❌ [AuthContext] Error in initializeAuth:", error);
+        logger.error("Error in initializeAuth", { error });
         if (error instanceof AuthError) {
           handleAuthError(error);
         }
@@ -155,8 +177,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initializeAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔄 [AuthContext] Auth state changed:', event, session ? "Session present" : "No session");
-      console.log('📊 [AuthContext] Event details:', { event, sessionExists: !!session });
+      logger.info("Auth state changed", { 
+        event, 
+        hasSession: !!session,
+        userId: session?.user?.id 
+      });
       
       if (mounted) {
         setSession(session);
@@ -165,7 +190,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setProfile(fetchedProfile);
           await handleNavigation(session);
         } else if (event === 'SIGNED_OUT') {
-          console.log('👋 [AuthContext] User signed out, clearing profile');
+          logger.info("User signed out, clearing profile");
           setProfile(null);
           navigate('/auth', { replace: true });
         }
