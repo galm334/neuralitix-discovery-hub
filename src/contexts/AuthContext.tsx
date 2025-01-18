@@ -53,8 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           userId,
           retryAttempt: retryCount,
           headers: {
-            // Log headers being used (excluding sensitive data)
-            hasApiKey: !!supabase.supabaseKey,
+            // Only log if auth token is present, not the actual token
             hasAuthToken: !!session?.access_token
           }
         });
