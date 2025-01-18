@@ -39,6 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         hasAuthHeader: !!session?.access_token
       });
 
+      // Use the Supabase client which automatically handles headers
       const { data, error, status } = await supabase
         .from('profiles')
         .select('id, terms_accepted, name, avatar_url')
@@ -50,7 +51,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           error, 
           status,
           userId,
-          retryAttempt: retryCount 
+          retryAttempt: retryCount,
+          headers: {
+            // Log headers being used (excluding sensitive data)
+            hasApiKey: !!supabase.supabaseKey,
+            hasAuthToken: !!session?.access_token
+          }
         });
 
         if (retryCount < maxRetries && (
@@ -60,6 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           status === 503 || 
           status === 429 || 
           status === 406 ||
+          status === 401 ||
           status === 0
         )) {
           const delay = retryDelay * Math.pow(2, retryCount);
