@@ -74,7 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const fetchedProfile = await fetchProfile(session.user.id);
       
-      if (!fetchedProfile) {
+      if (!fetchedProfile && !['/onboarding', '/auth'].includes(location.pathname)) {
         logger.info("No profile found, redirecting to onboarding", { userId: session.user.id });
         navigate('/onboarding', { replace: true });
         return;
