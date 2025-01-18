@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Session, AuthError } from '@supabase/supabase-js';
+import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
@@ -53,13 +53,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           retryAttempt: retryCount 
         });
 
-        // Handle network errors with exponential backoff
         if (retryCount < maxRetries && (
           error.message.includes('fetch') || 
           error.message.includes('network') ||
           error.message.includes('internet') ||
           status === 503 || 
           status === 429 || 
+          status === 406 ||
           status === 0
         )) {
           const delay = retryDelay * Math.pow(2, retryCount);
@@ -83,7 +83,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       logger.error("Profile fetch failed", { error, userId, retryCount });
       
-      // Additional retry for network disconnection errors
       if (retryCount < maxRetries && error instanceof Error && (
         error.message.includes('internet disconnected') ||
         error.message.includes('network') ||
