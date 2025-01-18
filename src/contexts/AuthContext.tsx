@@ -21,6 +21,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// ⚠️ WARNING: DO NOT MODIFY THE AUTHENTICATION FLOW WITHOUT THOROUGH TESTING
+// Changes to this component can break user sign-up/sign-in functionality
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -28,10 +30,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
   const initializationComplete = useRef(false);
+  const maxRetries = 3;
 
-  // ⚠️ IMPORTANT: DO NOT MODIFY THE AUTHENTICATION FLOW ROUTING LOGIC BELOW
-  // This code ensures users are properly directed to /onboarding when they first sign up
-  // Changing this logic may break the user registration process
+  const fetchProfile = async (userId: string, retryCount = 0): Promise<Profile | null> => {
+    try {
+      logger.info("Fetching profile", { userId, retryCount });
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, terms_accepted, name, avatar_url')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      logger.info("Profile fetch result", { 
+        success: !!data,
+        hasProfile: !!data,
+        userId 
+      });
+      
+      return data;
+    } catch (error) {
+      logger.error("Error in fetchProfile", { error, userId, retryCount });
+      
+      // Retry on network errors if we haven't exceeded max retries
+      if (retryCount < maxRetries && error instanceof Error && error.message.includes('fetch')) {
+        logger.info("Retrying profile fetch", { retryCount: retryCount + 1, maxRetries });
+        await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1))); // Exponential backoff
+        return fetchProfile(userId, retryCount + 1);
+      }
+      
+      // If we've exhausted retries or it's not a network error, show error toast
+      toast.error('Error loading profile. Please refresh the page.');
+      return null;
+    }
+  };
+
   const handleNavigation = useCallback(async (session: Session) => {
     logger.info("Starting navigation handling", {
       currentPath: location.pathname,
@@ -47,30 +84,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setProfile(currentProfile);
       }
 
-      logger.info("Navigation state", {
-        hasProfile: !!currentProfile,
-        currentPath: location.pathname,
-        isOnAuth: location.pathname === '/auth',
-        isOnOnboarding: location.pathname === '/onboarding'
-      });
-
-      if (location.pathname === '/auth') {
-        if (currentProfile) {
-          logger.info("Redirecting from auth to home", { userId: session.user.id });
-          navigate('/', { replace: true });
-        } else {
-          logger.info("No profile found, redirecting to onboarding", { userId: session.user.id });
-          navigate('/onboarding', { replace: true });
-        }
+      // If we're on /auth and have a profile, go home
+      if (location.pathname === '/auth' && currentProfile) {
+        logger.info("Redirecting from auth to home", { userId: session.user.id });
+        navigate('/', { replace: true });
         return;
       }
 
+      // If we're on /auth and don't have a profile, go to onboarding
+      if (location.pathname === '/auth' && !currentProfile) {
+        logger.info("No profile found, redirecting to onboarding", { userId: session.user.id });
+        navigate('/onboarding', { replace: true });
+        return;
+      }
+
+      // If we don't have a profile and aren't on onboarding, go to onboarding
       if (!currentProfile && location.pathname !== '/onboarding') {
         logger.info("No profile detected, redirecting to onboarding", { userId: session.user.id });
         navigate('/onboarding', { replace: true });
         return;
       }
 
+      // If we have a profile and are on onboarding, go home
       if (currentProfile && location.pathname === '/onboarding') {
         logger.info("Profile exists, redirecting from onboarding to home", { userId: session.user.id });
         navigate('/', { replace: true });
@@ -82,42 +117,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       navigate('/auth', { replace: true });
     }
   }, [navigate, location.pathname, profile]);
-
-  const fetchProfile = async (userId: string) => {
-    logger.info("Fetching profile", { userId });
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, terms_accepted, name, avatar_url')
-        .eq('id', userId)
-        .maybeSingle();
-
-      if (error) {
-        logger.error("Error fetching profile", { error, userId });
-        throw error;
-      }
-      
-      logger.info("Profile fetch result", { 
-        success: !!data,
-        hasProfile: !!data,
-        userId 
-      });
-      
-      return data;
-    } catch (error) {
-      logger.error("Error in fetchProfile", { error, userId });
-      return null;
-    }
-  };
-
-  const handleAuthError = (error: AuthError) => {
-    logger.error("Auth error occurred", { 
-      code: error.code,
-      message: error.message,
-      status: error.status
-    });
-    toast.error('Authentication error. Please try again.');
-  };
 
   const refreshProfile = async () => {
     if (!session?.user?.id) {
@@ -145,22 +144,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       try {
         const { data: { session: initialSession }, error } = await supabase.auth.getSession();
-        logger.info("Initial session check", { 
-          hasSession: !!initialSession,
-          error: !!error 
-        });
         
         if (error) throw error;
         
         if (mounted) {
           if (initialSession) {
-            logger.info("Setting initial session", { userId: initialSession.user.id });
             setSession(initialSession);
             const fetchedProfile = await fetchProfile(initialSession.user.id);
             setProfile(fetchedProfile);
             await handleNavigation(initialSession);
-          } else {
-            logger.info("No initial session found");
           }
           
           setIsLoading(false);
@@ -168,9 +160,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (error) {
         logger.error("Error in initializeAuth", { error });
-        if (error instanceof AuthError) {
-          handleAuthError(error);
-        }
         if (mounted) {
           setIsLoading(false);
           initializationComplete.current = true;
@@ -194,7 +183,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setProfile(fetchedProfile);
           await handleNavigation(session);
         } else if (event === 'SIGNED_OUT') {
-          logger.info("User signed out, clearing profile");
           setProfile(null);
           navigate('/auth', { replace: true });
         }
@@ -205,7 +193,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [handleNavigation]);
+  }, [handleNavigation, navigate, location.pathname]);
 
   return (
     <AuthContext.Provider value={{ session, profile, isLoading, refreshProfile }}>
