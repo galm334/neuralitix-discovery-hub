@@ -31,40 +31,69 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const initializationComplete = useRef(false);
   const maxRetries = 3;
+  const retryDelay = 1000; // Base delay in milliseconds
 
   const fetchProfile = async (userId: string, retryCount = 0): Promise<Profile | null> => {
     try {
-      logger.info("Fetching profile", { userId, retryCount });
-      
-      const { data, error } = await supabase
+      logger.info("Attempting to fetch profile", { 
+        userId, 
+        retryCount,
+        apiUrl: supabase.supabaseUrl,
+        hasAuthHeader: !!supabase.auth.session()
+      });
+
+      const { data, error, status } = await supabase
         .from('profiles')
         .select('id, terms_accepted, name, avatar_url')
         .eq('id', userId)
         .maybeSingle();
 
       if (error) {
+        logger.error("Supabase error fetching profile", { 
+          error, 
+          status,
+          userId, 
+          retryCount 
+        });
+        
+        // Network error handling with exponential backoff
+        if (retryCount < maxRetries && (error.message.includes('fetch') || error.code === 'NETWORK_ERROR')) {
+          const delay = retryDelay * Math.pow(2, retryCount);
+          logger.info("Retrying profile fetch after delay", { 
+            delay, 
+            retryCount: retryCount + 1 
+          });
+          await new Promise(resolve => setTimeout(resolve, delay));
+          return fetchProfile(userId, retryCount + 1);
+        }
+        
         throw error;
       }
 
       logger.info("Profile fetch result", { 
         success: !!data,
         hasProfile: !!data,
-        userId 
+        userId,
+        profileData: data 
       });
       
       return data;
     } catch (error) {
       logger.error("Error in fetchProfile", { error, userId, retryCount });
       
-      // Retry on network errors if we haven't exceeded max retries
-      if (retryCount < maxRetries && error instanceof Error && error.message.includes('fetch')) {
-        logger.info("Retrying profile fetch", { retryCount: retryCount + 1, maxRetries });
-        await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1))); // Exponential backoff
+      // Additional retry for network errors
+      if (retryCount < maxRetries && error instanceof Error && 
+         (error.message.includes('fetch') || error.message.includes('network'))) {
+        const delay = retryDelay * Math.pow(2, retryCount);
+        logger.info("Retrying after network error", { 
+          delay, 
+          retryCount: retryCount + 1 
+        });
+        await new Promise(resolve => setTimeout(resolve, delay));
         return fetchProfile(userId, retryCount + 1);
       }
       
-      // If we've exhausted retries or it's not a network error, show error toast
-      toast.error('Error loading profile. Please refresh the page.');
+      toast.error('Error loading profile. Please check your internet connection and refresh.');
       return null;
     }
   };
@@ -113,7 +142,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       logger.error("Navigation error", { error });
-      toast.error('Error loading user data');
+      toast.error('Error loading user data. Please check your connection and try again.');
       navigate('/auth', { replace: true });
     }
   }, [navigate, location.pathname, profile]);
@@ -137,7 +166,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       logger.info("Initializing authentication", {
         currentUrl: window.location.href,
-        pathname: location.pathname
+        pathname: location.pathname,
+        supabaseUrl: supabase.supabaseUrl
       });
       
       setIsLoading(true);
@@ -145,14 +175,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const { data: { session: initialSession }, error } = await supabase.auth.getSession();
         
-        if (error) throw error;
+        if (error) {
+          logger.error("Error getting initial session", { error });
+          throw error;
+        }
         
         if (mounted) {
           if (initialSession) {
+            logger.info("Initial session found", { 
+              userId: initialSession.user.id,
+              email: initialSession.user.email 
+            });
             setSession(initialSession);
             const fetchedProfile = await fetchProfile(initialSession.user.id);
             setProfile(fetchedProfile);
             await handleNavigation(initialSession);
+          } else {
+            logger.info("No initial session found");
           }
           
           setIsLoading(false);
@@ -163,6 +202,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (mounted) {
           setIsLoading(false);
           initializationComplete.current = true;
+          toast.error('Error initializing authentication. Please refresh the page.');
         }
       }
     };
