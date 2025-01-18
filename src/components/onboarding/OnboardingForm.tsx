@@ -98,7 +98,8 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
         nickname,
         name,
         avatar_url: avatarUrl,
-        terms_accepted: true
+        terms_accepted: true,
+        email: session.user.email
       };
 
       logger.info("Updating profile with data:", profileData);
@@ -119,7 +120,7 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
       const profileCreated = await waitForProfileCreation(session.user.id);
       
       if (!profileCreated) {
-        throw new Error("Profile creation could not be verified. Please try again or contact support.");
+        throw new Error("Profile creation verification failed. Please try again later.");
       }
 
       setProgress(100);
@@ -133,6 +134,7 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
     } catch (error) {
       logger.error("Error during onboarding submission:", error);
       showToast.error(error instanceof Error ? error.message : "Failed to create profile. Please try again.");
+      setRetryCount(prev => prev + 1);
     } finally {
       setIsSubmitting(false);
       setShowProgress(false);
@@ -143,6 +145,19 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
     <>
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-4">
+          {session?.user?.email && (
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={session.user.email}
+                disabled
+                className="mt-1 bg-gray-100"
+              />
+            </div>
+          )}
+
           <div>
             <Label htmlFor="name">Your Real Name</Label>
             <Input

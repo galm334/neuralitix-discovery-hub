@@ -1,4 +1,4 @@
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { RefreshCw } from "lucide-react";
 
@@ -12,9 +12,15 @@ export const ProgressDialog = ({ showProgress, progress, retryCount }: ProgressD
   return (
     <Dialog open={showProgress} onOpenChange={() => {}}>
       <DialogContent className="sm:max-w-[425px]">
+        <DialogTitle className="text-lg font-semibold">
+          Creating Your Profile
+        </DialogTitle>
+        <DialogDescription>
+          Please wait while we set up your account...
+        </DialogDescription>
         <div className="space-y-4 py-4">
           <p className="text-center text-muted-foreground">
-            {progress < 100 ? "Creating your profile..." : "Almost there..."}
+            {progress < 100 ? "Setting up your profile..." : "Almost there..."}
           </p>
           <Progress value={progress} className="w-full" />
           <p className="text-sm text-center text-muted-foreground">
