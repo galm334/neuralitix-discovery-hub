@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSearchParams, useLocation } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { Auth as SupabaseAuth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,57 +8,52 @@ import { logger } from "@/utils/logger";
 const Auth = () => {
   const [searchParams] = useSearchParams();
   const [errorMessage, setErrorMessage] = useState("");
-  const location = useLocation();
+  const navigate = useNavigate();
+  const authType = searchParams.get('type') || 'signin';
 
   useEffect(() => {
     const handleAuth = async () => {
-      logger.info("Starting magic link authentication...");
+      logger.info("Starting magic link authentication flow");
       try {
-        // Parse both URL parameters and hash parameters
-        const allParams = {
-          ...Object.fromEntries(searchParams.entries()),
-          ...parseHashParams(location.hash)
-        };
-        logger.info("Auth parameters", allParams);
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session) {
+          logger.info("User already has a session, checking profile");
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
 
-        // Check for error parameters in the URL hash
-        if (allParams.error) {
-          logger.error("Error from URL", { error: allParams.error, description: allParams.error_description });
-          switch (allParams.error_code) {
-            case 'otp_expired':
-              setErrorMessage("The magic link has expired. Please request a new one.");
-              break;
-            case 'invalid_otp':
-              setErrorMessage("Invalid magic link. Please request a new one.");
-              break;
-            default:
-              setErrorMessage(allParams.error_description || "Authentication failed. Please try again.");
+          if (!profile) {
+            logger.info("No profile found, redirecting to onboarding");
+            navigate('/onboarding');
+          } else {
+            logger.info("Profile found, redirecting to home");
+            navigate('/');
           }
-          return;
         }
-
-        logger.info("No errors in URL parameters");
       } catch (error) {
-        logger.error("Unexpected error during auth", error);
+        logger.error("Error in auth flow:", error);
         setErrorMessage("An unexpected error occurred");
       }
     };
 
     handleAuth();
-  }, [searchParams, location.hash]);
-
-  const parseHashParams = (hash: string) => {
-    if (!hash) return {};
-    const params = new URLSearchParams(hash.replace('#', ''));
-    return Object.fromEntries(params.entries());
-  };
+  }, [navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md space-y-8 bg-card p-8 rounded-lg shadow-lg">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-2">Welcome to Neuralitix</h1>
-          <p className="text-muted-foreground">Sign up with magic link to continue</p>
+          <h1 className="text-2xl font-bold mb-2">
+            {authType === 'signin' ? 'Welcome Back' : 'Create Account'}
+          </h1>
+          <p className="text-muted-foreground">
+            {authType === 'signin' 
+              ? 'Sign in with magic link to continue' 
+              : 'Sign up with magic link to get started'}
+          </p>
           {errorMessage && (
             <div className="mt-4 p-4 bg-destructive/10 text-destructive rounded-md">
               {errorMessage}
@@ -103,9 +98,11 @@ const Auth = () => {
               magic_link: {
                 email_input_label: 'Email',
                 email_input_placeholder: 'Your email',
-                button_label: 'Send Magic Link',
+                button_label: authType === 'signin' ? 'Send Magic Link' : 'Sign Up with Magic Link',
                 loading_button_label: 'Sending Magic Link ...',
-                link_text: "Don't have an account? Sign up",
+                link_text: authType === 'signin' 
+                  ? "Don't have an account? Sign up" 
+                  : "Already have an account? Sign in",
               }
             }
           }}

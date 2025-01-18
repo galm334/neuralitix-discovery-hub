@@ -101,19 +101,14 @@ export function AppSidebar() {
           {isMobile && (
             <li className="mt-4 space-y-2">
               <AuthOption
-                title="Sign up"
-                icon={UserPlus}
-                onClick={() => handleAuthClick('signup')}
-              />
-              <AuthOption
                 title="Sign in with Email"
                 icon={Mail}
                 onClick={() => handleAuthClick('signin')}
               />
               <AuthOption
-                title="Sign in with Google"
-                icon={LogIn}
-                onClick={() => handleAuthClick('signin')}
+                title="Sign up"
+                icon={UserPlus}
+                onClick={() => handleAuthClick('signup')}
               />
             </li>
           )}
