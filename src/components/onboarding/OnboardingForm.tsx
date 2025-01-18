@@ -53,14 +53,23 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
   };
 
   const verifyProfile = async (userId: string): Promise<boolean> => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('id', userId)
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, nickname')
+        .eq('id', userId)
+        .single();
       
-    if (error) return false;
-    return !!data;
+      if (error) {
+        logger.error("Profile verification error:", error);
+        return false;
+      }
+      
+      return !!data && !!data.nickname;
+    } catch (error) {
+      logger.error("Profile verification failed:", error);
+      return false;
+    }
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -74,6 +83,11 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
 
     if (!termsAccepted) {
       showToast.error("Please accept the terms and conditions");
+      return;
+    }
+
+    if (!name.trim()) {
+      showToast.error("Please enter your name");
       return;
     }
 
@@ -91,11 +105,12 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
         const fileExt = profilePic.name.split('.').pop();
         const filePath = `${session.user.id}-${Math.random()}.${fileExt}`;
 
-        const { error: uploadError } = await supabase.storage
+        const { error: uploadError, data: uploadData } = await supabase.storage
           .from('profile-pictures')
           .upload(filePath, profilePic);
 
         if (uploadError) {
+          logger.error("Profile picture upload error:", uploadError);
           throw uploadError;
         }
 
@@ -110,17 +125,22 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
 
       setProgress(60);
 
+      const profileData = {
+        nickname,
+        name,
+        avatar_url: avatarUrl,
+        terms_accepted: true
+      };
+
       const { error: updateError } = await supabase
         .from('profiles')
-        .update({
-          nickname,
-          name,
-          avatar_url: avatarUrl,
-          terms_accepted: true
-        })
+        .update(profileData)
         .eq('id', session.user.id);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        logger.error("Profile update error:", updateError);
+        throw updateError;
+      }
 
       setProgress(80);
 
