@@ -9,27 +9,31 @@ import { Button } from "@/components/ui/button";
 import { showToast } from "@/utils/toast-config";
 
 const Auth = () => {
-  const [errorMessage, setErrorMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const checkAuthAndProfile = async (session: any) => {
-      if (!session?.user?.id) return;
+    const checkAuthAndRedirect = async (session: any) => {
+      if (!session?.user?.id) {
+        setIsLoading(false);
+        return;
+      }
 
       try {
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('id')
           .eq('id', session.user.id)
-          .maybeSingle();
+          .single();
 
-        if (profileError) {
+        if (profileError && profileError.code !== 'PGRST116') {
           logger.error("Error checking profile:", profileError);
           showToast.error("Error checking profile status");
+          setIsLoading(false);
           return;
         }
 
-        if (!profile?.id) {
+        if (!profile) {
           logger.info("No profile found, redirecting to onboarding");
           navigate('/onboarding', { replace: true });
         } else {
@@ -39,12 +43,13 @@ const Auth = () => {
       } catch (error) {
         logger.error("Error in auth flow:", error);
         showToast.error("Authentication error occurred");
+        setIsLoading(false);
       }
     };
 
     // Check initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      checkAuthAndProfile(session);
+      checkAuthAndRedirect(session);
     });
 
     // Listen for auth changes
@@ -52,9 +57,7 @@ const Auth = () => {
       logger.info("Auth state changed:", { event, hasSession: !!session });
       
       if (event === 'SIGNED_IN') {
-        await checkAuthAndProfile(session);
-      } else if (event === 'SIGNED_OUT') {
-        navigate("/auth");
+        await checkAuthAndRedirect(session);
       }
     });
 
@@ -62,6 +65,10 @@ const Auth = () => {
       subscription.unsubscribe();
     };
   }, [navigate]);
+
+  if (isLoading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4 relative">
@@ -80,11 +87,6 @@ const Auth = () => {
           <p className="text-muted-foreground">
             Sign in with magic link to continue
           </p>
-          {errorMessage && (
-            <div className="mt-4 p-4 bg-destructive/10 text-destructive rounded-md">
-              {errorMessage}
-            </div>
-          )}
         </div>
 
         <SupabaseAuth 
