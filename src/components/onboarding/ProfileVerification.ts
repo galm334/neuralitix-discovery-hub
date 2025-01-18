@@ -16,8 +16,9 @@ export const verifyProfile = async (userId: string): Promise<boolean> => {
       return false;
     }
     
-    logger.info("Profile verification result:", data);
-    return !!data && !!data.nickname && !!data.name && data.terms_accepted === true;
+    const isValid = !!data && !!data.nickname && !!data.name && data.terms_accepted === true;
+    logger.info("Profile verification result:", { data, isValid });
+    return isValid;
   } catch (error) {
     logger.error("Profile verification failed:", error);
     return false;
@@ -26,9 +27,9 @@ export const verifyProfile = async (userId: string): Promise<boolean> => {
 
 export const waitForProfileCreation = async (
   userId: string,
-  maxAttempts: number = 10, // Increased from 5
-  delayBetweenAttempts: number = 5000, // Increased to 5 seconds
-  maxWaitTime: number = 60000 // Increased to 60 seconds
+  maxAttempts: number = 10,
+  delayBetweenAttempts: number = 5000, // 5 seconds
+  maxWaitTime: number = 60000 // 60 seconds
 ): Promise<boolean> => {
   const startTime = Date.now();
   let attempts = 0;
@@ -43,10 +44,12 @@ export const waitForProfileCreation = async (
       return true;
     }
     
-    logger.info(`Profile not verified yet, waiting ${delayBetweenAttempts}ms before retry...`);
-    await new Promise(resolve => setTimeout(resolve, delayBetweenAttempts));
+    if (attempts < maxAttempts) {
+      logger.info(`Profile not verified yet, waiting ${delayBetweenAttempts}ms before retry...`);
+      await new Promise(resolve => setTimeout(resolve, delayBetweenAttempts));
+    }
   }
   
-  logger.error("Profile creation verification timeout");
+  logger.error(`Profile creation verification timeout after ${attempts} attempts and ${Date.now() - startTime}ms`);
   return false;
 };

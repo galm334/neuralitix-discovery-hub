@@ -104,13 +104,36 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
 
       logger.info("Updating profile with data:", profileData);
 
-      const { error: updateError } = await supabase
+      // First check if profile exists
+      const { data: existingProfile, error: checkError } = await supabase
         .from('profiles')
-        .update(profileData)
-        .eq('id', session.user.id);
+        .select('id')
+        .eq('id', session.user.id)
+        .single();
+
+      if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is "not found" error
+        logger.error("Error checking existing profile:", checkError);
+        throw new Error("Failed to check existing profile");
+      }
+
+      let updateError;
+      if (existingProfile) {
+        // Update existing profile
+        const { error } = await supabase
+          .from('profiles')
+          .update(profileData)
+          .eq('id', session.user.id);
+        updateError = error;
+      } else {
+        // Insert new profile
+        const { error } = await supabase
+          .from('profiles')
+          .insert([{ ...profileData, id: session.user.id }]);
+        updateError = error;
+      }
 
       if (updateError) {
-        logger.error("Profile update error:", updateError);
+        logger.error("Profile update/insert error:", updateError);
         throw new Error("Failed to update profile: " + updateError.message);
       }
 
@@ -176,7 +199,7 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
                 type="email"
                 value={session.user.email}
                 disabled
-                className="mt-1 bg-gray-100"
+                className="mt-1 bg-background text-foreground border-input"
               />
             </div>
           )}
