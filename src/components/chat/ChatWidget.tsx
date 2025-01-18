@@ -9,6 +9,13 @@ export function ChatWidget() {
   const isLegalPage = ['/terms', '/privacy', '/gdpr'].includes(location.pathname);
 
   useEffect(() => {
+    // Load Zapier script
+    const script = document.createElement('script');
+    script.src = 'https://interfaces.zapier.com/assets/web-components/zapier-interfaces/zapier-interfaces.esm.js';
+    script.type = 'module';
+    script.async = true;
+    document.body.appendChild(script);
+
     const allowedOrigins = [
       'https://neuralitix.com',
       'https://www.neuralitix.com',
@@ -75,6 +82,7 @@ export function ChatWidget() {
 
     return () => {
       window.removeEventListener('message', handleMessage);
+      document.body.removeChild(script);
       clearTimeout(messageTimeout);
       logger.info('Chat widget cleanup completed', {
         timestamp: new Date().toISOString()
