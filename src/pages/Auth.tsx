@@ -6,58 +6,63 @@ import { supabase } from "@/integrations/supabase/client";
 import { logger } from "@/utils/logger";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { showToast } from "@/utils/toast-config";
+import { toast } from "sonner";
 
 const Auth = () => {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const checkAuthAndRedirect = async (session: any) => {
-      if (!session?.user?.id) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const { data: profile, error: profileError } = await supabase
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        const { data: profile, error } = await supabase
           .from('profiles')
           .select('id')
           .eq('id', session.user.id)
           .single();
 
-        if (profileError && profileError.code !== 'PGRST116') {
-          logger.error("Error checking profile:", profileError);
-          showToast.error("Error checking profile status");
+        if (error && error.code !== 'PGRST116') {
+          logger.error("Error checking profile:", error);
+          toast.error("Error checking profile status");
           setIsLoading(false);
           return;
         }
 
         if (!profile) {
-          logger.info("No profile found, redirecting to onboarding");
           navigate('/onboarding', { replace: true });
         } else {
-          logger.info("Profile exists, redirecting to home");
           navigate('/', { replace: true });
         }
-      } catch (error) {
-        logger.error("Error in auth flow:", error);
-        showToast.error("Authentication error occurred");
+      } else {
         setIsLoading(false);
       }
     };
 
-    // Check initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      checkAuthAndRedirect(session);
-    });
+    checkSession();
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       logger.info("Auth state changed:", { event, hasSession: !!session });
       
-      if (event === 'SIGNED_IN') {
-        await checkAuthAndRedirect(session);
+      if (event === 'SIGNED_IN' && session) {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', session.user.id)
+          .single();
+
+        if (error && error.code !== 'PGRST116') {
+          logger.error("Error checking profile after sign in:", error);
+          toast.error("Error checking profile status");
+          return;
+        }
+
+        if (!profile) {
+          navigate('/onboarding', { replace: true });
+        } else {
+          navigate('/', { replace: true });
+        }
       }
     });
 

@@ -16,8 +16,8 @@ import Privacy from "@/pages/Privacy";
 import GDPR from "@/pages/GDPR";
 import { logger } from "@/utils/logger";
 
-const RouteGuard = ({ children }: { children: React.ReactNode }) => {
-  const [loading, setLoading] = useState(true);
+export function AppRoutes() {
+  const [isLoading, setIsLoading] = useState(true);
   const [shouldRedirect, setShouldRedirect] = useState<string | null>(null);
 
   useEffect(() => {
@@ -32,8 +32,9 @@ const RouteGuard = ({ children }: { children: React.ReactNode }) => {
             .eq('id', session.user.id)
             .single();
 
-          if (error && error.code !== 'PGRST116') {
+          if (error) {
             logger.error("Profile check error:", error);
+            setIsLoading(false);
             return;
           }
 
@@ -44,24 +45,20 @@ const RouteGuard = ({ children }: { children: React.ReactNode }) => {
           logger.error("Session check error:", error);
         }
       }
-      setLoading(false);
+      setIsLoading(false);
     };
 
     checkSession();
   }, []);
 
-  if (loading) {
-    return null;
+  if (isLoading) {
+    return <div>Loading...</div>;
   }
 
   if (shouldRedirect) {
     return <Navigate to={shouldRedirect} replace />;
   }
 
-  return <>{children}</>;
-};
-
-export function AppRoutes() {
   return (
     <Routes>
       <Route path="/auth" element={<Auth />} />
@@ -70,62 +67,13 @@ export function AppRoutes() {
       <Route path="/gdpr" element={<GDPR />} />
       <Route path="/onboarding" element={<Onboarding />} />
       <Route path="/standalone-chat" element={<StandaloneChat />} />
-      <Route
-        path="/"
-        element={
-          <RouteGuard>
-            <Index />
-          </RouteGuard>
-        }
-      />
-      <Route
-        path="/popular"
-        element={
-          <RouteGuard>
-            <Popular />
-          </RouteGuard>
-        }
-      />
-      <Route
-        path="/trending"
-        element={
-          <RouteGuard>
-            <Trending />
-          </RouteGuard>
-        }
-      />
-      <Route
-        path="/just-added"
-        element={
-          <RouteGuard>
-            <JustAdded />
-          </RouteGuard>
-        }
-      />
-      <Route
-        path="/tool/:toolId"
-        element={
-          <RouteGuard>
-            <ToolPage />
-          </RouteGuard>
-        }
-      />
-      <Route
-        path="/category/:category"
-        element={
-          <RouteGuard>
-            <CategoryPage />
-          </RouteGuard>
-        }
-      />
-      <Route
-        path="/chat/:conversationId"
-        element={
-          <RouteGuard>
-            <Chat />
-          </RouteGuard>
-        }
-      />
+      <Route path="/" element={<Index />} />
+      <Route path="/popular" element={<Popular />} />
+      <Route path="/trending" element={<Trending />} />
+      <Route path="/just-added" element={<JustAdded />} />
+      <Route path="/tool/:toolId" element={<ToolPage />} />
+      <Route path="/category/:category" element={<CategoryPage />} />
+      <Route path="/chat/:conversationId" element={<Chat />} />
     </Routes>
   );
 }
