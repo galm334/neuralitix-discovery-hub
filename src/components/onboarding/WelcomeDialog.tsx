@@ -5,9 +5,10 @@ import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { User, RefreshCw } from "lucide-react";
+import { User } from "lucide-react";
 import { logger } from "@/utils/logger";
 import { showToast } from "@/utils/toast-config";
+import { verifyProfile } from "./ProfileVerification";
 
 interface WelcomeDialogProps {
   isOpen: boolean;
@@ -17,71 +18,31 @@ interface WelcomeDialogProps {
 export const WelcomeDialog = ({ isOpen, onComplete }: WelcomeDialogProps) => {
   const [isCreatingProfile, setIsCreatingProfile] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [retryCount, setRetryCount] = useState(0);
   const navigate = useNavigate();
   const { refreshProfile } = useAuth();
 
-  const verifyProfile = async (userId: string) => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('id', userId)
-      .single();
-      
-    if (error || !data) throw new Error("Profile verification failed");
-    return data;
-  };
-
   const createProfile = async () => {
-    logger.info("Starting profile creation process");
-    if (isCreatingProfile) {
-      logger.warn("Profile creation already in progress");
-      return;
-    }
+    if (isCreatingProfile) return;
     
     setIsCreatingProfile(true);
     setProgress(25);
 
     try {
-      logger.info("Fetching current session");
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
-      if (sessionError) {
-        logger.error("Session error", sessionError);
-        throw sessionError;
-      }
-      
-      if (!session?.user?.id) {
-        logger.error("No user session found");
-        throw new Error("No user session found");
+      if (sessionError || !session?.user?.id) {
+        throw new Error(sessionError?.message || "No user session found");
       }
 
-      logger.info("Session found", { email: session.user.email });
       setProgress(50);
-
-      // First check if profile already exists
-      const { data: existingProfile } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', session.user.id)
-        .single();
-
-      if (existingProfile) {
-        logger.info("Profile already exists, proceeding to home");
-        setProgress(100);
-        onComplete();
-        navigate("/", { replace: true });
-        return;
-      }
 
       // Get user metadata with fallbacks
       const fullName = session.user.user_metadata?.full_name || 'User';
       const avatarUrl = session.user.user_metadata?.avatar_url || null;
 
-      logger.info("Creating profile record", { fullName });
       const { error: profileError } = await supabase
         .from('profiles')
-        .insert([
+        .upsert([
           { 
             id: session.user.id,
             terms_accepted: true,
@@ -90,45 +51,25 @@ export const WelcomeDialog = ({ isOpen, onComplete }: WelcomeDialogProps) => {
           }
         ]);
 
-      if (profileError) {
-        logger.error("Profile creation error", profileError);
-        throw profileError;
-      }
+      if (profileError) throw profileError;
 
-      logger.info("Profile created successfully");
       setProgress(75);
-
-      logger.info("Refreshing profile data");
       await refreshProfile();
       
-      logger.info("Profile refresh complete");
-      setProgress(90);
+      // Simple verification
+      const isVerified = await verifyProfile(session.user.id);
+      if (!isVerified) throw new Error("Profile verification failed");
 
-      // Verify profile creation
-      await verifyProfile(session.user.id);
-
-      logger.info("Profile verified, completing onboarding");
       setProgress(100);
       onComplete();
       navigate("/", { replace: true });
-      showToast.success("Welcome to Neuralitix! Your profile has been created.");
+      showToast.success("Welcome to Neuralitix!");
 
     } catch (error) {
-      logger.error("Error in profile creation", error);
-      
-      if (retryCount < 3) {
-        showToast.error("Profile creation failed. Retrying...");
-        setRetryCount(prev => prev + 1);
-        setProgress(0);
-        setIsCreatingProfile(false);
-        // Retry after a short delay
-        setTimeout(createProfile, 1000);
-      } else {
-        showToast.error("Failed to create profile. Please try again later.");
-        setIsCreatingProfile(false);
-        setProgress(0);
-        navigate("/auth", { replace: true });
-      }
+      logger.error("Profile creation failed", error);
+      showToast.error("Failed to create profile. Please try again.");
+      setIsCreatingProfile(false);
+      navigate("/auth", { replace: true });
     }
   };
 
@@ -168,15 +109,6 @@ export const WelcomeDialog = ({ isOpen, onComplete }: WelcomeDialogProps) => {
               {progress < 100 ? "Setting up your profile..." : "Almost there..."}
             </p>
             <Progress value={progress} className="w-full" />
-            <p className="text-sm text-center text-muted-foreground">
-              {retryCount > 0 ? `Retry attempt ${retryCount}/3...` : "Please wait while we complete your setup..."}
-            </p>
-            {retryCount > 0 && (
-              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                <RefreshCw className="h-4 w-4 animate-spin" />
-                <span>Retrying...</span>
-              </div>
-            )}
           </div>
         )}
       </DialogContent>
