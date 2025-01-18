@@ -22,3 +22,24 @@ export const verifyProfile = async (userId: string): Promise<boolean> => {
     return false;
   }
 };
+
+export const waitForProfileCreation = async (userId: string): Promise<boolean> => {
+  try {
+    logger.info("Waiting for profile creation", { userId });
+    
+    // Try up to 3 times with a 2-second delay between attempts
+    for (let i = 0; i < 3; i++) {
+      const isVerified = await verifyProfile(userId);
+      if (isVerified) {
+        return true;
+      }
+      // Wait 2 seconds before next attempt
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+    
+    return false;
+  } catch (error) {
+    logger.error("Profile creation verification failed", { error, userId });
+    return false;
+  }
+};
