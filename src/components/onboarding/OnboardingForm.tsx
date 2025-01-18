@@ -84,6 +84,11 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
       return;
     }
 
+    if (isSubmitting) {
+      logger.warn("Submission already in progress");
+      return;
+    }
+
     logger.info("Starting profile creation for user:", session.user.id);
 
     if (!termsAccepted) {
@@ -116,7 +121,7 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
         const fileExt = profilePic.name.split('.').pop();
         const filePath = `${session.user.id}-${Math.random()}.${fileExt}`;
 
-        const { error: uploadError, data: uploadData } = await supabase.storage
+        const { error: uploadError } = await supabase.storage
           .from('profile-pictures')
           .upload(filePath, profilePic);
 
@@ -163,9 +168,10 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
       // Verify profile creation with timeout
       let profileCreated = false;
       const startTime = Date.now();
+      let mounted = true;
       
       logger.info("Starting profile verification loop");
-      while (Date.now() - startTime < 6000) {
+      while (mounted && Date.now() - startTime < 6000) {
         profileCreated = await verifyProfile(session.user.id);
         if (profileCreated) {
           logger.info("Profile verified successfully");
@@ -182,12 +188,13 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
 
       setProgress(100);
 
-      await refreshProfile();
-      logger.info("Profile refreshed successfully");
-      
-      showToast.success("Profile created successfully!");
-      navigate("/");
-
+      // Only proceed with navigation if the component is still mounted
+      if (mounted) {
+        await refreshProfile();
+        logger.info("Profile refreshed successfully");
+        showToast.success("Profile created successfully!");
+        navigate("/", { replace: true });
+      }
     } catch (error) {
       logger.error("Error during onboarding submission:", error);
       showToast.error("Failed to create profile. Please try again.");
