@@ -46,7 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       logger.info("✅ [AuthContext] Profile fetch result:", data);
-      retryCount.current = 0; // Reset retry count on success
+      retryCount.current = 0;
       
       if (!data) {
         logger.warn("⚠️ [AuthContext] No profile found for user:", userId);
@@ -63,7 +63,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (retry && retryCount.current < MAX_RETRIES) {
         retryCount.current++;
         logger.info(`🔄 [AuthContext] Retrying profile fetch (${retryCount.current}/${MAX_RETRIES})`);
-        // Exponential backoff
         const delay = Math.min(1000 * Math.pow(2, retryCount.current), 8000);
         await new Promise(resolve => setTimeout(resolve, delay));
         return fetchProfile(userId, true);
