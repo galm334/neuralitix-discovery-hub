@@ -62,7 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const handleAuthStateChange = useCallback(async (event: string, session: Session | null) => {
+  const handleAuthStateChange = useCallback(async ({ event, session }: { event: string; session: Session | null }) => {
     logger.info("🔄 [AuthContext] Auth state changed:", event, session ? "Session present" : "No session");
     
     setSession(session);
@@ -120,7 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           logger.info("✅ [AuthContext] Session check complete:", initialSession ? "Active session" : "No session");
           
           if (initialSession?.user) {
-            await handleAuthStateChange('INITIAL_SESSION', initialSession);
+            await handleAuthStateChange({ event: 'INITIAL_SESSION', session: initialSession });
           }
           
           setIsLoading(false);
@@ -138,7 +138,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     initializeAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      handleAuthStateChange({ event, session });
+    });
 
     return () => {
       mounted = false;
