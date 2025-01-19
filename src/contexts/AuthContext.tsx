@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Session, AuthError } from '@supabase/supabase-js';
+import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
@@ -69,7 +69,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return fetchProfile(userId, true);
       }
 
-      toast.error("Failed to load profile. Please refresh the page.");
+      if (error instanceof Error && error.message.includes('Failed to fetch')) {
+        toast.error("Network error. Please check your connection and try again.");
+      } else {
+        toast.error("Failed to load profile. Please refresh the page.");
+      }
       return null;
     }
   };
@@ -81,7 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (session?.user?.id) {
       try {
-        const fetchedProfile = await fetchProfile(session.user.id, true); // Enable retries
+        const fetchedProfile = await fetchProfile(session.user.id, true);
         setProfile(fetchedProfile);
         
         if (!fetchedProfile && location.pathname !== '/onboarding') {
@@ -109,7 +113,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     logger.info("🔄 [AuthContext] Refreshing profile...");
-    const fetchedProfile = await fetchProfile(session.user.id, true); // Enable retries
+    const fetchedProfile = await fetchProfile(session.user.id, true);
     setProfile(fetchedProfile);
   };
 
@@ -149,9 +153,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     initializeAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      handleAuthStateChange(event, session);
-    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
 
     return () => {
       mounted = false;
