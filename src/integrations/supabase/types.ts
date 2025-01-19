@@ -104,7 +104,7 @@ export type Database = {
           name: string | null
           nickname: string | null
           role: Database["public"]["Enums"]["user_role"] | null
-          terms_accepted: boolean | null
+          terms_accepted: boolean
           tiktok: string | null
           website: string | null
         }
@@ -119,7 +119,7 @@ export type Database = {
           name?: string | null
           nickname?: string | null
           role?: Database["public"]["Enums"]["user_role"] | null
-          terms_accepted?: boolean | null
+          terms_accepted?: boolean
           tiktok?: string | null
           website?: string | null
         }
@@ -134,7 +134,7 @@ export type Database = {
           name?: string | null
           nickname?: string | null
           role?: Database["public"]["Enums"]["user_role"] | null
-          terms_accepted?: boolean | null
+          terms_accepted?: boolean
           tiktok?: string | null
           website?: string | null
         }

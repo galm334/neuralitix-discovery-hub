@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
@@ -10,8 +10,6 @@ import { logger } from "@/utils/logger";
 import { showToast } from "@/utils/toast-config";
 import { supabase } from "@/integrations/supabase/client";
 import { ProfilePictureInput } from "./ProfilePictureInput";
-import { ProgressDialog } from "./ProgressDialog";
-import { waitForProfileCreation } from "./ProfileVerification";
 
 interface OnboardingFormProps {
   onShowTerms: () => void;
@@ -19,19 +17,12 @@ interface OnboardingFormProps {
 }
 
 export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormProps) => {
-  const [nickname, setNickname] = useState("");
+  const [nickname, setNickname] = useState(generateNickname());
   const [name, setName] = useState("");
   const [profilePic, setProfilePic] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showProgress, setShowProgress] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [retryCount, setRetryCount] = useState(0);
   const navigate = useNavigate();
   const { refreshProfile, session } = useAuth();
-
-  useEffect(() => {
-    setNickname(generateNickname());
-  }, []);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -58,14 +49,10 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
     }
 
     setIsSubmitting(true);
-    setShowProgress(true);
-    setProgress(0);
 
     try {
       let avatarUrl = null;
       logger.info("Starting profile creation process");
-
-      setProgress(20);
 
       if (profilePic) {
         logger.info("Uploading profile picture");
@@ -76,14 +63,9 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
           .from('profile-pictures')
           .upload(filePath, profilePic);
 
-        if (uploadError) {
-          logger.error("Profile picture upload error:", uploadError);
-          throw new Error("Failed to upload profile picture: " + uploadError.message);
-        }
+        if (uploadError) throw uploadError;
 
         logger.info("Profile picture uploaded successfully");
-        setProgress(40);
-
         const { data: { publicUrl } } = supabase.storage
           .from('profile-pictures')
           .getPublicUrl(filePath);
@@ -92,9 +74,8 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
         logger.info("Generated public URL for profile picture:", avatarUrl);
       }
 
-      setProgress(60);
-
       const profileData = {
+        id: session.user.id,
         nickname,
         name,
         avatar_url: avatarUrl,
@@ -102,164 +83,106 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
         email: session.user.email
       };
 
-      logger.info("Updating profile with data:", profileData);
+      logger.info("Creating profile with data:", profileData);
 
-      // First check if profile exists
-      const { data: existingProfile, error: checkError } = await supabase
+      const { error: profileError } = await supabase
         .from('profiles')
-        .select('id')
-        .eq('id', session.user.id)
-        .single();
+        .insert([profileData]);
 
-      if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is "not found" error
-        logger.error("Error checking existing profile:", checkError);
-        throw new Error("Failed to check existing profile");
-      }
+      if (profileError) throw profileError;
 
-      let updateError;
-      if (existingProfile) {
-        // Update existing profile
-        const { error } = await supabase
-          .from('profiles')
-          .update(profileData)
-          .eq('id', session.user.id);
-        updateError = error;
-      } else {
-        // Insert new profile
-        const { error } = await supabase
-          .from('profiles')
-          .insert([{ ...profileData, id: session.user.id }]);
-        updateError = error;
-      }
-
-      if (updateError) {
-        logger.error("Profile update/insert error:", updateError);
-        throw new Error("Failed to update profile: " + updateError.message);
-      }
-
-      logger.info("Profile updated successfully");
-      setProgress(80);
-
-      const profileCreated = await waitForProfileCreation(session.user.id);
-      
-      if (!profileCreated) {
-        throw new Error("Profile creation verification failed. Please try again later.");
-      }
-
-      setProgress(100);
-
+      logger.info("Profile created successfully");
       await refreshProfile();
-      logger.info("Profile refreshed successfully");
       
       showToast.success("Profile created successfully!");
       navigate("/", { replace: true });
 
     } catch (error) {
       logger.error("Error during onboarding submission:", error);
-      showToast.error(error instanceof Error ? error.message : "Failed to create profile. Please try again.");
-      setRetryCount(prev => prev + 1);
+      showToast.error(error instanceof Error ? error.message : "Failed to create profile");
     } finally {
       setIsSubmitting(false);
-      setShowProgress(false);
     }
   };
 
   return (
-    <>
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="name">Your Real Name</Label>
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="mt-1"
-              placeholder="Your real name"
-              required
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="nickname">Nickname</Label>
-            <Input
-              id="nickname"
-              value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
-              className="mt-1"
-              required
-            />
-          </div>
-
-          {session?.user?.email && (
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={session.user.email}
-                disabled
-                className="mt-1 bg-background text-foreground border-input"
-              />
-            </div>
-          )}
-
-          <ProfilePictureInput onFileSelect={setProfilePic} />
-
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id="terms"
-              checked={termsAccepted}
-              onCheckedChange={onShowTerms}
-              className="h-4 w-4"
-            />
-            <label htmlFor="terms" className="text-sm text-muted-foreground">
-              I agree to the{" "}
-              <a
-                href="/terms"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary hover:underline"
-              >
-                Terms of Service
-              </a>
-              {" "}and{" "}
-              <a
-                href="/privacy"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary hover:underline"
-              >
-                Privacy Policy
-              </a>
-              , and I consent to the processing of my personal data in accordance with{" "}
-              <a
-                href="/gdpr"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary hover:underline"
-              >
-                GDPR
-              </a>
-              {" "}regulations.
-            </label>
-          </div>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="space-y-4">
+        <div>
+          <Label htmlFor="name">Your Real Name</Label>
+          <Input
+            id="name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="mt-1"
+            placeholder="Your real name"
+            required
+          />
         </div>
 
-        <Button
-          type="submit"
-          className="w-full"
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? "Creating Profile..." : "Create Profile"}
-        </Button>
-      </form>
+        <div>
+          <Label htmlFor="nickname">Nickname</Label>
+          <Input
+            id="nickname"
+            value={nickname}
+            onChange={(e) => setNickname(e.target.value)}
+            className="mt-1"
+            required
+          />
+        </div>
 
-      <ProgressDialog 
-        showProgress={showProgress}
-        progress={progress}
-        retryCount={retryCount}
-      />
-    </>
+        {session?.user?.email && (
+          <div>
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              value={session.user.email}
+              disabled
+              className="mt-1 bg-background text-foreground border-input"
+            />
+          </div>
+        )}
+
+        <ProfilePictureInput onFileSelect={setProfilePic} />
+
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id="terms"
+            checked={termsAccepted}
+            onCheckedChange={onShowTerms}
+            className="h-4 w-4"
+          />
+          <label htmlFor="terms" className="text-sm text-muted-foreground">
+            I agree to the{" "}
+            <a
+              href="/terms"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
+              Terms of Service
+            </a>
+            {" "}and{" "}
+            <a
+              href="/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
+              Privacy Policy
+            </a>
+          </label>
+        </div>
+      </div>
+
+      <Button
+        type="submit"
+        className="w-full"
+        disabled={isSubmitting}
+      >
+        {isSubmitting ? "Creating Profile..." : "Create Profile"}
+      </Button>
+    </form>
   );
 };
