@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Session } from '@supabase/supabase-js';
+import { Session, AuthError } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
@@ -62,14 +62,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (retry && retryCount.current < MAX_RETRIES) {
         retryCount.current++;
-        logger.info(`🔄 [AuthContext] Retrying profile fetch (${retryCount.current}/${MAX_RETRIES})`);
         const delay = Math.min(1000 * Math.pow(2, retryCount.current), 8000);
+        logger.info(`🔄 [AuthContext] Retrying profile fetch in ${delay}ms (${retryCount.current}/${MAX_RETRIES})`);
         await new Promise(resolve => setTimeout(resolve, delay));
         return fetchProfile(userId, true);
       }
 
-      if (error instanceof Error && error.message.includes('Failed to fetch')) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
         toast.error("Network error. Please check your connection and try again.");
+      } else if (errorMessage.includes('not found')) {
+        toast.error("Profile not found. Please try logging in again.");
       } else {
         toast.error("Failed to load profile. Please refresh the page.");
       }
@@ -77,14 +80,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const handleAuthStateChange = useCallback(async (event: string, session: Session | null) => {
-    logger.info("🔄 [AuthContext] Auth state changed:", event, session ? "Session present" : "No session");
+  const handleAuthStateChange = useCallback(async (event: string, newSession: Session | null) => {
+    logger.info("🔄 [AuthContext] Auth state changed:", event, newSession ? "Session present" : "No session");
     
-    setSession(session);
+    setSession(newSession);
 
-    if (session?.user?.id) {
+    if (newSession?.user?.id) {
       try {
-        const fetchedProfile = await fetchProfile(session.user.id, true);
+        const fetchedProfile = await fetchProfile(newSession.user.id, true);
         setProfile(fetchedProfile);
         
         if (!fetchedProfile && location.pathname !== '/onboarding') {
@@ -96,6 +99,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (error) {
         logger.error("❌ [AuthContext] Error handling auth state change:", error);
+        toast.error("Error updating authentication state. Please try again.");
       }
     } else if (event === 'SIGNED_OUT') {
       setProfile(null);
@@ -145,7 +149,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (mounted) {
           setIsLoading(false);
           initializationComplete.current = true;
-          toast.error("Error initializing authentication");
+          toast.error("Error initializing authentication. Please refresh the page.");
         }
       }
     };
