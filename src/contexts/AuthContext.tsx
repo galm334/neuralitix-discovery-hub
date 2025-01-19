@@ -28,9 +28,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
   const initializationComplete = useRef(false);
+  const retryCount = useRef(0);
+  const MAX_RETRIES = 3;
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = async (userId: string, retry = false) => {
     logger.info("🔍 [AuthContext] Fetching profile for user:", userId);
+    
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -39,12 +42,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .maybeSingle();
 
       if (error) {
-        logger.error("❌ [AuthContext] Profile fetch error:", error);
-        toast.error("Error fetching profile data");
         throw error;
       }
 
       logger.info("✅ [AuthContext] Profile fetch result:", data);
+      retryCount.current = 0; // Reset retry count on success
       
       if (!data) {
         logger.warn("⚠️ [AuthContext] No profile found for user:", userId);
@@ -56,8 +58,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       return data;
     } catch (error) {
-      logger.error("❌ [AuthContext] Profile fetch error:", error);
-      toast.error("Failed to load profile. Please try again.");
+      logger.error("❌ [AuthContext] Error fetching profile:", error);
+      
+      if (retry && retryCount.current < MAX_RETRIES) {
+        retryCount.current++;
+        logger.info(`🔄 [AuthContext] Retrying profile fetch (${retryCount.current}/${MAX_RETRIES})`);
+        // Exponential backoff
+        const delay = Math.min(1000 * Math.pow(2, retryCount.current), 8000);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return fetchProfile(userId, true);
+      }
+
+      toast.error("Failed to load profile. Please refresh the page.");
       return null;
     }
   };
@@ -69,10 +81,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (session?.user?.id) {
       try {
-        const fetchedProfile = await fetchProfile(session.user.id);
+        const fetchedProfile = await fetchProfile(session.user.id, true); // Enable retries
         setProfile(fetchedProfile);
         
-        // Handle navigation based on profile state
         if (!fetchedProfile && location.pathname !== '/onboarding') {
           logger.info("➡️ [AuthContext] No profile, redirecting to onboarding");
           navigate('/onboarding', { replace: true });
@@ -98,7 +109,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     logger.info("🔄 [AuthContext] Refreshing profile...");
-    const fetchedProfile = await fetchProfile(session.user.id);
+    const fetchedProfile = await fetchProfile(session.user.id, true); // Enable retries
     setProfile(fetchedProfile);
   };
 
