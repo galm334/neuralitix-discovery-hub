@@ -1,6 +1,5 @@
-import { useState, useEffect, Suspense, lazy } from "react";
+import { useState, Suspense, lazy } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
 import { OnboardingForm } from "@/components/onboarding/OnboardingForm";
 import { logger } from "@/utils/logger";
 
@@ -12,18 +11,6 @@ const WelcomeDialog = lazy(() => import('@/components/onboarding/WelcomeDialog')
 const Onboarding = () => {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const navigate = useNavigate();
-  const { session } = useAuth();
-
-  useEffect(() => {
-    if (!session) {
-      logger.warn("No session found, redirecting to auth");
-      navigate("/auth");
-    }
-  }, [session, navigate]);
-
-  if (!session) {
-    return null;
-  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
