@@ -7,13 +7,12 @@ import { useLocation } from "react-router-dom";
 
 function App() {
   const location = useLocation();
-  const isAuthPage = location.pathname === '/auth' || location.pathname === '/onboarding';
   const isLegalPage = ['/terms', '/privacy', '/gdpr'].includes(location.pathname);
 
   return (
     <SidebarProvider>
       <div className="flex min-h-screen bg-background">
-        {!isAuthPage && !isLegalPage && <AppSidebar />}
+        {!isLegalPage && <AppSidebar />}
         <main className="flex-1">
           <AppRoutes />
         </main>
