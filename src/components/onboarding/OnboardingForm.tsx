@@ -21,7 +21,6 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
   const [name, setName] = useState("");
   const [profilePic, setProfilePic] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const navigate = useNavigate();
   const { refreshProfile, session } = useAuth();
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -29,7 +28,6 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
     
     if (!session?.user) {
       logger.error("No session found during onboarding submission");
-      navigate("/auth");
       return;
     }
 
@@ -95,7 +93,6 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
       await refreshProfile();
       
       showToast.success("Profile created successfully!");
-      navigate("/", { replace: true });
 
     } catch (error) {
       logger.error("Error during onboarding submission:", error);

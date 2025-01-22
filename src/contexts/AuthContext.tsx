@@ -1,6 +1,5 @@
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { Session, AuthError } from '@supabase/supabase-js';
+import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
@@ -25,8 +24,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const navigate = useNavigate();
-  const location = useLocation();
   const initializationComplete = useRef(false);
   const retryCount = useRef(0);
   const MAX_RETRIES = 3;
@@ -50,9 +47,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (!data) {
         logger.warn("⚠️ [AuthContext] No profile found for user:", userId);
-        if (location.pathname !== '/onboarding') {
-          navigate('/onboarding', { replace: true });
-        }
         return null;
       }
 
@@ -89,25 +83,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const fetchedProfile = await fetchProfile(newSession.user.id, true);
         setProfile(fetchedProfile);
-        
-        if (!fetchedProfile && location.pathname !== '/onboarding') {
-          logger.info("➡️ [AuthContext] No profile, redirecting to onboarding");
-          navigate('/onboarding', { replace: true });
-        } else if (fetchedProfile && location.pathname === '/onboarding') {
-          logger.info("➡️ [AuthContext] Profile exists, redirecting from onboarding");
-          navigate('/', { replace: true });
-        }
       } catch (error) {
         logger.error("❌ [AuthContext] Error handling auth state change:", error);
         toast.error("Error updating authentication state. Please try again.");
       }
     } else if (event === 'SIGNED_OUT') {
       setProfile(null);
-      if (!location.pathname.startsWith('/auth')) {
-        navigate('/auth', { replace: true });
-      }
     }
-  }, [navigate, location.pathname]);
+  }, []);
 
   const refreshProfile = async () => {
     if (!session?.user?.id) {
