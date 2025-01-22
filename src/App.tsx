@@ -1,25 +1,26 @@
-import { Toaster } from "@/components/ui/sonner";
-import { SidebarProvider } from "@/contexts/SidebarContext";
-import { AppSidebar } from "@/components/AppSidebar";
-import { AppRoutes } from "@/components/routing/AppRoutes";
-import { ChatWidget } from "@/components/chat/ChatWidget";
-import { useLocation } from "react-router-dom";
+import { BrowserRouter as Router } from "react-router-dom";
+import { AppSidebar } from "./components/AppSidebar";
+import { AppRoutes } from "./components/routing/AppRoutes";
+import { SidebarProvider } from "./contexts/SidebarContext";
+import { Footer } from "./components/Footer";
+import { Toaster } from "sonner";
 
 function App() {
-  const location = useLocation();
-  const isLegalPage = ['/terms', '/privacy', '/gdpr'].includes(location.pathname);
-
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen bg-background">
-        {!isLegalPage && <AppSidebar />}
-        <main className="flex-1">
-          <AppRoutes />
-        </main>
-        <Toaster />
-        <ChatWidget />
-      </div>
-    </SidebarProvider>
+    <Router>
+      <SidebarProvider>
+        <div className="min-h-screen flex flex-col">
+          <div className="flex-1 flex">
+            <AppSidebar />
+            <main className="flex-1 md:ml-44 pt-14 md:pt-0">
+              <AppRoutes />
+            </main>
+          </div>
+          <Footer />
+          <Toaster />
+        </div>
+      </SidebarProvider>
+    </Router>
   );
 }
 

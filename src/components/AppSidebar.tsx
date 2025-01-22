@@ -1,8 +1,9 @@
-import { Home, Star, TrendingUp, Plus, Send, MessageSquare, Menu } from "lucide-react";
+import { Home, Star, TrendingUp, Plus, Send } from "lucide-react";
 import { Sidebar } from "./Sidebar";
 import { SidebarMenuItem } from "./SidebarMenuItem";
 import { useSidebar } from "@/contexts/SidebarContext";
 import { Button } from "./ui/button";
+import { Menu } from "lucide-react";
 
 const navigationItems = [
   { title: "Home", url: "/", icon: Home },
@@ -10,7 +11,6 @@ const navigationItems = [
   { title: "Trending", url: "/trending", icon: TrendingUp },
   { title: "Just Added", url: "/new", icon: Plus },
   { title: "Submit", url: "/submit", icon: Send },
-  { title: "Contact", url: "/contact", icon: MessageSquare },
 ];
 
 export function AppSidebar() {
