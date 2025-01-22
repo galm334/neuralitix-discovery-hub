@@ -1,6 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -21,16 +19,10 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
   const [name, setName] = useState("");
   const [profilePic, setProfilePic] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { refreshProfile, session } = useAuth();
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     
-    if (!session?.user) {
-      logger.error("No session found during onboarding submission");
-      return;
-    }
-
     if (!termsAccepted) {
       showToast.error("Please accept the terms and conditions");
       return;
@@ -55,9 +47,9 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
       if (profilePic) {
         logger.info("Uploading profile picture");
         const fileExt = profilePic.name.split('.').pop();
-        const filePath = `${session.user.id}-${Math.random()}.${fileExt}`;
+        const filePath = `${Math.random()}-${Date.now()}.${fileExt}`;
 
-        const { error: uploadError, data: uploadData } = await supabase.storage
+        const { error: uploadError } = await supabase.storage
           .from('profile-pictures')
           .upload(filePath, profilePic);
 
@@ -72,26 +64,6 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
         logger.info("Generated public URL for profile picture:", avatarUrl);
       }
 
-      const profileData = {
-        id: session.user.id,
-        nickname,
-        name,
-        avatar_url: avatarUrl,
-        terms_accepted: true,
-        email: session.user.email
-      };
-
-      logger.info("Creating profile with data:", profileData);
-
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert([profileData]);
-
-      if (profileError) throw profileError;
-
-      logger.info("Profile created successfully");
-      await refreshProfile();
-      
       showToast.success("Profile created successfully!");
 
     } catch (error) {
@@ -127,19 +99,6 @@ export const OnboardingForm = ({ onShowTerms, termsAccepted }: OnboardingFormPro
             required
           />
         </div>
-
-        {session?.user?.email && (
-          <div>
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              value={session.user.email}
-              disabled
-              className="mt-1 bg-background text-foreground border-input"
-            />
-          </div>
-        )}
 
         <ProfilePictureInput onFileSelect={setProfilePic} />
 
